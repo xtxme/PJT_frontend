@@ -1,10 +1,19 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Geist, Geist_Mono, Poppins } from 'next/font/google';
 import './globals.css';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import StyledComponentsRegistry from '@/app/lib/registry';
 import { ThemeProvider } from '@mui/material/styles';
 import theme from '@/app/styles/theme';
+// ถ้าใช้ CssBaseline แนะนำเปิดใช้
+// import CssBaseline from '@mui/material/CssBaseline';
+
+const poppins = Poppins({
+  weight: ['300','400','500','600','700'],
+  subsets: ['latin'],
+  variable: '--font-poppins',
+  display: 'swap',
+});
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -23,18 +32,17 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html lang="th">
+      <body className={`${poppins.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AppRouterCacheProvider>
-          <StyledComponentsRegistry>
-            <ThemeProvider theme={theme}>{children}</ThemeProvider>
-          </StyledComponentsRegistry>
+          <ThemeProvider theme={theme}>
+            {/* <CssBaseline /> */}
+            <StyledComponentsRegistry>
+              {children}
+            </StyledComponentsRegistry>
+          </ThemeProvider>
         </AppRouterCacheProvider>
       </body>
     </html>

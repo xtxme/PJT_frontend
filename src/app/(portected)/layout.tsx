@@ -8,7 +8,7 @@ const Shell = styled.div`
     display: grid;
     grid-template-columns: 264px 1fr;
     min-height: 100dvh;
-    background-color: #FFFF;
+    background-color: #eeeeee;
 `;
 
 const Main = styled.main`
