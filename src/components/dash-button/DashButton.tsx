@@ -186,8 +186,8 @@ export default function DashButton({
               : "/images/dropdown-down-or.svg"
           }
           alt={isPeriodOpen ? "ปิดตัวเลือกช่วงเวลา" : "เปิดตัวเลือกช่วงเวลา"}
-          width={22}
-          height={22}
+          width={16}
+          height={16}
           priority={false}
         />
       </button>

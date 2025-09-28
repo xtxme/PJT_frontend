@@ -1,16 +1,25 @@
 "use client";
 
+import DashButton from "@/components/dash-button/DashButton";
 import Image from "next/image";
 import styled from "styled-components";
+
+import SummaryCard from "@/components/summary-card/SummaryCard";
 
 const DashboardPage = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 32px;
-  padding: 40px 48px 64px;
-  background: linear-gradient(110deg, rgba(0, 0, 0, 0.05) 0%, transparent 30%) #ffffff;
+  gap: 24px;
   min-height: 100%;
   color: #0f0f0f;
+
+  .dash-text{
+    font-family: ibmThai;
+    font-size: 20px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 20px;
+  }
 
   .breadcrumb-row {
     display: flex;
@@ -58,14 +67,19 @@ const DashboardPage = styled.div`
   }
 
   .welcome {
-    display: flex;
+    width: 355px;
+    height: 36px;
     flex-direction: column;
+    justify-content: center;
     gap: 8px;
   }
 
   .welcome h1 {
-    font-size: 40px;
+    font-family: ibmThai;
+    font-size: 32px;
+    font-style: normal;
     font-weight: 700;
+    line-height: 20px;
   }
 
   .cards-row {
@@ -74,7 +88,6 @@ const DashboardPage = styled.div`
     gap: 24px;
   }
 
-  .summary-card,
   .leaderboard {
     background: #d9d9d9;
     border-radius: 28px;
@@ -83,44 +96,6 @@ const DashboardPage = styled.div`
     flex-direction: column;
     gap: 16px;
     min-height: 200px;
-  }
-
-  .summary-card {
-    box-shadow: 0 8px 20px rgba(15, 15, 15, 0.08);
-  }
-
-  .summary-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 18px;
-    font-weight: 600;
-  }
-
-  .summary-card-value {
-    font-size: 36px;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-  }
-
-  .summary-card-trend {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    color: #1f1f1f;
-  }
-
-  .summary-card-trend.negative {
-    color: #c0392b;
-  }
-
-  .summary-card-trend img {
-    width: 24px;
-    height: 24px;
-  }
-
-  .leaderboard {
     grid-column: span 3;
     box-shadow: 0 12px 24px rgba(15, 15, 15, 0.08);
   }
@@ -200,7 +175,7 @@ const DashboardPage = styled.div`
   }
 
   @media (max-width: 1024px) {
-    padding: 32px 24px;
+    padding: 24px 24px;
 
     .welcome h1 {
       font-size: 32px;
@@ -230,68 +205,33 @@ export default function OwnerDashboardPage() {
           <Image
             src="/images/dashboard-black-icon.svg"
             alt="Dashboard icon"
-            width={32}
-            height={32}
+            width={24}
+            height={24}
           />
-          <span>Dashboard</span>
+          <img src="/images/arrow-left.svg" alt="arrow-left" />
+          <strong className="dash-text">Dashboard</strong>
         </div>
-        <button className="period-selector" type="button">
-          Monthly
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden
-          >
-            <path
-              d="M6 9l6 6 6-6"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
+        <DashButton />
       </div>
 
       <div className="welcome">
-        <h1>ยินดีต้อนรับ, คุณ xxxx</h1>
+        <h1>ยินดีต้อนรับ, คุณ xxxxxx</h1>
       </div>
 
       <div className="cards-row">
-        <div className="summary-card">
-          <div className="summary-card-header">
-            <span>ยอดขายรวม</span>
-            <span>฿</span>
-          </div>
-          <div className="summary-card-value">฿xxx,xxx</div>
-          <div className="summary-card-trend">
-            <Image
-              src="/images/ArrowRise.svg"
-              alt="ยอดขึ้น"
-              width={24}
-              height={24}
-            />
-            +xx.xx% จากเดือนที่แล้ว
-          </div>
-        </div>
+        <SummaryCard
+          title="ยอดขายรวม"
+          unit="฿"
+          value="฿xxx,xxx"
+          trendText="+xx.xx% จากเดือนที่แล้ว"
+        />
 
-        <div className="summary-card">
-          <div className="summary-card-header">
-            <span>กำไรสุทธิ</span>
-            <span>฿</span>
-          </div>
-          <div className="summary-card-value">฿xxx,xxx</div>
-          <div className="summary-card-trend">
-            <Image
-              src="/images/ArrowRise.svg"
-              alt="ยอดขึ้น"
-              width={24}
-              height={24}
-            />
-            +xx.xx% จากเดือนที่แล้ว
-          </div>
-        </div>
+        <SummaryCard
+          title="กำไรสุทธิ"
+          unit="฿"
+          value="฿xxx,xxx"
+          trendText="+xx.xx% จากเดือนที่แล้ว"
+        />
 
         <div className="leaderboard">
           <h2>ยอดขายรายบุคคลของพนักงาน</h2>
