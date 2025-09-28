@@ -99,9 +99,8 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   const navItems = [
-    { href: "/sale/sales", label: "ออกบิล", icon: "/images/dashboard-wh-icon.svg" },
-    { href: "/sale/inventory", label: "คลัง", icon: "/images/RoleAccess-gray-icon.svg" },
-    { href: "/sale/customers", label: "ลูกค้า", icon: "/images/DataLog-gray-icon.svg" },
+    { href: "/sale/sales", label: "ออกบิล", icon: "/images/dashboard-black-icon.svg" },
+    { href: "/sale/customers", label: "ลูกค้า", icon: "/images/RoleAccess-gray-icon.svg" },
     { href: "/sale/invoices", label: "บิลทั้งหมด", icon: "/images/Pending-gray-icon.svg" },
   ];
 
