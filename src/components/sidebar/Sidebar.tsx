@@ -24,7 +24,7 @@ const Aside = styled.aside`
     width: 100%;
     height: 1px;
     background-color: #e4e4e4;
-    margin-bottom: 20px;
+    margin-bottom: 4px;
     margin-top: -18px;
   }
 
