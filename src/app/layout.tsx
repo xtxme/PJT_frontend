@@ -5,6 +5,7 @@ import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import StyledComponentsRegistry from '@/app/lib/registry';
 import { ThemeProvider } from '@mui/material/styles';
 import theme from '@/app/styles/theme';
+import {ibmPlexThai} from "@/app/lib/fonts";
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -27,10 +28,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html
+        lang="th"
+        className={`${ibmPlexThai.variable} ${ibmPlexThai.variable}`}
+    >
+      <body>
         <AppRouterCacheProvider>
           <StyledComponentsRegistry>
             <ThemeProvider theme={theme}>{children}</ThemeProvider>

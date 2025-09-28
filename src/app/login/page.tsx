@@ -1,7 +1,9 @@
-import Image from 'next/image';
+import LoginForm from '@/component/login/LoginForm';
 
 export default function Login() {
   return (
-  <></>
+  <>
+    <LoginForm/>
+  </>
   );
 }
