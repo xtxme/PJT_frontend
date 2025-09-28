@@ -1,6 +1,8 @@
 'use client';
 
 import styled from "styled-components";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const Aside = styled.aside`
   width: 264px;
@@ -45,36 +47,29 @@ const Aside = styled.aside`
     width: 100%;
   }
 
-  .nav-button {
+  .nav-link {
     width: 100%;
     display: flex;
     align-items: center;
     gap: 16px;
     padding: 14px 20px;
-    border: none;
     border-radius: 99px;
     font: inherit;
     text-align: left;
     background-color: transparent;
     cursor: pointer;
+    text-decoration: none;
     transition: background-color 0.2s ease;
-    outline: none;
+    color: #000;
   }
 
-  .nav-button:hover {
+  .nav-link:hover {
     background-color: #efefef;
   }
 
-  .nav-button:focus-visible {
-    box-shadow: 0 0 0 2px rgba(78, 70, 220, 0.45);
-  }
-
-  .nav-button.active {
+  .nav-link.active {
     background-color: #df6a33;
-  }
-
-  .nav-button.active:hover {
-    background-color: #df6a33;
+    color: #fff;
   }
 
   .icon {
@@ -95,59 +90,40 @@ const Aside = styled.aside`
   .label {
     font-size: 16px;
     font-weight: 500;
-    color: #000;
-    font-family: Poppins;
     line-height: 20px;
     display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-self: stretch;
-  }
-
-  .label.active {
-    color: #FFFFFF;
+    align-items: center;
   }
 `;
-
 export default function Sidebar() {
+  const pathname = usePathname();
+
+  const navItems = [
+    { href: "/sale/sales", label: "ออกบิล", icon: "/images/dashboard-wh-icon.svg" },
+    { href: "/sale/inventory", label: "คลัง", icon: "/images/RoleAccess-gray-icon.svg" },
+    { href: "/sale/customers", label: "ลูกค้า", icon: "/images/DataLog-gray-icon.svg" },
+    { href: "/sale/invoices", label: "บิลทั้งหมด", icon: "/images/Pending-gray-icon.svg" },
+  ];
+
   return (
     <Aside>
       <img className="logo" src="/images/logo-black.webp" alt="logo-black" />
       <div className="divider" />
       <nav>
         <ul className="nav-list">
-          <li className="nav-item">
-            <button type="button" className="nav-button active">
-              <span className="icon active">
-                <img src="/images/dashboard-wh-icon.svg" alt="dashboard-black-icon" />
-              </span>
-              <span className="label active">Sales</span>
-            </button>
-          </li>
-          <li className="nav-item">
-            <button type="button" className="nav-button">
-              <span className="icon">
-                <img src="/images/RoleAccess-gray-icon.svg" alt="RoleAccess-gray-icon" />
-              </span>
-              <span className="label">Inventory</span>
-            </button>
-          </li>
-          <li className="nav-item">
-            <button type="button" className="nav-button">
-              <span className="icon">
-                <img src="/images/DataLog-gray-icon.svg" alt="DataLog-gray-icon" />
-              </span>
-              <span className="label">Customers</span>
-            </button>
-          </li>
-          <li className="nav-item">
-            <button type="button" className="nav-button">
-              <span className="icon">
-                <img src="/images/Pending-gray-icon.svg" alt="Pending-gray-icon" />
-              </span>
-              <span className="label">All Invoice</span>
-            </button>
-          </li>
+          {navItems.map(item => (
+            <li key={item.href} className="nav-item">
+              <Link
+                href={item.href}
+                className={`nav-link ${pathname === item.href ? "active" : ""}`}
+              >
+                <span className="icon">
+                  <img src={item.icon} alt={`${item.label}-icon`} />
+                </span>
+                <span className="label">{item.label}</span>
+              </Link>
+            </li>
+          ))}
         </ul>
       </nav>
     </Aside>
