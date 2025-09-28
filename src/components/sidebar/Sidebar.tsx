@@ -70,11 +70,11 @@ const Aside = styled.aside`
   }
 
   .nav-button.active {
-    background-color: #df6a33;
+    background-color: #df7544;
   }
 
   .nav-button.active:hover {
-    background-color: #df6a33;
+    background-color: #c46436;
   }
 
   .icon {
