@@ -5,25 +5,9 @@ import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import StyledComponentsRegistry from '@/app/lib/registry';
 import { ThemeProvider } from '@mui/material/styles';
 import theme from '@/app/styles/theme';
+import {ibmPlexThai} from "@/app/lib/fonts";
 // ถ้าใช้ CssBaseline แนะนำเปิดใช้
 // import CssBaseline from '@mui/material/CssBaseline';
-
-const poppins = Poppins({
-  weight: ['300','400','500','600','700'],
-  subsets: ['latin'],
-  variable: '--font-poppins',
-  display: 'swap',
-});
-
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-});
 
 export const metadata: Metadata = {
   title: 'Create Next App',
@@ -34,8 +18,11 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="th">
-      <body className={`${poppins.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <html
+          lang="th"
+          className={`${ibmPlexThai.variable} ${ibmPlexThai.variable}`}
+      >
+      <body>
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
             {/* <CssBaseline /> */}
