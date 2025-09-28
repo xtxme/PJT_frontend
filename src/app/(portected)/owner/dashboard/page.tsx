@@ -13,7 +13,7 @@ const DashboardPage = styled.div`
   min-height: 100%;
   color: #0f0f0f;
 
-  .dash-text{
+  .dash-text {
     font-family: ibmThai;
     font-size: 20px;
     font-style: normal;
@@ -67,25 +67,27 @@ const DashboardPage = styled.div`
   }
 
   .welcome {
-    width: 355px;
-    height: 36px;
+    display: flex;
     flex-direction: column;
-    justify-content: center;
     gap: 8px;
+    margin-top: -6px;
   }
 
   .welcome h1 {
     font-family: ibmThai;
-    font-size: 32px;
+    font-size: 34px;
     font-style: normal;
     font-weight: 700;
-    line-height: 20px;
+    line-height: 1.2;
   }
 
   .cards-row {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(256px, 256px));
     gap: 24px;
+    align-items: start;
+    justify-items: start;
+    justify-content: flex-start;
   }
 
   .leaderboard {
@@ -96,7 +98,7 @@ const DashboardPage = styled.div`
     flex-direction: column;
     gap: 16px;
     min-height: 200px;
-    grid-column: span 3;
+    grid-column: 1 / -1;
     box-shadow: 0 12px 24px rgba(15, 15, 15, 0.08);
   }
 
@@ -175,18 +177,19 @@ const DashboardPage = styled.div`
   }
 
   @media (max-width: 1024px) {
-    padding: 24px 24px;
+    padding: 24px 16px;
 
     .welcome h1 {
-      font-size: 32px;
+      font-size: 28px;
     }
 
     .cards-row {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
+      justify-items: stretch;
     }
 
     .leaderboard {
-      grid-column: span 1;
+      grid-column: 1 / -1;
     }
   }
 `;
@@ -222,15 +225,19 @@ export default function OwnerDashboardPage() {
         <SummaryCard
           title="ยอดขายรวม"
           unit="฿"
-          value="฿xxx,xxx"
-          trendText="+xx.xx% จากเดือนที่แล้ว"
+          unitValue="฿"
+          value="xxx,xxx"
+          trendText="+xx.xx"
+          fixTrendText="% จากเดือนที่แล้ว"
         />
 
         <SummaryCard
           title="กำไรสุทธิ"
           unit="฿"
-          value="฿xxx,xxx"
-          trendText="+xx.xx% จากเดือนที่แล้ว"
+          unitValue="฿"
+          value="xxx,xxx"
+          trendText="-xx.xx"
+          fixTrendText="% จากเดือนที่แล้ว"
         />
 
         <div className="leaderboard">

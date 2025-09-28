@@ -6,34 +6,49 @@ type TrendDirection = "up" | "down";
 interface SummaryCardProps {
   title: string;
   unit?: string;
+  unitValue?: string;
   value: string;
   trendText: string;
+  fixTrendText?: string;
   trendDirection?: TrendDirection;
 }
 
 const Card = styled.article`
   background: #d9d9d9;
   border-radius: 10px;
-  padding: 28px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
   width: 256px;
   height: 160px;
-  box-shadow: 0 8px 20px rgba(15, 15, 15, 0.08);
+  box-shadow: 0 12px 32px rgba(15, 15, 15, 0.08);
+
+  @media (max-width: 600px) {
+    width: 100%;
+  }
 `;
 
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
+  transform: translateY(4px);
+
+  span:first-child {
+    font-family: ibmThai;
+  }
 `;
 
 const Value = styled.div`
-  font-size: 36px;
+  font-size: 24px;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  line-height: 16px;
+  font-family: ibmThai;
+  transform: translateY(8px);
 `;
 
 const Trend = styled.div<{ negative?: boolean }>`
@@ -41,20 +56,23 @@ const Trend = styled.div<{ negative?: boolean }>`
   align-items: center;
   gap: 8px;
   font-size: 14px;
-  color: ${({ negative }) => (negative ? "#c0392b" : "#1f1f1f")};
+  color: ${({ negative }) => (negative ? "#c0392b" : "#3f3f3f")};
+  font-family: var(--font-ibm-plex-thai, inherit);
 
   img,
   svg {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
   }
 `;
 
 export default function SummaryCard({
   title,
   unit,
+  unitValue,
   value,
   trendText,
+  fixTrendText,
   trendDirection = "up",
 }: SummaryCardProps) {
   const isNegative = trendDirection === "down";
@@ -65,32 +83,25 @@ export default function SummaryCard({
         <span>{title}</span>
         {unit ? <span>{unit}</span> : null}
       </Header>
-      <Value>{value}</Value>
+      <Value>{unitValue ? `${unitValue} ${value}` : value}</Value>
       <Trend negative={isNegative}>
         {isNegative ? (
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden
-          >
-            <path
-              d="M6 15l6-6 6 6"
-              stroke="#c0392b"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <Image
+            src="/images/ArrowFall.svg"
+            alt="แนวโน้มลดลง"
+            width={20}
+            height={20}
+          />
         ) : (
           <Image
             src="/images/ArrowRise.svg"
             alt="แนวโน้มเพิ่มขึ้น"
-            width={24}
-            height={24}
+            width={20}
+            height={20}
           />
         )}
         {trendText}
+        {fixTrendText ? ` ${fixTrendText}` : ""}
       </Trend>
     </Card>
   );
