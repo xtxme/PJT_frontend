@@ -60,14 +60,9 @@ const LoginForm = () => {
                                 variant="outlined"
                                 size="large"
                                 startIcon={<GoogleIcon />}
-                                onClick={() => {
-                                    window.location.href =
-                                        "https://accounts.google.com/o/oauth2/v2/auth?client_id=97659364307-pum10j2qk37pdi5ebmn7kgju6bmtqe6k.apps.googleusercontent.com&redirect_uri=http://localhost&response_type=code&scope=openid%20https://www.googleapis.com/auth/userinfo.email%20https://www.googleapis.com/auth/userinfo.profile";
-                                }}
-                                sx={{
-                                    textTransform: 'none', // keeps original capitalization
-                                    fontWeight: 'bold',    // makes text bold
-                                }}
+                                component="a"
+                                href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/google`}
+                                sx={{ textTransform: 'none', fontWeight: 'bold' }}
                             >
                                 เข้าสู่ระบบด้วย Google
                             </Button>
