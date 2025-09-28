@@ -1,4 +1,5 @@
 
+import { useState } from 'react';
 import styled from 'styled-components';
 
 const HeaderBar = styled.header`
@@ -63,14 +64,15 @@ const HeaderBar = styled.header`
   .user-details {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 2px;
     line-height: 1;
   }
 
   .user-name {
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
+    display: flex;
+    line-height: 24px;
+    font-size: 16px;
+    font-weight: 500;
     color: #111a44;
     text-transform: uppercase;
   }
@@ -174,6 +176,8 @@ const HeaderBar = styled.header`
 `;
 
 export default function AppHeader() {
+  const [isLogoutHovered, setIsLogoutHovered] = useState(false);
+
   return (
     <HeaderBar>
       <div className="brand">
@@ -190,8 +194,17 @@ export default function AppHeader() {
           </div>
         </div>
         <span className="user-divider" aria-hidden="true" />
-        <button type="button" className="logout-button">
-            <img className="logout-button-icon" src="/images/logout-black-icon.svg" alt="logout-icon" />
+        <button
+          type="button"
+          className="logout-button"
+          onMouseEnter={() => setIsLogoutHovered(true)}
+          onMouseLeave={() => setIsLogoutHovered(false)}
+        >
+          <img
+            className="logout-button-icon"
+            src={isLogoutHovered ? '/images/logout-wh-icon.svg' : '/images/logout-black-icon.svg'}
+            alt="logout-icon"
+          />
           <span className="logout-button-text">Logout</span>
         </button>
       </div>
