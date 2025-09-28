@@ -1,3 +1,4 @@
+
 import styled from 'styled-components';
 
 const HeaderBar = styled.header`
@@ -75,7 +76,9 @@ const HeaderBar = styled.header`
   }
 
   .user-role {
-    font-size: 13px;
+    line-height: 20px;
+    font-weight: 400;
+    font-size: 14px;
     color: #7f8499;
   }
 
@@ -137,6 +140,21 @@ const HeaderBar = styled.header`
     transform: translateY(-50%) rotate(45deg);
   }
 
+  .logout-button-text {
+        display: flex;
+        width: 62px;
+        height: 28px;
+        flex-direction: column;
+        justify-content: center;
+        font-size: 18px;
+        font-weight: 500;
+    }
+
+    .admin-icon{
+        width: 50px;
+        height: 50px;
+    }
+
   @media (max-width: 960px) {
     padding: 16px 20px;
 
@@ -152,16 +170,6 @@ const HeaderBar = styled.header`
     .logout-button {
       padding: 10px 18px;
     }
-
-    .logout-button-text {
-        display: flex;
-        width: 62px;
-        height: 28px;
-        flex-direction: column;
-        justify-content: center;
-        font-size: 18px;
-        font-weight: 500;
-    }
   }
 `;
 
@@ -175,7 +183,7 @@ export default function AppHeader() {
       </div>
       <div className="user">
         <div className="user-profile">
-          <span className="user-avatar" aria-hidden="true" />
+          <img className="admin-icon" src="/images/admin-icon.svg" alt="admin-icon" />
           <div className="user-details">
             <span className="user-name">xxxxx</span>
             <span className="user-role">Admin</span>
