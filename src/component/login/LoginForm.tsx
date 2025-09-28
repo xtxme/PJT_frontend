@@ -60,6 +60,10 @@ const LoginForm = () => {
                                 variant="outlined"
                                 size="large"
                                 startIcon={<GoogleIcon />}
+                                onClick={() => {
+                                    window.location.href =
+                                        "https://accounts.google.com/o/oauth2/v2/auth?client_id=97659364307-pum10j2qk37pdi5ebmn7kgju6bmtqe6k.apps.googleusercontent.com&redirect_uri=http://localhost&response_type=code&scope=openid%20https://www.googleapis.com/auth/userinfo.email%20https://www.googleapis.com/auth/userinfo.profile";
+                                }}
                                 sx={{
                                     textTransform: 'none', // keeps original capitalization
                                     fontWeight: 'bold',    // makes text bold
