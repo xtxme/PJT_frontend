@@ -1,0 +1,192 @@
+import styled from 'styled-components';
+
+const HeaderBar = styled.header`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e4e4e4;
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .brand-text {
+    width: 286px;
+    height: 52px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .brand-title {
+    font-size: 36px;
+    font-weight: 600;
+    line-height: 140%;
+    color: #111a44;
+  }
+
+  .user {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .user-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .user-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background-color: #000000;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .user-avatar::after {
+    content: '\\1F464';
+    color: #ffffff;
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .user-details {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    line-height: 1;
+  }
+
+  .user-name {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: #111a44;
+    text-transform: uppercase;
+  }
+
+  .user-role {
+    font-size: 13px;
+    color: #7f8499;
+  }
+
+  .user-divider {
+    width: 1px;
+    height: 44px;
+    background-color: #d7d9e2;
+    display: inline-block;
+  }
+
+  .logout-button {
+    width: 138px;
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 30px;
+    border-radius: 4px;
+    border: 1px solid #1c1f2c;
+    background-color: transparent;
+    font-size: 15px;
+    font-weight: 500;
+    color: #1c1f2c;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .logout-button:hover {
+    background-color: #1c1f2c;
+    color: #ffffff;
+  }
+
+  .logout-button-icon {
+    position: relative;
+    width: 20px;
+    height: 20px;
+  }
+
+  .logout-button-icon::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 2px;
+    width: 9px;
+    height: 2px;
+    background-color: currentColor;
+    transform: translateY(-50%);
+  }
+
+  .logout-button-icon::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 1px;
+    width: 6px;
+    height: 6px;
+    border-top: 2px solid currentColor;
+    border-right: 2px solid currentColor;
+    transform: translateY(-50%) rotate(45deg);
+  }
+
+  @media (max-width: 960px) {
+    padding: 16px 20px;
+
+    .brand-title {
+      font-size: 20px;
+      letter-spacing: 0.08em;
+    }
+
+    .user {
+      gap: 16px;
+    }
+
+    .logout-button {
+      padding: 10px 18px;
+    }
+
+    .logout-button-text {
+        display: flex;
+        width: 62px;
+        height: 28px;
+        flex-direction: column;
+        justify-content: center;
+        font-size: 18px;
+        font-weight: 500;
+    }
+  }
+`;
+
+export default function AppHeader() {
+  return (
+    <HeaderBar>
+      <div className="brand">
+        <div className="brand-text">
+          <span className="brand-title">PJT INVENTORY</span>
+        </div>
+      </div>
+      <div className="user">
+        <div className="user-profile">
+          <span className="user-avatar" aria-hidden="true" />
+          <div className="user-details">
+            <span className="user-name">xxxxx</span>
+            <span className="user-role">Admin</span>
+          </div>
+        </div>
+        <span className="user-divider" aria-hidden="true" />
+        <button type="button" className="logout-button">
+            <img className="logout-button-icon" src="/images/logout-black-icon.svg" alt="logout-icon" />
+          <span className="logout-button-text">Logout</span>
+        </button>
+      </div>
+    </HeaderBar>
+  );
+}
