@@ -62,11 +62,11 @@ app.get(
 
         // Example: check specific emails
         if (userEmail === 'prae.tippy@gmail.com') {
-            return res.redirect(`${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/admin`);
+            return res.redirect(`${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/owner`);
         }
 
         if (userEmail === 'prts0774@gmail.com') {
-            return res.redirect(`${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/manager`);
+            return res.redirect(`${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/sale`);
         }
 
         // default redirect

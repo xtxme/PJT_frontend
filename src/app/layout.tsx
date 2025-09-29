@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono, Poppins } from 'next/font/google';
 import './globals.css';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import StyledComponentsRegistry from '@/app/lib/registry';

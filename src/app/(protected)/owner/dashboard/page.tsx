@@ -1,11 +1,9 @@
-"use client";
-
+'use client';
 import DashButton from "@/components/dash-button/DashButton";
 import Image from "next/image";
 import styled from "styled-components";
-
 import SummaryCard from "@/components/summary-card/SummaryCard";
-import Leaderboard from "@/components/leaderboard/leaderboard";
+import Leaderboard from "@/components/leaderboard/Leaderboard";
 import Saleboard from "@/components/saleboard/Saleboard";
 
 const DashboardPage = styled.div`
@@ -16,7 +14,6 @@ const DashboardPage = styled.div`
   color: #0f0f0f;
 
   .dash-text {
-    font-family: var(--font-ibm-plex-sans-thai), 'IBM Plex Sans Thai', sans-serif;
     font-size: 20px;
     font-style: normal;
     font-weight: 700;
@@ -76,7 +73,6 @@ const DashboardPage = styled.div`
   }
 
   .welcome h1 {
-    font-family: var(--font-ibm-plex-sans-thai), 'IBM Plex Sans Thai', sans-serif;
     font-size: 34px;
     font-style: normal;
     font-weight: 700;
