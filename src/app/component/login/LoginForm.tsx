@@ -61,7 +61,7 @@ const LoginForm = () => {
                                 size="large"
                                 startIcon={<GoogleIcon />}
                                 component="a"
-                                href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/google`}
+                                href={`${process.env.BACKEND_DOMAIN_URL}:${process.env.BACKEND_PORT}/auth/google`}
                                 sx={{ textTransform: 'none', fontWeight: 'bold' }}
                             >
                                 เข้าสู่ระบบด้วย Google
