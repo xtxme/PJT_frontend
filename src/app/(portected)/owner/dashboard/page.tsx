@@ -5,7 +5,7 @@ import Image from "next/image";
 import styled from "styled-components";
 
 import SummaryCard from "@/components/summary-card/SummaryCard";
-import Leaderboard from "@/components/leaderboard/Leaderboard";
+import Leaderboard from "@/components/leaderboard/leaderboard";
 import Saleboard from "@/components/saleboard/Saleboard";
 
 const DashboardPage = styled.div`
