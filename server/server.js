@@ -54,10 +54,22 @@ app.get(
 );
 
 // Google callback
-app.get('/auth/google/callback',
+app.get(
+    '/auth/google/callback',
     passport.authenticate('google', { failureRedirect: '/login' }),
     (req, res) => {
-        // Example: frontend URL
+        const userEmail = req.user.emails[0].value;
+
+        // Example: check specific emails
+        if (userEmail === 'prae.tippy@gmail.com') {
+            return res.redirect(`${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/admin`);
+        }
+
+        if (userEmail === 'prts0774@gmail.com') {
+            return res.redirect(`${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/manager`);
+        }
+
+        // default redirect
         res.redirect(`${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/warehouse`);
     }
 );
