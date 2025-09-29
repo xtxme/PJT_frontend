@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono, Poppins } from 'next/font/google';
-import './globals.css';
+import { Geist, Geist_Mono } from 'next/font/google';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import StyledComponentsRegistry from '@/app/lib/registry';
 import { ThemeProvider } from '@mui/material/styles';
@@ -14,20 +13,19 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{ children: React.ReactNode }>) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html
-        lang="th"
-        className={`${ibmPlexThai.variable} ${ibmPlexThai.variable}`}
-    >
+      <html
+          lang="th"
+          className={`${ibmPlexThai.variable} ${ibmPlexThai.variable}`}
+      >
       <body>
         <AppRouterCacheProvider>
-          <ThemeProvider theme={theme}>
-            {/* <CssBaseline /> */}
-            <StyledComponentsRegistry>
-              {children}
-            </StyledComponentsRegistry>
-          </ThemeProvider>
+          <StyledComponentsRegistry>
+            <ThemeProvider theme={theme}>{children}</ThemeProvider>
+          </StyledComponentsRegistry>
         </AppRouterCacheProvider>
       </body>
     </html>
