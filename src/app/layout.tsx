@@ -1,24 +1,17 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono, Poppins, IBM_Plex_Sans_Thai} from 'next/font/google';
+import { Geist, Geist_Mono, IBM_Plex_Sans_Thai } from 'next/font/google';
 import './globals.css';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import StyledComponentsRegistry from '@/app/lib/registry';
 import { ThemeProvider } from '@mui/material/styles';
 import theme from '@/app/styles/theme';
 
-const poppins = Poppins({
-  weight: ['300','400','500','600','700'],
-  subsets: ['latin'],
-  variable: '--font-poppins',
+const ibmPlexSansThai = IBM_Plex_Sans_Thai({
+  weight: ['300', '400', '500', '600', '700'],
+  subsets: ['latin', 'thai'],
+  variable: '--font-ibm-plex-sans-thai',
   display: 'swap',
 });
-
-export const ibmThai = IBM_Plex_Sans_Thai({
-  subsets: ['thai'],
-  weight: ['100','200','300','400','500','600','700'],
-  variable: '--font-ibm-plex-thai',
-  display: 'swap',
-})
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -40,7 +33,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="th">
-      <body className={`${ibmThai.variable} ${poppins.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${ibmPlexSansThai.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
             {/* <CssBaseline /> */}

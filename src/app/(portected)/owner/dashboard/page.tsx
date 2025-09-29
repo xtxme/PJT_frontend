@@ -6,6 +6,7 @@ import styled from "styled-components";
 
 import SummaryCard from "@/components/summary-card/SummaryCard";
 import Leaderboard from "@/components/leaderboard/Leaderboard";
+import Saleboard from "@/components/saleboard/Saleboard";
 
 const DashboardPage = styled.div`
   display: flex;
@@ -15,7 +16,7 @@ const DashboardPage = styled.div`
   color: #0f0f0f;
 
   .dash-text {
-    font-family: ibmThai;
+    font-family: var(--font-ibm-plex-sans-thai), 'IBM Plex Sans Thai', sans-serif;
     font-size: 20px;
     font-style: normal;
     font-weight: 700;
@@ -75,7 +76,7 @@ const DashboardPage = styled.div`
   }
 
   .welcome h1 {
-    font-family: ibmThai;
+    font-family: var(--font-ibm-plex-sans-thai), 'IBM Plex Sans Thai', sans-serif;
     font-size: 34px;
     font-style: normal;
     font-weight: 700;
@@ -84,30 +85,12 @@ const DashboardPage = styled.div`
 
   .cards-row {
     display: grid;
-    grid-template-columns: 256px 256px minmax(0, 1fr);
-    column-gap: 36px;
-    row-gap: 24px;
-    align-items: stretch;
-    justify-items: stretch;
-  }
-
-  @media (max-width: 1200px) {
-    .cards-row {
-      grid-template-columns: repeat(auto-fit, minmax(256px, 1fr));
-    }
-  }
-
-  @media (max-width: 1024px) {
-    padding: 24px 16px;
-
-    .welcome h1 {
-      font-size: 28px;
-    }
-
-    .cards-row {
-      grid-template-columns: minmax(0, 1fr);
-      justify-items: stretch;
-    }
+    grid-template-columns: 256px 256px 540px;
+    column-gap: 50px;
+    row-gap: 50px;
+    align-items: start;
+    justify-items: start;
+    justify-content: flex-start;
   }
 `;
 
@@ -152,6 +135,7 @@ export default function OwnerDashboardPage() {
         />
 
         <Leaderboard />
+        <Saleboard/>
       </div>
     </DashboardPage>
   );

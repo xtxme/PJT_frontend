@@ -24,12 +24,7 @@ const Card = styled.article`
   width: 256px;
   height: 160px;
   box-shadow: 0 12px 32px rgba(15, 15, 15, 0.08);
-  margin-inline: 24px;
-
-
-  @media (max-width: 600px) {
-    width: 100%;
-  }
+  margin: 0;
 `;
 
 const Header = styled.div`
@@ -51,7 +46,7 @@ const ValueText = styled.span`
   font-size: 24px;
   font-weight: 700;
   line-height: 20px;
-  font-family: ibmThai;
+  font-family: var(--font-ibm-plex-sans-thai), 'IBM Plex Sans Thai', sans-serif;
 `;
 
 const UnitBadge = styled.span`
@@ -80,7 +75,7 @@ const Trend = styled.div<{ negative?: boolean }>`
   gap: 8px;
   font-size: 14px;
   color: ${({ negative }) => (negative ? "#c0392b" : "#3f3f3f")};
-  font-family: var(--font-ibm-plex-thai, inherit);
+  font-family: var(--font-ibm-plex-sans-thai), 'IBM Plex Sans Thai', sans-serif;
 
   img,
   svg {

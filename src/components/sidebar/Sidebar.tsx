@@ -132,7 +132,7 @@ const Aside = styled.aside`
     font-size: 16px;
     font-weight: 500;
     color: #000;
-    font-family: Poppins;
+    font-family: var(--font-ibm-plex-sans-thai), 'IBM Plex Sans Thai', sans-serif;
     line-height: 20px;
     display: flex;
     flex-direction: column;

@@ -34,7 +34,7 @@ const Title = styled.h2`
   font-size: 18px;
   font-weight: 600;
   color: #0f0f0f;
-  font-family: ibmThai;
+  font-family: var(--font-ibm-plex-sans-thai), 'IBM Plex Sans Thai', sans-serif;
 `;
 
 const LeaderboardTable = styled.table`
@@ -92,7 +92,7 @@ const Rank = styled.span`
 
   color: #0f0f0f;
   text-align: center;
-  font-family: ibmThai;
+  font-family: var(--font-ibm-plex-sans-thai), 'IBM Plex Sans Thai', sans-serif;
   font-size: 12px;
   font-weight: 600;
 `;
@@ -132,8 +132,8 @@ function TrendArrow({ direction }: { direction: TrendDirection }) {
 const salesLeaders: SalesLeader[] = [
   { rank: 1, name: "สมชาย ใจดี", sales: "฿ xxxx", trend: "up" },
   { rank: 2, name: "สมหญิง รักงาน", sales: "฿ xxxx", trend: "down" },
-  { rank: 3, name: "วิชัย ขยัน", sales: "฿ xxxx" },
-  { rank: 4, name: "มาลี ใส่ใจ", sales: "฿ xxxx" },
+  { rank: 3, name: "วิชัย ขยัน", sales: "฿ xxxx", trend: "down" },
+  { rank: 4, name: "มาลี ใส่ใจ", sales: "฿ xxxx", trend: "down" },
 ];
 
 export default function Leaderboard() {
