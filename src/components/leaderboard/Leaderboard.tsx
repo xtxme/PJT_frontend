@@ -61,7 +61,7 @@ const TableRow = styled.tr`
 `;
 
 const TableCell = styled.td`
-  padding: 18px 0;
+  padding: 12px 0;
   vertical-align: middle;
 
   &:first-child {
@@ -69,9 +69,15 @@ const TableCell = styled.td`
   }
 
   &:last-child {
-    text-align: right;
+    text-align: left;
     font-weight: 600;
   }
+`;
+
+const RankCellContent = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 `;
 
 const Rank = styled.span`
@@ -91,10 +97,8 @@ const Rank = styled.span`
   font-weight: 600;
 `;
 
-const LeaderboardName = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
+const LeaderboardName = styled.span`
+  display: inline-block;
   font-weight: 500;
 `;
 
@@ -148,10 +152,8 @@ export default function Leaderboard() {
           {salesLeaders.map((leader) => (
             <TableRow key={leader.rank}>
               <TableCell>
-                <Rank>{leader.rank}</Rank>
-              </TableCell>
-              <TableCell>
-                <LeaderboardName>
+                <RankCellContent>
+                  <Rank>{leader.rank}</Rank>
                   {leader.trend ? (
                     <TrendIcon $trend={leader.trend}>
                       <TrendArrow direction={leader.trend} />
@@ -159,8 +161,10 @@ export default function Leaderboard() {
                   ) : (
                     <TrendPlaceholder aria-hidden />
                   )}
-                  <span>{leader.name}</span>
-                </LeaderboardName>
+                </RankCellContent>
+              </TableCell>
+              <TableCell>
+                <LeaderboardName>{leader.name}</LeaderboardName>
               </TableCell>
               <TableCell>{leader.sales}</TableCell>
             </TableRow>
