@@ -1,4 +1,4 @@
-name: preflight # You can also change this to another name to avoid warning with existing group. 
+name: PJT-frontend # You can also change this to another name to avoid warning with existing group. 
 services:
   frontend:
     container_name: PJT-frontend
