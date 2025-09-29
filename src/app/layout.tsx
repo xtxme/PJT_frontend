@@ -1,21 +1,11 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Geist, Geist_Mono, Poppins } from 'next/font/google';
 import './globals.css';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import StyledComponentsRegistry from '@/app/lib/registry';
 import { ThemeProvider } from '@mui/material/styles';
 import theme from '@/app/styles/theme';
 import {ibmPlexThai} from "@/app/lib/fonts";
-
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-});
 
 export const metadata: Metadata = {
   title: 'Create Next App',
@@ -24,9 +14,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html
         lang="th"
@@ -34,9 +22,12 @@ export default function RootLayout({
     >
       <body>
         <AppRouterCacheProvider>
-          <StyledComponentsRegistry>
-            <ThemeProvider theme={theme}>{children}</ThemeProvider>
-          </StyledComponentsRegistry>
+          <ThemeProvider theme={theme}>
+            {/* <CssBaseline /> */}
+            <StyledComponentsRegistry>
+              {children}
+            </StyledComponentsRegistry>
+          </ThemeProvider>
         </AppRouterCacheProvider>
       </body>
     </html>
