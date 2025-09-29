@@ -33,7 +33,7 @@ const DashboardPage = styled.div`
   .breadcrumb {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     font-weight: 600;
     font-size: 20px;
   }

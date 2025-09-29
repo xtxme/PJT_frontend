@@ -95,6 +95,7 @@ const Rank = styled.span`
   font-family: var(--font-ibm-plex-sans-thai), 'IBM Plex Sans Thai', sans-serif;
   font-size: 12px;
   font-weight: 600;
+  box-shadow: 0 6px 12px rgba(15, 15, 15, 0.08);
 `;
 
 const LeaderboardName = styled.span`

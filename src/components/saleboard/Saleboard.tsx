@@ -13,140 +13,140 @@ type ProductRanking = {
   emoji?: string;
 };
 
-const SaleboardCard = styled.section`
-  width: 396px;
-  height: 484px;
-  flex-shrink: 0;
-  border-radius: 17px;
+const SaleboardCard = styled.article`
   background: #ffffff;
-  padding: 28px 24px;
+  border-radius: 32px;
+  padding: 32px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  box-shadow: 0 16px 28px rgba(15, 15, 15, 0.06);
-  font-family: var(--font-ibm-plex-sans-thai), 'IBM Plex Sans Thai', sans-serif;
+  gap: 24px;
+  box-shadow: 0 20px 40px rgba(15, 15, 15, 0.06);
+  border: 1px solid rgba(15, 15, 15, 0.08);
+  width: 540px;
+  font-family: var(--font-ibm-plex-sans-thai), "IBM Plex Sans Thai", sans-serif;
 
-  .saleboard-title {
-    font-size: 18px;
+  @media (max-width: 1200px) {
+    max-width: 100%;
+  }
+`;
+
+const Title = styled.h2`
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2024;
+`;
+
+const SaleboardTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 16px;
+  color: #1f2024;
+`;
+
+const HeaderCell = styled.th`
+  text-align: left;
+  font-weight: 500;
+  color: rgba(31, 32, 36, 0.65);
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(31, 32, 36, 0.18);
+
+  &:last-child {
+    text-align: right;
+  }
+`;
+
+const TableRow = styled.tr`
+  border-bottom: 1px solid rgba(31, 32, 36, 0.1);
+
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const TableCell = styled.td`
+  padding: 18px 0;
+  vertical-align: middle;
+
+  &:first-child {
+    width: 96px;
+  }
+
+  &:last-child {
+    text-align: right;
     font-weight: 600;
-    color: #1f2024;
   }
+`;
 
-  .saleboard-header {
-    display: grid;
-    grid-template-columns: 110px 1fr 96px;
-    align-items: center;
-    font-size: 14px;
-    font-weight: 500;
-    color: rgba(31, 32, 36, 0.6);
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(31, 32, 36, 0.2);
-  }
+const RankGroup = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+`;
 
-  .saleboard-rows {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-    flex: 1;
-  }
+const RankBadge = styled.span`
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  background: #EFBE46;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 12px;
+  color: #1f2024;
+  box-shadow: 0 6px 12px rgba(15, 15, 15, 0.08);
+`;
 
-  .saleboard-row {
-    display: grid;
-    grid-template-columns: 110px 1fr 96px;
-    align-items: center;
-    column-gap: 16px;
-  }
+const TrendBadge = styled.span<{ $trend?: TrendDirection }>`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: ${({ $trend }) =>
+    $trend === "up" ? "#2abf75" : $trend === "down" ? "#e25c5c" : "transparent"};
+  ${({ $trend }) => !$trend && "visibility: hidden;"}
+`;
 
-  .rank-cell {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
+const ProductCell = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+`;
 
-  .rank-number {
-    display: inline-flex;
-    width: 24px;
-    height: 24px;
-    border-radius: 5px;
-    background: #EFBE46;
-    align-items: center;
-    justify-content: center;
-    color: #0f0f0f;
-    text-align: center;
-    font-size: 12px;
-    font-weight: 600;
-    font-family: var(--font-ibm-plex-sans-thai), 'IBM Plex Sans Thai', sans-serif;
-  }
+const ProductAvatar = styled.span`
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: #f4f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+`;
 
-  .trend-icon {
-    width: 22px;
-    height: 22px;
-    border-radius: 999px;
-    background: #ffffff;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: rgba(31, 32, 36, 0.24);
-  }
+const ProductEmoji = styled.span`
+  font-size: 32px;
+  line-height: 1;
+`;
 
-  .trend-icon.up {
-    color: #2abf75;
-  }
+const ProductInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
 
-  .trend-icon.down {
-    color: #e35f5f;
-  }
+const ProductName = styled.span`
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2024;
+`;
 
-  .trend-icon.none {
-    visibility: hidden;
-  }
-
-  .product-cell {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-
-  .product-avatar {
-    width: 60px;
-    height: 60px;
-    border-radius: 18px;
-    background: #f5f5f5;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-  }
-
-  .product-avatar .emoji {
-    font-size: 32px;
-    line-height: 1;
-  }
-
-  .product-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .product-name {
-    font-size: 16px;
-    font-weight: 600;
-    color: #1f2024;
-  }
-
-  .product-code {
-    font-size: 14px;
-    font-weight: 400;
-    color: rgba(31, 32, 36, 0.6);
-  }
-
-  .sales-cell {
-    justify-self: end;
-    font-size: 16px;
-    font-weight: 600;
-    color: #1f2024;
-  }
+const ProductCode = styled.span`
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(31, 32, 36, 0.6);
 `;
 
 const productSales: ProductRanking[] = [
@@ -192,11 +192,11 @@ const productSales: ProductRanking[] = [
 
 function TrendArrow({ direction }: { direction: TrendDirection }) {
   return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
       {direction === "up" ? (
-        <path d="M6 2l4 4H2l4-4z" />
+        <path d="M6 2l4 4H2L6 2z" fill="currentColor" />
       ) : (
-        <path d="M6 10l4-4H2l4 4z" />
+        <path d="M6 10l4-4H2l4 4z" fill="currentColor" />
       )}
     </svg>
   );
@@ -205,37 +205,42 @@ function TrendArrow({ direction }: { direction: TrendDirection }) {
 export default function Saleboard() {
   return (
     <SaleboardCard>
-      <h2 className="saleboard-title">ยอดขายตามอันดับสินค้า</h2>
-      <div className="saleboard-header">
-        <span>อันดับ</span>
-        <span>รายการสินค้า</span>
-        <span>ยอดการขาย</span>
-      </div>
-      <div className="saleboard-rows">
-        {productSales.map((product) => (
-          <div key={product.rank} className="saleboard-row">
-            <div className="rank-cell">
-              <span className="rank-number">{product.rank}</span>
-              <span
-                className={`trend-icon ${product.trend ? product.trend : "none"}`}
-                aria-hidden={!product.trend}
-              >
-                {product.trend ? <TrendArrow direction={product.trend} /> : null}
-              </span>
-            </div>
-            <div className="product-cell">
-              <div className="product-avatar" aria-hidden={!product.emoji}>
-                {product.emoji ? <span className="emoji">{product.emoji}</span> : null}
-              </div>
-              <div className="product-info">
-                <span className="product-name">{product.name}</span>
-                <span className="product-code">{product.code}</span>
-              </div>
-            </div>
-            <span className="sales-cell">{product.sales}</span>
-          </div>
-        ))}
-      </div>
+      <Title>ยอดขายตามอันดับสินค้า</Title>
+      <SaleboardTable>
+        <thead>
+          <tr>
+            <HeaderCell>อันดับ</HeaderCell>
+            <HeaderCell>รายการสินค้า</HeaderCell>
+            <HeaderCell>ยอดการขาย</HeaderCell>
+          </tr>
+        </thead>
+        <tbody>
+          {productSales.map((product) => (
+            <TableRow key={product.rank}>
+              <TableCell>
+                <RankGroup>
+                  <RankBadge>{product.rank}</RankBadge>
+                  <TrendBadge $trend={product.trend}>
+                    {product.trend ? <TrendArrow direction={product.trend} /> : null}
+                  </TrendBadge>
+                </RankGroup>
+              </TableCell>
+              <TableCell>
+                <ProductCell>
+                  <ProductAvatar aria-hidden={!product.emoji}>
+                    {product.emoji ? <ProductEmoji>{product.emoji}</ProductEmoji> : null}
+                  </ProductAvatar>
+                  <ProductInfo>
+                    <ProductName>{product.name}</ProductName>
+                    <ProductCode>{product.code}</ProductCode>
+                  </ProductInfo>
+                </ProductCell>
+              </TableCell>
+              <TableCell>{product.sales}</TableCell>
+            </TableRow>
+          ))}
+        </tbody>
+      </SaleboardTable>
     </SaleboardCard>
   );
 }
