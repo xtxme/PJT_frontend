@@ -1,6 +1,42 @@
 'use client';
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import styled from "styled-components";
+
+type NavItem = {
+  label: string;
+  href: string;
+  icon: string;
+  activeIcon: string;
+};
+
+const navItems: NavItem[] = [
+  {
+    label: "Dashboard",
+    href: "/owner/dashboard",
+    icon: "/images/dashboard-gray-icon.svg",
+    activeIcon: "/images/dashboard-wh-icon.svg",
+  },
+  {
+    label: "Role Access",
+    href: "/owner/roleAccess",
+    icon: "/images/RoleAccess-gray-icon.svg",
+    activeIcon: "/images/RoleAccess-wh-icon.svg",
+  },
+  {
+    label: "Data Log",
+    href: "/owner/dataLog",
+    icon: "/images/DataLog-gray-icon.svg",
+    activeIcon: "/images/DataLog-wh-icon.svg",
+  },
+  {
+    label: "Product Pending",
+    href: "/owner/productPending",
+    icon: "/images/Pending-gray-icon.svg",
+    activeIcon: "/images/Pending-wh-icon.svg",
+  },
+];
 
 const Aside = styled.aside`
   width: 264px;
@@ -70,11 +106,11 @@ const Aside = styled.aside`
   }
 
   .nav-button.active {
-    background-color: #df6a33;
+    background-color: #df7544;
   }
 
   .nav-button.active:hover {
-    background-color: #df6a33;
+    background-color: #c46436;
   }
 
   .icon {
@@ -96,7 +132,7 @@ const Aside = styled.aside`
     font-size: 16px;
     font-weight: 500;
     color: #000;
-    font-family: Poppins;
+    font-family: var(--font-ibm-plex-sans-thai), 'IBM Plex Sans Thai', sans-serif;
     line-height: 20px;
     display: flex;
     flex-direction: column;
@@ -110,44 +146,36 @@ const Aside = styled.aside`
 `;
 
 export default function Sidebar() {
+  const pathname = usePathname();
+
   return (
     <Aside>
       <img className="logo" src="/images/logo-black.webp" alt="logo-black" />
       <div className="divider" />
       <nav>
         <ul className="nav-list">
-          <li className="nav-item">
-            <button type="button" className="nav-button active">
-              <span className="icon active">
-                <img src="/images/dashboard-wh-icon.svg" alt="dashboard-black-icon" />
-              </span>
-              <span className="label active">Dashboard</span>
-            </button>
-          </li>
-          <li className="nav-item">
-            <button type="button" className="nav-button">
-              <span className="icon">
-                <img src="/images/RoleAccess-gray-icon.svg" alt="RoleAccess-gray-icon" />
-              </span>
-              <span className="label">Role Access</span>
-            </button>
-          </li>
-          <li className="nav-item">
-            <button type="button" className="nav-button">
-              <span className="icon">
-                <img src="/images/DataLog-gray-icon.svg" alt="DataLog-gray-icon" />
-              </span>
-              <span className="label">Data Log</span>
-            </button>
-          </li>
-          <li className="nav-item">
-            <button type="button" className="nav-button">
-              <span className="icon">
-                <img src="/images/Pending-gray-icon.svg" alt="Pending-gray-icon" />
-              </span>
-              <span className="label">Product Pending</span>
-            </button>
-          </li>
+          {navItems.map((item) => {
+            const isActive =
+              pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const iconSrc = isActive ? item.activeIcon : item.icon;
+
+            return (
+              <li key={item.href} className="nav-item">
+                <Link
+                  href={item.href}
+                  className={`nav-button${isActive ? " active" : ""}`}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  <span className={`icon${isActive ? " active" : ""}`}>
+                    <img src={iconSrc} alt={`${item.label} icon`} />
+                  </span>
+                  <span className={`label${isActive ? " active" : ""}`}>
+                    {item.label}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </nav>
     </Aside>

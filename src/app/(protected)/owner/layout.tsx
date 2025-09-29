@@ -20,7 +20,7 @@ const Shell = styled.div`
 
 const Main = styled.main`
   flex: 1;
-  padding: 32px 40px 40px;
+  padding: 16px 22px 40px;
 `;
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
