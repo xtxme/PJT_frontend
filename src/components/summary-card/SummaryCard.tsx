@@ -14,16 +14,18 @@ interface SummaryCardProps {
 }
 
 const Card = styled.article`
-  background: #d9d9d9;
+  background: #ffffff;
   border-radius: 10px;
   padding: 24px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 16px;
+  gap: 8px;
   width: 256px;
   height: 160px;
   box-shadow: 0 12px 32px rgba(15, 15, 15, 0.08);
+  margin-inline: 24px;
+
 
   @media (max-width: 600px) {
     width: 100%;
@@ -33,22 +35,43 @@ const Card = styled.article`
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   font-size: 18px;
   font-weight: 700;
-  transform: translateY(4px);
-
-  span:first-child {
-    font-family: ibmThai;
-  }
+  line-height: 1.2;
 `;
 
-const Value = styled.div`
+const ValueRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
+
+const ValueText = styled.span`
   font-size: 24px;
   font-weight: 700;
-  line-height: 16px;
+  line-height: 20px;
   font-family: ibmThai;
-  transform: translateY(8px);
+`;
+
+const UnitBadge = styled.span`
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  color: #2f2f2f;
+
+  svg {
+    grid-area: 1 / 1;
+  }
+
+  span {
+    grid-area: 1 / 1;
+    z-index: 1;
+  }
 `;
 
 const Trend = styled.div<{ negative?: boolean }>`
@@ -81,9 +104,25 @@ export default function SummaryCard({
     <Card>
       <Header>
         <span>{title}</span>
-        {unit ? <span>{unit}</span> : null}
+        {unit && (
+          <UnitBadge>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="48"
+              height="48"
+              viewBox="0 0 48 48"
+              fill="none"
+            >
+              <circle cx="24" cy="24" r="24" fill="#EFBE46" />
+            </svg>
+            <span>{unit}</span>
+          </UnitBadge>
+        )}
       </Header>
-      <Value>{unitValue ? `${unitValue} ${value}` : value}</Value>
+
+      <ValueRow>
+        <ValueText>{unitValue ? `${unitValue} ${value}` : value}</ValueText>
+      </ValueRow>
       <Trend negative={isNegative}>
         {isNegative ? (
           <Image

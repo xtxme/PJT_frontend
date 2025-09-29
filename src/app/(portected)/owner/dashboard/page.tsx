@@ -5,6 +5,7 @@ import Image from "next/image";
 import styled from "styled-components";
 
 import SummaryCard from "@/components/summary-card/SummaryCard";
+import Leaderboard from "@/components/leaderboard/Leaderboard";
 
 const DashboardPage = styled.div`
   display: flex;
@@ -83,97 +84,17 @@ const DashboardPage = styled.div`
 
   .cards-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(256px, 256px));
-    gap: 24px;
-    align-items: start;
-    justify-items: start;
-    justify-content: flex-start;
+    grid-template-columns: 256px 256px minmax(0, 1fr);
+    column-gap: 36px;
+    row-gap: 24px;
+    align-items: stretch;
+    justify-items: stretch;
   }
 
-  .leaderboard {
-    background: #d9d9d9;
-    border-radius: 28px;
-    padding: 28px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    min-height: 200px;
-    grid-column: 1 / -1;
-    box-shadow: 0 12px 24px rgba(15, 15, 15, 0.08);
-  }
-
-  .leaderboard h2 {
-    font-size: 24px;
-    font-weight: 600;
-  }
-
-  .leaderboard-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 16px;
-  }
-
-  .leaderboard-table thead th {
-    text-align: left;
-    font-weight: 500;
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(15, 15, 15, 0.3);
-  }
-
-  .leaderboard-table tbody tr {
-    border-bottom: 1px solid rgba(15, 15, 15, 0.08);
-  }
-
-  .leaderboard-table tbody tr:last-child {
-    border-bottom: none;
-  }
-
-  .leaderboard-table td {
-    padding: 16px 0;
-    vertical-align: middle;
-  }
-
-  .leaderboard-table td:first-child {
-    width: 80px;
-  }
-
-  .leaderboard-table td:last-child {
-    text-align: right;
-    font-weight: 600;
-  }
-
-  .rank {
-    display: inline-flex;
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    background: #ffffff;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-  }
-
-  .leaderboard-name {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-weight: 500;
-  }
-
-  .trend-icon {
-    display: inline-flex;
-    width: 18px;
-    height: 18px;
-  }
-
-  .trend-icon.down svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  .trend-icon.up img {
-    width: 18px;
-    height: 18px;
+  @media (max-width: 1200px) {
+    .cards-row {
+      grid-template-columns: repeat(auto-fit, minmax(256px, 1fr));
+    }
   }
 
   @media (max-width: 1024px) {
@@ -187,18 +108,8 @@ const DashboardPage = styled.div`
       grid-template-columns: minmax(0, 1fr);
       justify-items: stretch;
     }
-
-    .leaderboard {
-      grid-column: 1 / -1;
-    }
   }
 `;
-
-const salesLeaders = [
-  { rank: 1, name: "สมชาย ใจดี", sales: "฿ xxxx", trend: "up" },
-  { rank: 2, name: "สมหญิง รักงาน", sales: "฿ xxxx", trend: "down" },
-  { rank: 3, name: "สมคิด ทันใจ", sales: "฿ xxxx", trend: "up" },
-];
 
 export default function OwnerDashboardPage() {
   return (
@@ -240,58 +151,7 @@ export default function OwnerDashboardPage() {
           fixTrendText="% จากเดือนที่แล้ว"
         />
 
-        <div className="leaderboard">
-          <h2>ยอดขายรายบุคคลของพนักงาน</h2>
-          <table className="leaderboard-table">
-            <thead>
-              <tr>
-                <th>อันดับ</th>
-                <th>ชื่อ</th>
-                <th>ยอดการขาย</th>
-              </tr>
-            </thead>
-            <tbody>
-              {salesLeaders.map((leader) => (
-                <tr key={leader.rank}>
-                  <td>
-                    <span className="rank">{leader.rank}</span>
-                  </td>
-                  <td>
-                    <div className="leaderboard-name">
-                      <span className={`trend-icon ${leader.trend}`}>
-                        {leader.trend === "up" ? (
-                          <Image
-                            src="/images/ArrowRise.svg"
-                            alt="เพิ่มขึ้น"
-                            width={18}
-                            height={18}
-                          />
-                        ) : (
-                          <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                            aria-hidden
-                          >
-                            <path
-                              d="M6 15l6-6 6 6"
-                              stroke="#c0392b"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        )}
-                      </span>
-                      <span>{leader.name}</span>
-                    </div>
-                  </td>
-                  <td>{leader.sales}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Leaderboard />
       </div>
     </DashboardPage>
   );

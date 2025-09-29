@@ -19,6 +19,7 @@ interface DashButtonProps {
 const Wrapper = styled.div`
   position: relative;
   display: inline-flex;
+  transform: translateX(-10px);
 
   .period-toggle {
     display: flex;
