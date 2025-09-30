@@ -7,6 +7,7 @@ import Leaderboard from "@/components/leaderboard/Leaderboard";
 import Saleboard from "@/components/saleboard/Saleboard";
 import SaleSummaryChart from "@/components/sale-summary-chart/SaleSummaryChart";
 import PurchaseSummaryChart from "@/components/purchase-summary-chart/PurchaseSummaryChart";
+import TopSellersChart from "@/components/top-sellers-chart/TopSellersChart";
 
 const DashboardPage = styled.div`
   display: flex;
@@ -160,6 +161,7 @@ export default function OwnerDashboardPage() {
         <RightColumn>
           <Leaderboard />
           <Saleboard />
+          <TopSellersChart />
         </RightColumn>
       </ContentGrid>
     </DashboardPage>

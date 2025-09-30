@@ -47,6 +47,16 @@ const ChartTitle = styled.h2`
   color: #1f2024;
 `;
 
+const Text = styled.div`
+    display: flex;
+    width: 128px;
+    height: 22px;
+    flex-direction: column;
+    justify-content: center;
+    font-size: 13px;
+    color: #6d7e9c;
+`;
+
 const ChartWrapper = styled.div`
   width: 100%;
   height: 320px;
@@ -60,6 +70,7 @@ export default function PurchaseSummaryChart() {
     return (
         <PurchaseChartCard>
             <ChartTitle>Stock In Purchase Summary</ChartTitle>
+            <Text>ยอดสั่งซื้อสินค้าเข้า</Text>
             <ChartWrapper>
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
