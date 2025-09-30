@@ -59,7 +59,7 @@ const ChartWrapper = styled.div`
 export default function PurchaseSummaryChart() {
     return (
         <PurchaseChartCard>
-            <ChartTitle>Purchase Summary</ChartTitle>
+            <ChartTitle>Stock In Purchase Summary</ChartTitle>
             <ChartWrapper>
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
