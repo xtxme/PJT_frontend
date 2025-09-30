@@ -24,7 +24,7 @@ const StyledPagination = styled.nav`
     box-shadow: 0 12px 28px rgba(15, 15, 15, 0.08);
   }
 
-  .pagination__button {
+  .pagination-button {
     min-width: 36px;
     height: 36px;
     border-radius: 10px;
@@ -40,39 +40,39 @@ const StyledPagination = styled.nav`
     transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
   }
 
-  .pagination__button:hover:not(.pagination__button--active):not(.pagination__button--disabled) {
+  .pagination-button:hover:not(.pagination-button--active):not(.pagination-button--disabled) {
     background: rgba(232, 232, 232, 0.9);
   }
 
-  .pagination__button:active:not(.pagination__button--disabled) {
+  .pagination-button:active:not(.pagination-button--disabled) {
     transform: scale(0.96);
   }
 
-  .pagination__button--active {
+  .pagination-button--active {
     background: #ff5b21;
     color: #ffffff;
     box-shadow: 0 10px 20px rgba(255, 91, 33, 0.35);
   }
 
-  .pagination__button--arrow {
+  .pagination-button--arrow {
     width: 36px;
     background: #f5f5f5;
     border-radius: 12px;
     color: #2f2f2f;
   }
 
-  .pagination__button--disabled {
+  .pagination-button--disabled {
     opacity: 0.4;
     cursor: default;
   }
 
-  .pagination__separator {
+  .pagination-separator {
     padding: 0 4px;
     color: #777777;
     font-weight: 600;
   }
 
-  .pagination__icon {
+  .pagination-icon {
     width: 16px;
     height: 16px;
     stroke: currentColor;
@@ -163,19 +163,19 @@ export default function PaginationControls({
       <div className="pagination">
         <button
           type="button"
-          className={`pagination__button pagination__button--arrow${canGoPrev ? '' : ' pagination__button--disabled'}`}
+          className={`pagination-button pagination-button--arrow${canGoPrev ? '' : ' pagination-button--disabled'}`}
           onClick={handlePrev}
           disabled={!canGoPrev}
           aria-label="หน้า ก่อนหน้า"
         >
-          <svg className="pagination__icon" viewBox="0 0 24 24">
+          <svg className="pagination-icon" viewBox="0 0 24 24">
             <path d="M14 6l-6 6 6 6" />
           </svg>
         </button>
         {pages.map((page, index) =>
           page === '...'
             ? (
-              <span key={`ellipsis-${index}`} className="pagination__separator">
+              <span key={`ellipsis-${index}`} className="pagination-separator">
                 ...
               </span>
             )
@@ -183,7 +183,7 @@ export default function PaginationControls({
               <button
                 key={page}
                 type="button"
-                className={`pagination__button${page === currentPage ? ' pagination__button--active' : ''}`}
+                className={`pagination-button${page === currentPage ? ' pagination-button--active' : ''}`}
                 onClick={() => handlePageClick(page)}
                 aria-current={page === currentPage ? 'page' : undefined}
               >
@@ -193,12 +193,12 @@ export default function PaginationControls({
         )}
         <button
           type="button"
-          className={`pagination__button pagination__button--arrow${canGoNext ? '' : ' pagination__button--disabled'}`}
+          className={`pagination-button pagination-button--arrow${canGoNext ? '' : ' pagination-button--disabled'}`}
           onClick={handleNext}
           disabled={!canGoNext}
           aria-label="หน้าถัดไป"
         >
-          <svg className="pagination__icon" viewBox="0 0 24 24">
+          <svg className="pagination-icon" viewBox="0 0 24 24">
             <path d="M10 6l6 6-6 6" />
           </svg>
         </button>

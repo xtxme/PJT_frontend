@@ -24,16 +24,17 @@ const StyledAccountRow = styled.li`
     background: #ffffff;
     border-radius: 16px;
     box-shadow: 0 10px 30px rgba(15, 15, 15, 0.06);
+    border: 1px solid #d9d9d9;
   }
 
-  .row__identity {
+  .row-identity {
     display: flex;
     align-items: center;
     gap: 16px;
     min-width: 0;
   }
 
-  .row__avatar {
+  .row-avatar {
     width: 52px;
     height: 52px;
     border-radius: 50%;
@@ -45,26 +46,26 @@ const StyledAccountRow = styled.li`
     overflow: hidden;
   }
 
-  .row__avatar img {
+  .row-avatar img {
     width: 32px;
     height: 32px;
   }
 
-  .row__meta {
+  .row-meta {
     display: flex;
     flex-direction: column;
     gap: 4px;
     min-width: 0;
   }
 
-  .row__name {
+  .row-name {
     font-size: 18px;
     font-weight: 700;
     color: #0f0f0f;
     margin: 0;
   }
 
-  .row__contact {
+  .row-contact {
     font-size: 14px;
     font-weight: 500;
     color: #3f3f3f;
@@ -72,7 +73,7 @@ const StyledAccountRow = styled.li`
     white-space: nowrap;
   }
 
-  .row__last-login {
+  .row-last-login {
     font-size: 12px;
     font-weight: 500;
     color: #7a7a7a;
@@ -80,7 +81,7 @@ const StyledAccountRow = styled.li`
     white-space: nowrap;
   }
 
-  .row__actions {
+  .row-actions {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -88,13 +89,13 @@ const StyledAccountRow = styled.li`
     justify-content: flex-end;
   }
 
-  .row__badge {
+  .row-badge {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     height: 32px;
     padding: 0 18px;
-    border-radius: 999px;
+    border-radius: 4px;
     font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.02em;
@@ -102,29 +103,29 @@ const StyledAccountRow = styled.li`
     white-space: nowrap;
   }
 
-  .row__badge--role {
-    background: #ededed;
-    border-color: #d7d7d7;
-    color: #444444;
+  .row-badge--role {
+    background: #D9D9D9;
+    border-color: #7D7D7D;
+    color: #7D7D7D;
   }
 
-  .row__badge--status {
+  .row-badge--status {
     min-width: 92px;
   }
 
-  .row__badge--status-active {
+  .row-badge--status-active {
     background: #def5ee;
-    border-color: #7ec3aa;
-    color: #157347;
+    border-color: #5aac71;
+    color: #5aac71;
   }
 
-  .row__badge--status-inactive {
-    background: #fce3e3;
-    border-color: #f4a9a9;
-    color: #b42318;
+  .row-badge--status-inactive {
+    background: #FFC5C5;
+    border-color: #DF0404;
+    color: #DF0404;
   }
 
-  .row__icon-button {
+  .row-icon-button {
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -138,20 +139,20 @@ const StyledAccountRow = styled.li`
     box-shadow: inset 0 0 0 1px #d9d9d9;
   }
 
-  .row__icon-button:hover {
+  .row-icon-button:hover {
     background: #e6e6e6;
   }
 
-  .row__icon-button--danger {
+  .row-icon-button--danger {
     background: #fde6e6;
     box-shadow: inset 0 0 0 1px #f2b1b1;
   }
 
-  .row__icon-button--danger:hover {
+  .row-icon-button--danger:hover {
     background: #fdd1d1;
   }
 
-  .row__icon-button svg {
+  .row-icon-button svg {
     width: 16px;
     height: 16px;
     fill: none;
@@ -166,13 +167,13 @@ const StyledAccountRow = styled.li`
       gap: 20px;
     }
 
-    .row__actions {
+    .row-actions {
       align-self: stretch;
       justify-content: space-between;
     }
 
-    .row__contact,
-    .row__last-login {
+    .row-contact,
+    .row-last-login {
       white-space: normal;
     }
   }
@@ -188,35 +189,28 @@ export default function RoleAccessAccountRow({ account }: RoleAccessAccountRowPr
   return (
     <StyledAccountRow>
       <div className="row">
-        <div className="row__identity">
-          <div className="row__avatar">
+        <div className="row-identity">
+          <div className="row-avatar">
             <img src="/images/admin-icon.svg" alt="account-avatar" />
           </div>
-          <div className="row__meta">
-            <h3 className="row__name">{account.name}</h3>
-            <p className="row__contact">@{account.username} | {account.email}</p>
-            <p className="row__last-login">ล็อกอินล่าสุด: {account.lastLogin}</p>
+          <div className="row-meta">
+            <h3 className="row-name">{account.name}</h3>
+            <p className="row-contact">@{account.username} | {account.email}</p>
+            <p className="row-last-login">ล็อกอินล่าสุด: {account.lastLogin}</p>
           </div>
         </div>
-        <div className="row__actions">
-          <span className="row__badge row__badge--role">{account.role}</span>
-          <span className={`row__badge row__badge--status row__badge--status-${statusModifier}`}>
+        <div className="row-actions">
+          <span className="row-badge row-badge--role">{account.role}</span>
+          <span className={`row-badge row-badge--status row-badge--status-${statusModifier}`}>
             {account.status}
           </span>
-          <button className="row__icon-button" type="button" aria-label="แก้ไขสิทธิ์">
-            <svg viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 17.5V20h2.5L18.81 7.69a1.4 1.4 0 0 0 0-2L17 3.88a1.4 1.4 0 0 0-2 0L4 14.91z" />
-              <path d="M12.8 6.2l4.9 4.9" />
-            </svg>
+          <button className="row-icon-button" type="button" aria-label="แก้ไขสิทธิ์">
+            <img src="/images/edit.svg" alt="edit" 
+                  width={10}
+                  height={10}/>
           </button>
-          <button className="row__icon-button row__icon-button--danger" type="button" aria-label="ลบผู้ใช้">
-            <svg viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 7h14" />
-              <path d="M9 7V5h6v2" />
-              <path d="M10 11v6" />
-              <path d="M14 11v6" />
-              <path d="M7 7l1 12h8l1-12" />
-            </svg>
+          <button className="row-icon-button row-icon-button--danger" type="button" aria-label="ลบผู้ใช้">
+            <img src="/images/delete.svg" alt="delete" />
           </button>
         </div>
       </div>

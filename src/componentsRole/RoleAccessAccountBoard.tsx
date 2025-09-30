@@ -11,15 +11,16 @@ const StyledAccountBoard = styled.section`
     width: 100%;
     max-width: 1106px;
     border-radius: 17px;
-    background: linear-gradient(180deg, #f4f4f4 0%, #f1f1f1 100%);
+    background: #ffffff;
     padding: 28px 32px;
     box-shadow: 0 20px 40px rgba(15, 15, 15, 0.08);
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 10px;
+    transform: translateX(14px);
   }
 
-  .panel__header {
+  .panel-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -27,34 +28,34 @@ const StyledAccountBoard = styled.section`
     gap: 20px;
   }
 
-  .panel__title {
+  .panel-title {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 20px;
   }
 
-  .panel__title h2 {
+  .panel-title h2 {
     font-size: 26px;
     font-weight: 700;
     color: #0f0f0f;
     margin: 0;
   }
 
-  .panel__subtitle {
+  .panel-subtitle {
     font-size: 16px;
     font-weight: 600;
     color: #6c6c6c;
     margin: 0;
   }
 
-  .panel__actions {
+  .panel-actions {
     display: flex;
     align-items: center;
     gap: 14px;
     flex-wrap: wrap;
   }
 
-  .panel__action {
+  .panel-action {
     display: inline-flex;
     align-items: center;
     gap: 10px;
@@ -69,23 +70,23 @@ const StyledAccountBoard = styled.section`
     transition: transform 0.1s ease, box-shadow 0.1s ease;
   }
 
-  .panel__action:hover {
+  .panel-action:hover {
     transform: translateY(-1px);
   }
 
-  .panel__action--secondary {
+  .panel-action--secondary {
     background: #f8f8f8;
     box-shadow: inset 0 0 0 1px #dadada;
     color: #3f3f3f;
   }
 
-  .panel__action--primary {
+  .panel-action--primary {
     background: #0ac786;
     color: #ffffff;
     box-shadow: 0 10px 20px rgba(10, 199, 134, 0.2);
   }
 
-  .panel__action svg {
+  .panel-action svg {
     width: 18px;
     height: 18px;
     fill: none;
@@ -95,7 +96,7 @@ const StyledAccountBoard = styled.section`
     stroke-linejoin: round;
   }
 
-  .panel__list {
+  .panel-list {
     margin: 0;
     padding: 0;
     display: flex;
@@ -108,12 +109,12 @@ const StyledAccountBoard = styled.section`
       padding: 24px;
     }
 
-    .panel__header {
+    .panel-header {
       flex-direction: column;
       align-items: stretch;
     }
 
-    .panel__actions {
+    .panel-actions {
       justify-content: space-between;
     }
   }
@@ -171,13 +172,13 @@ export default function RoleAccessAccountBoard() {
   return (
     <StyledAccountBoard>
       <div className="panel">
-        <div className="panel__header">
-          <div className="panel__title">
+        <div className="panel-header">
+          <div className="panel-title">
             <h2>Account</h2>
-            <p className="panel__subtitle">ชื่อ - สกุล</p>
+            <p className="panel-subtitle">ชื่อ - สกุล</p>
           </div>
-          <div className="panel__actions">
-            <button className="panel__action panel__action--secondary" type="button">
+          <div className="panel-actions">
+            <button className="panel-action panel-action--secondary" type="button">
               <svg viewBox="0 0 24 24">
                 <path d="M4 5h16" />
                 <path d="M6 10h12" />
@@ -186,7 +187,7 @@ export default function RoleAccessAccountBoard() {
               </svg>
               Filter & Short
             </button>
-            <button className="panel__action panel__action--primary" type="button">
+            <button className="panel-action panel-action--primary" type="button">
               <svg viewBox="0 0 24 24">
                 <path d="M12 5v14" />
                 <path d="M5 12h14" />
@@ -195,7 +196,7 @@ export default function RoleAccessAccountBoard() {
             </button>
           </div>
         </div>
-        <ul className="panel__list">
+        <ul className="panel-list">
           {mockAccounts.map((account) => (
             <RoleAccessAccountRow key={account.id} account={account} />
           ))}
