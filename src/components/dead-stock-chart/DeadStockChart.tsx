@@ -103,7 +103,7 @@ export default function DeadStockChart() {
             />
             <Bar
               dataKey="units"
-              fill="#df7544"
+              fill="#EFBE46"
               radius={[14, 14, 0, 0]}
               maxBarSize={48}
             />

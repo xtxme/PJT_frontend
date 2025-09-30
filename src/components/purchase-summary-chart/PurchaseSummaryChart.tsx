@@ -103,7 +103,7 @@ export default function PurchaseSummaryChart() {
                             <Area
                             type="monotone"
                             dataKey="sales"
-                            stroke="#df7544"
+                            stroke="#EFBE46"
                             strokeWidth={3}
                             fill="url(#saleGradient)"
                             dot={false}

@@ -103,7 +103,7 @@ export default function TopSellersChart() {
             />
             <Bar
               dataKey="orders"
-              fill="#df7544"
+              fill="#5aac71"
               radius={[14, 14, 0, 0]}
               maxBarSize={48}
             />
