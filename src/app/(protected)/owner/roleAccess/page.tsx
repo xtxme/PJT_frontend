@@ -2,7 +2,7 @@
 
 import styled from 'styled-components';
 
-import RoleAccessAccountBoard from '@/componentsRole/RoleAccessAccountBoard';
+import RoleAccessAccountBoard from '@/componentsRole/roleAccessAccountBoard';
 
 const RoleAccessPage = styled.div`
     display: flex;

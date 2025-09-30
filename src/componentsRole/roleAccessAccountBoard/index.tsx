@@ -1,8 +1,8 @@
 'use client';
 
 import styled from 'styled-components';
-import RoleAccessAccountRow, { RoleAccessAccount } from './RoleAccessAccountRow';
-import PaginationControls from './PaginationControls';
+import RoleAccessAccountRow, { RoleAccessAccount } from '@/componentsRole/roleAccessAccountRow';
+import PaginationControls from '@/componentsRole/paginationControls';
 
 const StyledAccountBoard = styled.section`
   width: 100%;

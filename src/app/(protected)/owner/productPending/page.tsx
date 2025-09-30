@@ -2,7 +2,7 @@
 
 import styled from 'styled-components';
 
-import PaginationControls from '@/componentsRole/PaginationControls';
+import PaginationControls from '@/componentsRole/paginationControls';
 
 const ProductPendingPage = styled.div`
     display: flex;
