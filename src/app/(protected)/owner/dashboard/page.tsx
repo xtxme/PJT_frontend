@@ -5,6 +5,8 @@ import styled from "styled-components";
 import SummaryCard from "@/components/summary-card/SummaryCard";
 import Leaderboard from "@/components/leaderboard/Leaderboard";
 import Saleboard from "@/components/saleboard/Saleboard";
+import SaleSummaryChart from "@/components/sale-summary-chart/SaleSummaryChart";
+import PurchaseSummaryChart from "@/components/purchase-summary-chart/PurchaseSummaryChart";
 
 const DashboardPage = styled.div`
   display: flex;
@@ -78,16 +80,36 @@ const DashboardPage = styled.div`
     font-weight: 700;
     line-height: 1.2;
   }
+`;
 
-  .cards-row {
-    display: grid;
-    grid-template-columns: 256px 256px 540px;
-    column-gap: 50px;
-    row-gap: 50px;
-    align-items: start;
-    justify-items: start;
-    justify-content: flex-start;
+const SummaryCardsRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 54px;
+  align-items: stretch;
+`;
+
+const ContentGrid = styled.div`
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 540px;
+  gap: 40px;
+  align-items: start;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr;
   }
+`;
+
+const LeftColumn = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+`;
+
+const RightColumn = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
 `;
 
 export default function OwnerDashboardPage() {
@@ -111,28 +133,35 @@ export default function OwnerDashboardPage() {
         <h1>ยินดีต้อนรับ, คุณ xxxxxx</h1>
       </div>
 
-      <div className="cards-row">
-        <SummaryCard
-          title="ยอดขายรวม"
-          unit="฿"
-          unitValue="฿"
-          value="xxx,xxx"
-          trendText="+xx.xx"
-          fixTrendText="% จากเดือนที่แล้ว"
-        />
+      <ContentGrid>
+        <LeftColumn>
+          <SummaryCardsRow>
+            <SummaryCard
+              title="ยอดขายรวม"
+              unit="฿"
+              unitValue="฿"
+              value="xxx,xxx"
+              trendText="+xx.xx"
+              fixTrendText="% จากเดือนที่แล้ว"
+            />
 
-        <SummaryCard
-          title="กำไรสุทธิ"
-          unit="฿"
-          unitValue="฿"
-          value="xxx,xxx"
-          trendText="-xx.xx"
-          fixTrendText="% จากเดือนที่แล้ว"
-        />
-
-        <Leaderboard />
-        <Saleboard/>
-      </div>
+            <SummaryCard
+              title="กำไรสุทธิ"
+              unit="฿"
+              unitValue="฿"
+              value="xxx,xxx"
+              trendText="-xx.xx"
+              fixTrendText="% จากเดือนที่แล้ว"
+            />
+          </SummaryCardsRow>
+          <SaleSummaryChart />
+          <PurchaseSummaryChart />
+        </LeftColumn>
+        <RightColumn>
+          <Leaderboard />
+          <Saleboard />
+        </RightColumn>
+      </ContentGrid>
     </DashboardPage>
   );
 }

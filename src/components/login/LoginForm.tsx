@@ -44,6 +44,7 @@ const LoginForm = () => {
 
         try {
             const url = `${process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/auth/login`;
+            
             console.log("📡 กำลัง fetch:", url);
 
             const res = await fetch(url, {
