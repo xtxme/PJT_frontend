@@ -1,27 +1,10 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono, IBM_Plex_Sans_Thai } from 'next/font/google';
 import './globals.css';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import StyledComponentsRegistry from '@/app/lib/registry';
 import { ThemeProvider } from '@mui/material/styles';
 import theme from '@/app/styles/theme';
-
-const ibmPlexSansThai = IBM_Plex_Sans_Thai({
-  weight: ['300', '400', '500', '600', '700'],
-  subsets: ['latin', 'thai'],
-  variable: '--font-ibm-plex-sans-thai',
-  display: 'swap',
-});
-
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-});
+import {ibmPlexThai} from "@/app/lib/fonts";
 
 export const metadata: Metadata = {
   title: 'Create Next App',
@@ -32,8 +15,11 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="th">
-      <body className={`${ibmPlexSansThai.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html
+        lang="th"
+        className={`${ibmPlexThai.variable} ${ibmPlexThai.variable}`}
+    >
+      <body>
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
             {/* <CssBaseline /> */}

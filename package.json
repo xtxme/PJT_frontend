@@ -6,14 +6,25 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "backend": "node server/server.js",
+    "dev:backend": "nodemon server/server.js"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
     "@mui/material-nextjs": "^7.3.2",
+    "@mui/styled-engine-sc": "^7.3.2",
+    "@tailwindcss/vite": "^4.1.13",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "jspdf": "^3.0.3",
     "next": "15.5.4",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "styled-components": "^6.1.19"
@@ -34,8 +45,9 @@
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-unused-imports": "^4.2.0",
+    "nodemon": "^3.1.10",
     "prettier": "^3.6.2",
-    "tailwindcss": "^4",
+    "tailwindcss": "^4.1.13",
     "typescript": "^5"
   }
 }
