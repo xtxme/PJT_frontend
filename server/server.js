@@ -1,11 +1,22 @@
 // server.js
-require('dotenv').config();
-const express = require('express');
-const session = require('express-session');
-const passport = require('passport');
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
+require("dotenv").config();
+const express = require("express");
+const session = require("express-session");
+const passport = require("passport");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const cors = require("cors");
+// const authRoutes = require("./auth"); // << import route ที่แยกมา
 
 const app = express();
+
+app.use(express.json()); // ต้องมีเพื่ออ่าน JSON body
+
+app.use(
+    cors({
+        origin: `${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}`,
+        credentials: true, // เผื่อใช้ session/cookie
+    })
+);
 
 // Session setup
 app.use(
@@ -36,44 +47,73 @@ passport.use(
             callbackURL: process.env.GOOGLE_CALLBACK_URL,
         },
         (accessToken, refreshToken, profile, done) => {
-            // Here you can save user to database if needed
             return done(null, profile);
         }
     )
 );
 
 // Routes
-app.get('/', (req, res) => {
-    res.send('Welcome to the OAuth server');
+app.get("/", (req, res) => {
+    res.send("Welcome to the OAuth server");
 });
 
-// Redirect user to Google login
+// Google login
 app.get(
-    '/auth/google',
-    passport.authenticate('google', { scope: ['profile', 'email'] })
+    "/auth/google",
+    passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
 // Google callback
 app.get(
-    '/auth/google/callback',
-    passport.authenticate('google', { failureRedirect: '/login' }),
+    "/auth/google/callback",
+    passport.authenticate("google", { failureRedirect: "/login" }),
     (req, res) => {
         const userEmail = req.user.emails[0].value;
 
-        // Example: check specific emails
-        if (userEmail === 'prae.tippy@gmail.com') {
-            return res.redirect(`${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/owner`);
+        if (userEmail === "prae.tippy@gmail.com") {
+            return res.redirect(
+                `${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/owner`
+            );
         }
 
-        if (userEmail === 'prts0774@gmail.com') {
-            return res.redirect(`${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/sale`);
+        if (userEmail === "prts0774@gmail.com") {
+            return res.redirect(
+                `${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/sale`
+            );
         }
 
-        // default redirect
-        res.redirect(`${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/warehouse`);
+        res.redirect(
+            `${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/warehouse`
+        );
     }
 );
 
+// Mount Email/Password routes
+app.post("/auth/login", (req, res) => {
+    const { email, password } = req.body;
+
+    // mock users (จริงๆ ควรดึงจาก DB)
+    if (email === "owner@gmail.com" && password === "1234") {
+        return res.json({
+            redirect: `${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/owner`,
+        });
+    }
+
+    if (email === "sales@gmail.com" && password === "1234") {
+        return res.json({
+            redirect: `${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/sale`,
+        });
+    }
+
+    if (email === "warehouse@gmail.com" && password === "1234") {
+        return res.json({
+            redirect: `${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/warehouse`,
+        });
+    }
+});
+
 app.listen(process.env.BACKEND_PORT, () => {
-    console.log(`Server running on ${process.env.BACKEND_DOMAIN_URL}:${process.env.BACKEND_PORT}`);
+    console.log(
+        `Server running on ${process.env.BACKEND_DOMAIN_URL}:${process.env.BACKEND_PORT}`
+    );
 });
