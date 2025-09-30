@@ -2,6 +2,8 @@
 
 import styled from 'styled-components';
 
+import RoleAccessAccountBoard from '@/componentsRole/RoleAccessAccountBoard';
+
 const RoleAccessPage = styled.div`
     display: flex;
     flex-direction: column;
@@ -68,7 +70,7 @@ export default function OwnerRoleAccessPage() {
             <div className="head-text">
                 <h1>การจัดการผู้ใช้และสิทธิ์การเข้าถึง</h1>
             </div>
-                
-        </RoleAccessPage>
+            <RoleAccessAccountBoard />
+        </RoleAccessPage> 
     );
 }
