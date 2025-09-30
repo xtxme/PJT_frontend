@@ -8,6 +8,8 @@ import Saleboard from "@/components/saleboard/Saleboard";
 import SaleSummaryChart from "@/components/sale-summary-chart/SaleSummaryChart";
 import PurchaseSummaryChart from "@/components/purchase-summary-chart/PurchaseSummaryChart";
 import TopSellersChart from "@/components/top-sellers-chart/TopSellersChart";
+import DeadStockChart from "@/components/dead-stock-chart/DeadStockChart";
+import HighestOrderCustomerChart from "@/components/highest0rderCustomer-chart/Highest0rderCustomerChart";
 
 const DashboardPage = styled.div`
   display: flex;
@@ -157,11 +159,13 @@ export default function OwnerDashboardPage() {
           </SummaryCardsRow>
           <SaleSummaryChart />
           <PurchaseSummaryChart />
+          <HighestOrderCustomerChart />
         </LeftColumn>
         <RightColumn>
           <Leaderboard />
           <Saleboard />
           <TopSellersChart />
+          <DeadStockChart />
         </RightColumn>
       </ContentGrid>
     </DashboardPage>
