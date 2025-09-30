@@ -2,6 +2,7 @@
 
 import styled from 'styled-components';
 import RoleAccessAccountRow, { RoleAccessAccount } from './RoleAccessAccountRow';
+import PaginationControls from './PaginationControls';
 
 const StyledAccountBoard = styled.section`
   width: 100%;
@@ -199,6 +200,7 @@ export default function RoleAccessAccountBoard() {
             <RoleAccessAccountRow key={account.id} account={account} />
           ))}
         </ul>
+        <PaginationControls />
       </div>
     </StyledAccountBoard>
   );
