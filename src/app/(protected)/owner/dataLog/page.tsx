@@ -1,5 +1,52 @@
-export default function DataLogPage() {
+import styled from 'styled-components';
+
+const DataLogPage = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    min-height: 100%;
+    color: #0f0f0f;
+
+    .data-text {
+    font-size: 20px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 20px;
+  }
+
+  .breadcrumb-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 20px;
+  }
+
+  .breadcrumb span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+`;
+
+export default function OwnerDataLogPage() {
     return (
-        <div>Data Log Page - Owner Only</div>
+        <DataLogPage>
+            <div className="breadcrumb-row">
+                <div className='breadcrumb'>
+                    <img src="/images/RoleAccess-black-icon.svg" 
+                      alt="RoleAccess-black-icon" 
+                      width="24"
+                      height="24" />
+                </div>
+            </div>
+        </DataLogPage>
     );
 }
