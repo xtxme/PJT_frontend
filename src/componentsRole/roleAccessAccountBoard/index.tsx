@@ -59,9 +59,10 @@ const StyledAccountBoard = styled.section`
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    height: 44px;
+    height: 34px;
+    width: 131px;
     padding: 0 18px;
-    border-radius: 999px;
+    border-radius: 12px;
     border: none;
     font-size: 15px;
     font-weight: 600;
@@ -81,9 +82,9 @@ const StyledAccountBoard = styled.section`
   }
 
   .panel-action--primary {
-    background: #0ac786;
+    background: #df7544;
     color: #ffffff;
-    box-shadow: 0 10px 20px rgba(10, 199, 134, 0.2);
+    box-shadow: 0 10px 20px rgba(223, 117, 68, 0.4);
   }
 
   .panel-action svg {
@@ -188,11 +189,8 @@ export default function RoleAccessAccountBoard() {
               Filter & Short
             </button>
             <button className="panel-action panel-action--primary" type="button">
-              <svg viewBox="0 0 24 24">
-                <path d="M12 5v14" />
-                <path d="M5 12h14" />
-              </svg>
               Add User
+              <img src="/images/add-wh.svg" alt="add-wh" />
             </button>
           </div>
         </div>
