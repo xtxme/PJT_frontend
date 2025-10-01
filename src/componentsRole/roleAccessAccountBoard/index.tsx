@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import AddUserButton from '@/componentsRole/addUser';
 import FilterButton from '@/componentsRole/filter';
@@ -8,6 +8,7 @@ import RoleAccessAccountRow, { RoleAccessAccount } from '@/componentsRole/roleAc
 import PaginationControls from '@/componentsRole/paginationControls';
 import SearchField from '@/componentsRole/search-field';
 import AddUserPopup from '@/componentsRole/addUser-popUp';
+import FilterDropdown from '@/componentsRole/filter-dropDown';
 
 const StyledAccountBoard = styled.section`
   width: 100%;
@@ -63,6 +64,12 @@ const StyledAccountBoard = styled.section`
     margin-left: auto;
     padding: 8px 12px;
     border-radius: 30px;
+    position: relative;
+  }
+
+  .filter-control {
+    position: relative;
+    display: inline-flex;
   }
 
   .panel-list {
@@ -105,54 +112,112 @@ const StyledAccountBoard = styled.section`
 
 const mockAccounts: RoleAccessAccount[] = [
   {
-    id: 'admin',
-    name: 'ผู้ดูแลระบบ',
-    role: 'ผู้ดูแลระบบ',
-    username: 'admin',
+    id: '1',
+    name: 'John Doe',
+    role: 'owner',
+    username: 'owner1',
     email: 'admin@company.com',
     lastLogin: '2024-06-15 09:30',
     status: 'Active',
   },
   {
-    id: 'owner',
-    name: 'เจ้าของร้าน',
-    role: 'เจ้าของร้าน',
-    username: 'owner1',
+    id: '2',
+    name: 'Jane Smith',
+    role: 'sales',
+    username: 'sales1',
     email: 'owner@company.com',
     lastLogin: '2024-06-15 08:15',
     status: 'Active',
   },
   {
-    id: 'sales-a',
-    name: 'พนักงานขาย A',
-    role: 'พนักงานขาย',
-    username: 'sales1',
+    id: '3',
+    name: 'Alex Johnson',
+    role: 'warehouse',
+    username: 'warehouse1',
     email: 'sales1@company.com',
     lastLogin: '2024-06-15 10:45',
     status: 'Active',
   },
   {
-    id: 'sales-b',
-    name: 'พนักงานขาย B',
-    role: 'พนักงานขาย',
-    username: 'sales2',
-    email: 'sales2@company.com',
-    lastLogin: '2024-06-10 16:20',
+    id: '4',
+    name: 'Samantha Lee',
+    role: 'finance',
+    username: 'finance1',
+    email: 'finance1@company.com',
+    lastLogin: '2024-06-14 17:12',
+    status: 'Active',
+  },
+  {
+    id: '5',
+    name: 'Michael Brown',
+    role: 'support',
+    username: 'support1',
+    email: 'support1@company.com',
+    lastLogin: '2024-06-15 07:40',
     status: 'Inactive',
   },
   {
-    id: 'warehouse',
-    name: 'พนักงานคลัง A',
-    role: 'พนักงานคลัง',
-    username: 'warehouse1',
-    email: 'warehouse1@company.com',
-    lastLogin: '2024-06-15 07:00',
+    id: '6',
+    name: 'Emily Davis',
+    role: 'marketing',
+    username: 'marketing1',
+    email: 'marketing1@company.com',
+    lastLogin: '2024-06-13 19:05',
     status: 'Active',
+  },
+  {
+    id: '7',
+    name: 'Robert Wilson',
+    role: 'owner',
+    username: 'owner2',
+    email: 'owner2@company.com',
+    lastLogin: '2024-06-14 11:25',
+    status: 'Active',
+  },
+  {
+    id: '8',
+    name: 'Isabella Martinez',
+    role: 'sales',
+    username: 'sales2',
+    email: 'sales2@company.com',
+    lastLogin: '2024-06-12 16:12',
+    status: 'Inactive',
+  },
+  {
+    id: '9',
+    name: 'Daniel Thompson',
+    role: 'warehouse',
+    username: 'warehouse2',
+    email: 'warehouse2@company.com',
+    lastLogin: '2024-06-15 06:55',
+    status: 'Active',
+  },
+  {
+    id: '10',
+    name: 'Laura Garcia',
+    role: 'support',
+    username: 'support2',
+    email: 'support2@company.com',
+    lastLogin: '2024-06-13 13:30',
+    status: 'Inactive',
   },
 ];
 
 export default function RoleAccessAccountBoard() {
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const filterButtonRef = useRef<HTMLButtonElement>(null);
+
+  const rowsPerPage = 5;
+  const totalPages = Math.max(1, Math.ceil(mockAccounts.length / rowsPerPage));
+  const paginatedAccounts = mockAccounts.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   return (
     <StyledAccountBoard>
@@ -165,16 +230,31 @@ export default function RoleAccessAccountBoard() {
           </div>
           <div className="panel-controls">
             <SearchField id="role-access-search" placeholder="Search" />
-            <FilterButton aria-label="กรองและจัดเรียงบัญชีผู้ใช้" />
+            <div className="filter-control">
+              <FilterButton
+                aria-label="กรองและจัดเรียงบัญชีผู้ใช้"
+                ref={filterButtonRef}
+                onClick={() => setIsFilterOpen((prev) => !prev)}
+              />
+              <FilterDropdown
+                open={isFilterOpen}
+                onClose={() => setIsFilterOpen(false)}
+                anchorRef={filterButtonRef}
+              />
+            </div>
             <AddUserButton aria-label="เพิ่มบัญชีผู้ใช้" onClick={() => setIsAddUserOpen(true)} />
           </div>
         </div>
         <ul className="panel-list">
-          {mockAccounts.map((account) => (
+          {paginatedAccounts.map((account) => (
             <RoleAccessAccountRow key={account.id} account={account} />
           ))}
         </ul>
-        <PaginationControls />
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </div>
     </StyledAccountBoard>
   );

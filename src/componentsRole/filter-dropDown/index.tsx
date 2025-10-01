@@ -1,13 +1,15 @@
 'use client';
 
-import { RefObject, useEffect, useRef } from 'react';
+import { MutableRefObject, RefObject, useEffect, useRef } from 'react';
 import styled from 'styled-components';
+
+type AnchorElementRef = RefObject<HTMLElement> | MutableRefObject<HTMLElement | null>;
 
 type FilterDropdownProps = {
   open: boolean;
   onClose?: () => void;
   onSelect?: (filterGroup: 'status' | 'role', value: string) => void;
-  anchorRef?: RefObject<HTMLElement>;
+  anchorRef?: AnchorElementRef;
 };
 
 const StyledFilterDropdown = styled.div`

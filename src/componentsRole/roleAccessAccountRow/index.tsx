@@ -194,7 +194,7 @@ export default function RoleAccessAccountRow({ account }: RoleAccessAccountRowPr
             <img src="/images/admin-icon.svg" alt="account-avatar" />
           </div>
           <div className="row-meta">
-            <h3 className="row-name">{account.name}</h3>
+            <h3 className="row-name">{account.role}</h3>
             <p className="row-contact">@{account.username} | {account.email}</p>
             <p className="row-last-login">ล็อกอินล่าสุด: {account.lastLogin}</p>
           </div>

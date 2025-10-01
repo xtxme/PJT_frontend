@@ -49,9 +49,9 @@ const StyledPagination = styled.nav`
   }
 
   .pagination-button--active {
-    background: #ff5b21;
+    background: #df7544;
     color: #ffffff;
-    box-shadow: 0 10px 20px rgba(255, 91, 33, 0.35);
+    box-shadow: 0 10px 20px rgba(223, 117, 68, 0.35);
   }
 
   .pagination-button--arrow {
