@@ -1,6 +1,8 @@
 'use client';
 
 import styled from 'styled-components';
+import AddUserButton from '@/componentsRole/addUser';
+import FilterButton from '@/componentsRole/filter';
 import RoleAccessAccountRow, { RoleAccessAccount } from '@/componentsRole/roleAccessAccountRow';
 import PaginationControls from '@/componentsRole/paginationControls';
 import SearchField from '@/componentsRole/search-field';
@@ -61,49 +63,6 @@ const StyledAccountBoard = styled.section`
     border-radius: 30px;
   }
 
-  .panel-action {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    height: 54px;
-    min-width: 132px;
-    padding: 0 26px;
-    border-radius: 27px;
-    border: none;
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: 0.01em;
-    cursor: pointer;
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
-    background: #ffffff;
-    box-shadow: inset 0 0 0 1px #dadada;
-    color: #0f0f0f;
-    flex: 0 0 auto;
-  }
-
-  .panel-action:hover {
-    transform: translateY(-1px);
-  }
-
-  .panel-action svg {
-    width: 18px;
-    height: 18px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.8px;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  .panel-action--primary {
-    box-shadow: inset 0 0 0 1px #d1d1d1;
-  }
-
-  .panel-action--secondary {
-    box-shadow: inset 0 0 0 1px #cfcfcf;
-  }
-
   .panel-list {
     margin: 0;
     padding: 0;
@@ -139,9 +98,6 @@ const StyledAccountBoard = styled.section`
       align-items: stretch;
     }
 
-    .panel-action {
-      width: 100%;
-    }
   }
 `;
 
@@ -204,21 +160,8 @@ export default function RoleAccessAccountBoard() {
           </div>
           <div className="panel-controls">
             <SearchField id="role-access-search" placeholder="Search" />
-            <button className="panel-action panel-action--secondary" type="button">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M4 5h16" />
-                <path d="M8 12h8" />
-                <path d="M11 19h5" />
-              </svg>
-              <span>Filter & Sort</span>
-            </button>
-            <button className="panel-action panel-action--primary" type="button">
-              <span>Add User</span>
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-            </button>
+            <FilterButton aria-label="กรองและจัดเรียงบัญชีผู้ใช้" />
+            <AddUserButton aria-label="เพิ่มบัญชีผู้ใช้" />
           </div>
         </div>
         <ul className="panel-list">

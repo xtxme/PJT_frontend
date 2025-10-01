@@ -3,10 +3,11 @@ import styled from 'styled-components';
 
 const SearchFieldLabel = styled.label`
   display: flex;
+  position: relative;
   align-items: center;
   gap: 12px;
   height: 38px;
-  padding: 8px 312px 8px 12px;
+  padding: 8px 12px;
   border-radius: 12px;
   background: #ffffff;
   box-shadow: 0 1px 2px rgba(223, 117, 68, 0.35);
@@ -19,6 +20,7 @@ const SearchFieldLabel = styled.label`
   .search-pic {
     width: 18px;
     height: 18px;
+    flex: 0 0 18px;
   }
 
   input {
@@ -28,6 +30,7 @@ const SearchFieldLabel = styled.label`
     font-size: 16px;
     color: #0f0f0f;
     outline: none;
+    padding-right: 36px;
   }
 
   input::placeholder {
@@ -37,8 +40,19 @@ const SearchFieldLabel = styled.label`
   }
 
   .cross{
+    position: absolute;
+    cursor: pointer;
+    right: 12px;
     width: 18px;
     height: 18px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+  }
+
+  &:focus-within .cross {
+    opacity: 1;
+    pointer-events: auto;
   }
 `;
 

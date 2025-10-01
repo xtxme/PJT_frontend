@@ -3,7 +3,7 @@
 import { ButtonHTMLAttributes, ReactNode, forwardRef } from 'react';
 import styled from 'styled-components';
 
-const StyledFilterButton = styled.button`
+const StyledAddUserButton = styled.button`
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -12,7 +12,7 @@ const StyledFilterButton = styled.button`
   min-width: 132px;
   padding: 0 26px;
   border-radius: 27px;
-  border: 1px solid #cfcfcf;
+  border: 1px solid #d1d1d1;
   background: #ffffff;
   color: #0f0f0f;
   font-size: 15px;
@@ -21,7 +21,7 @@ const StyledFilterButton = styled.button`
   cursor: pointer;
   flex: 0 0 auto;
   transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
 
   &:hover:not(:disabled) {
     transform: translateY(-1px);
@@ -59,33 +59,32 @@ const StyledFilterButton = styled.button`
   }
 `;
 
-type FilterButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+type AddUserButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   label?: string;
   icon?: ReactNode;
 };
 
 const DefaultIcon = (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    <line x1="4" y1="7" x2="20" y2="7" />
-    <line x1="8" y1="12" x2="16" y2="12" />
-    <line x1="11" y1="17" x2="19" y2="17" />
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
   </svg>
 );
 
-const FilterButton = forwardRef<HTMLButtonElement, FilterButtonProps>(
-  ({ label = 'Filter & Sort', icon, children, type = 'button', ...rest }, ref) => (
-    <StyledFilterButton ref={ref} type={type} {...rest}>
+const AddUserButton = forwardRef<HTMLButtonElement, AddUserButtonProps>(
+  ({ label = 'Add User', icon, children, type = 'button', ...rest }, ref) => (
+    <StyledAddUserButton ref={ref} type={type} {...rest}>
       {children ?? (
         <>
-          {icon ?? DefaultIcon}
           <span className="label">{label}</span>
+          {icon ?? DefaultIcon}
         </>
       )}
-    </StyledFilterButton>
+    </StyledAddUserButton>
   ),
 );
 
-FilterButton.displayName = 'FilterButton';
+AddUserButton.displayName = 'AddUserButton';
 
-export default FilterButton;
-export { StyledFilterButton };
+export default AddUserButton;
+export { StyledAddUserButton };
