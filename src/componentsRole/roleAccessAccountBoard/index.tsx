@@ -3,6 +3,7 @@
 import styled from 'styled-components';
 import RoleAccessAccountRow, { RoleAccessAccount } from '@/componentsRole/roleAccessAccountRow';
 import PaginationControls from '@/componentsRole/paginationControls';
+import SearchField from '@/componentsRole/search-field';
 
 const StyledAccountBoard = styled.section`
   width: 100%;
@@ -23,15 +24,16 @@ const StyledAccountBoard = styled.section`
   .panel-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     flex-wrap: wrap;
-    gap: 20px;
+    gap: 24px;
   }
 
   .panel-title {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    flex: 0 0 auto;
   }
 
   .panel-title h2 {
@@ -48,43 +50,40 @@ const StyledAccountBoard = styled.section`
     margin: 0;
   }
 
-  .panel-actions {
+  .panel-controls {
     display: flex;
     align-items: center;
-    gap: 14px;
-    flex-wrap: wrap;
+    gap: 18px;
+    flex: 1 1 520px;
+    min-width: 360px;
+    margin-left: auto;
+    padding: 8px 12px;
+    border-radius: 30px;
   }
 
   .panel-action {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
-    height: 34px;
-    width: 131px;
-    padding: 0 18px;
-    border-radius: 12px;
+    height: 54px;
+    min-width: 132px;
+    padding: 0 26px;
+    border-radius: 27px;
     border: none;
     font-size: 15px;
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: 0.01em;
     cursor: pointer;
     transition: transform 0.1s ease, box-shadow 0.1s ease;
+    background: #ffffff;
+    box-shadow: inset 0 0 0 1px #dadada;
+    color: #0f0f0f;
+    flex: 0 0 auto;
   }
 
   .panel-action:hover {
     transform: translateY(-1px);
-  }
-
-  .panel-action--secondary {
-    background: #f8f8f8;
-    box-shadow: inset 0 0 0 1px #dadada;
-    color: #3f3f3f;
-  }
-
-  .panel-action--primary {
-    background: #df7544;
-    color: #ffffff;
-    box-shadow: 0 10px 20px rgba(223, 117, 68, 0.4);
   }
 
   .panel-action svg {
@@ -95,6 +94,14 @@ const StyledAccountBoard = styled.section`
     stroke-width: 1.8px;
     stroke-linecap: round;
     stroke-linejoin: round;
+  }
+
+  .panel-action--primary {
+    box-shadow: inset 0 0 0 1px #d1d1d1;
+  }
+
+  .panel-action--secondary {
+    box-shadow: inset 0 0 0 1px #cfcfcf;
   }
 
   .panel-list {
@@ -115,8 +122,25 @@ const StyledAccountBoard = styled.section`
       align-items: stretch;
     }
 
-    .panel-actions {
-      justify-content: space-between;
+    .panel-controls {
+      flex: 1 1 auto;
+      min-width: 0;
+      width: 100%;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-left: 0;
+      gap: 12px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .panel-controls {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .panel-action {
+      width: 100%;
     }
   }
 `;
@@ -178,19 +202,22 @@ export default function RoleAccessAccountBoard() {
             <h2>Account</h2>
             <p className="panel-subtitle">ชื่อ - สกุล</p>
           </div>
-          <div className="panel-actions">
+          <div className="panel-controls">
+            <SearchField id="role-access-search" placeholder="Search" />
             <button className="panel-action panel-action--secondary" type="button">
-              <svg viewBox="0 0 24 24">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M4 5h16" />
-                <path d="M6 10h12" />
-                <path d="M10 15h8" />
-                <path d="M14 20h4" />
+                <path d="M8 12h8" />
+                <path d="M11 19h5" />
               </svg>
-              Filter & Short
+              <span>Filter & Sort</span>
             </button>
             <button className="panel-action panel-action--primary" type="button">
-              Add User
-              <img src="/images/add-wh.svg" alt="add-wh" />
+              <span>Add User</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
             </button>
           </div>
         </div>
