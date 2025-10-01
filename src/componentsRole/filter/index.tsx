@@ -69,7 +69,7 @@ const DefaultIcon = (
 );
 
 const FilterButton = forwardRef<HTMLButtonElement, FilterButtonProps>(
-  ({ label = 'Filter & Sort', icon, children, type = 'button', ...rest }, ref) => (
+  ({ label = 'Filter', icon, children, type = 'button', ...rest }, ref) => (
     <StyledFilterButton ref={ref} type={type} {...rest}>
       {children ?? (
         <>

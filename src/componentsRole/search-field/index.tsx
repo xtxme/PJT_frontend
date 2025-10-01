@@ -41,18 +41,31 @@ const SearchFieldLabel = styled.label`
     font-weight: 400;
   }
 
-  .cross{
+  .clear-button {
     position: absolute;
-    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
     width: 22px;
     height: 22px;
+    border: none;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.15s ease;
   }
 
-  &:focus-within .cross {
+  .clear-button img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  &:focus-within .clear-button {
     opacity: 1;
     pointer-events: auto;
   }
@@ -137,12 +150,12 @@ export default function SearchField({ id, className, type = 'search', onChange, 
       />
       <button
         type="button"
-        className="cross"
+        className="clear-button"
         onClick={handleClear}
         aria-label="Clear search"
         title="Clear"
       >
-        <img className="cross" src="/images/cross-or.svg" alt="cross" />
+        <img src="/images/cross-or.svg" alt="cross" />
       </button>
       
     </SearchFieldLabel>
