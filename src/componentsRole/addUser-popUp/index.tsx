@@ -291,7 +291,6 @@ export default function AddUserPopup({ open, onClose, onSubmit }: AddUserPopupPr
                   <option value="sales">พนักงานขาย</option>
                   <option value="owner">เจ้าของร้าน</option>
                   <option value="warehouse">พนักงานคลัง</option>
-                  <option value="support">ฝ่ายสนับสนุน</option>
                 </select>
               </label>
             </div>
