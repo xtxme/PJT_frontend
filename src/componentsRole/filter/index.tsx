@@ -8,20 +8,20 @@ const StyledFilterButton = styled.button`
   align-items: center;
   justify-content: center;
   gap: 10px;
-  height: 54px;
+  height: 38px;
   min-width: 132px;
   padding: 0 26px;
-  border-radius: 27px;
-  border: 1px solid #cfcfcf;
-  background: #ffffff;
-  color: #0f0f0f;
+  border-radius: 12px;
+  border: 1px solid #e87641;
+  background: #df7544;
+  color: #ffffff;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.01em;
   cursor: pointer;
   flex: 0 0 auto;
   transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 2px rgba(223, 117, 68, 0.35);
 
   &:hover:not(:disabled) {
     transform: translateY(-1px);
@@ -65,11 +65,7 @@ type FilterButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const DefaultIcon = (
-  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    <line x1="4" y1="7" x2="20" y2="7" />
-    <line x1="8" y1="12" x2="16" y2="12" />
-    <line x1="11" y1="17" x2="19" y2="17" />
-  </svg>
+    <img src="/images/Filter.svg" alt="Filter" />
 );
 
 const FilterButton = forwardRef<HTMLButtonElement, FilterButtonProps>(
@@ -77,8 +73,8 @@ const FilterButton = forwardRef<HTMLButtonElement, FilterButtonProps>(
     <StyledFilterButton ref={ref} type={type} {...rest}>
       {children ?? (
         <>
-          {icon ?? DefaultIcon}
           <span className="label">{label}</span>
+          {icon ?? DefaultIcon}
         </>
       )}
     </StyledFilterButton>

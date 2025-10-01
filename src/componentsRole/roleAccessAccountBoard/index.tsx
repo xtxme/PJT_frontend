@@ -1,11 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import styled from 'styled-components';
 import AddUserButton from '@/componentsRole/addUser';
 import FilterButton from '@/componentsRole/filter';
 import RoleAccessAccountRow, { RoleAccessAccount } from '@/componentsRole/roleAccessAccountRow';
 import PaginationControls from '@/componentsRole/paginationControls';
 import SearchField from '@/componentsRole/search-field';
+import AddUserPopup from '@/componentsRole/addUser-popUp';
 
 const StyledAccountBoard = styled.section`
   width: 100%;
@@ -150,8 +152,11 @@ const mockAccounts: RoleAccessAccount[] = [
 ];
 
 export default function RoleAccessAccountBoard() {
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+
   return (
     <StyledAccountBoard>
+      <AddUserPopup open={isAddUserOpen} onClose={() => setIsAddUserOpen(false)} />
       <div className="panel">
         <div className="panel-header">
           <div className="panel-title">
@@ -161,7 +166,7 @@ export default function RoleAccessAccountBoard() {
           <div className="panel-controls">
             <SearchField id="role-access-search" placeholder="Search" />
             <FilterButton aria-label="กรองและจัดเรียงบัญชีผู้ใช้" />
-            <AddUserButton aria-label="เพิ่มบัญชีผู้ใช้" />
+            <AddUserButton aria-label="เพิ่มบัญชีผู้ใช้" onClick={() => setIsAddUserOpen(true)} />
           </div>
         </div>
         <ul className="panel-list">
