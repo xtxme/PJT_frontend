@@ -6,10 +6,16 @@ export type RoleAccessAccount = {
   id: string;
   name: string;
   role: string;
+  roleValue?: string;
   username: string;
   email: string;
   lastLogin: string;
   status: 'Active' | 'Inactive';
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 };
 
 const StyledAccountRow = styled.li`
@@ -181,9 +187,11 @@ const StyledAccountRow = styled.li`
 
 type RoleAccessAccountRowProps = {
   account: RoleAccessAccount;
+  onEdit?: (account: RoleAccessAccount) => void;
+  onDelete?: (account: RoleAccessAccount) => void;
 };
 
-export default function RoleAccessAccountRow({ account }: RoleAccessAccountRowProps) {
+export default function RoleAccessAccountRow({ account, onEdit, onDelete }: RoleAccessAccountRowProps) {
   const statusModifier = account.status === 'Active' ? 'active' : 'inactive';
 
   return (
@@ -194,7 +202,7 @@ export default function RoleAccessAccountRow({ account }: RoleAccessAccountRowPr
             <img src="/images/admin-icon.svg" alt="account-avatar" />
           </div>
           <div className="row-meta">
-            <h3 className="row-name">{account.role}</h3>
+            <h3 className="row-name">{account.name || account.username}</h3>
             <p className="row-contact">@{account.username} | {account.email}</p>
             <p className="row-last-login">ล็อกอินล่าสุด: {account.lastLogin}</p>
           </div>
@@ -204,12 +212,22 @@ export default function RoleAccessAccountRow({ account }: RoleAccessAccountRowPr
           <span className={`row-badge row-badge--status row-badge--status-${statusModifier}`}>
             {account.status}
           </span>
-          <button className="row-icon-button" type="button" aria-label="แก้ไขสิทธิ์">
+          <button
+            className="row-icon-button"
+            type="button"
+            aria-label="แก้ไขสิทธิ์"
+            onClick={() => onEdit?.(account)}
+          >
             <img src="/images/edit.svg" alt="edit" 
                   width={10}
                   height={10}/>
           </button>
-          <button className="row-icon-button row-icon-button--danger" type="button" aria-label="ลบผู้ใช้">
+          <button
+            className="row-icon-button row-icon-button--danger"
+            type="button"
+            aria-label="ลบผู้ใช้"
+            onClick={() => onDelete?.(account)}
+          >
             <img src="/images/delete.svg" alt="delete" />
           </button>
         </div>

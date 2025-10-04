@@ -5,6 +5,7 @@ import styled from 'styled-components';
 
 type AddUserPopupProps = {
   open: boolean;
+  submitting?: boolean;
   onClose?: () => void;
   onSubmit?: (formData: FormData) => void;
 };
@@ -229,7 +230,7 @@ const StyledAddUserPopup = styled.div`
   }
 `;
 
-export default function AddUserPopup({ open, onClose, onSubmit }: AddUserPopupProps) {
+export default function AddUserPopup({ open, submitting = false, onClose, onSubmit }: AddUserPopupProps) {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -295,10 +296,10 @@ export default function AddUserPopup({ open, onClose, onSubmit }: AddUserPopupPr
               </label>
             </div>
             <footer className="dialog-footer">
-              <button type="button" className="dialog-button" onClick={onClose}>
+              <button type="button" className="dialog-button" onClick={onClose} disabled={submitting}>
                 ยกเลิก
               </button>
-              <button type="submit" className="dialog-button primary">
+              <button type="submit" className="dialog-button primary" disabled={submitting}>
                 เพิ่มผู้ใช้
                 <span className="dialog-button-icon">+</span>
               </button>

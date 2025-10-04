@@ -50,7 +50,7 @@ const StyledFilterDropdown = styled.div`
 
   .dropdown-label {
     background: #df7544;
-    color: #414141;
+    color: #ffffff;
     font-size: 15px;
     font-weight: 700;
     padding: 12px 18px;
@@ -92,7 +92,7 @@ const statusOptions = [
 
 const roleOptions = [
   { value: 'owner', label: 'Owner' },
-  { value: 'sale', label: 'Sale' },
+  { value: 'sales', label: 'Sales' },
   { value: 'warehouse', label: 'Warehouse' },
 ];
 
