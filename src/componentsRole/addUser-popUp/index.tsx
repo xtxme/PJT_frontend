@@ -198,8 +198,8 @@ const StyledAddUserPopup = styled.div`
   }
 
   .dialog-button-icon {
-    font-size: 18px;
-    line-height: 1;
+    width: 12px;
+    height: 12px;
   }
 
   @media (max-width: 920px) {
@@ -298,10 +298,11 @@ export default function AddUserPopup({ open, submitting = false, onClose, onSubm
             <footer className="dialog-footer">
               <button type="button" className="dialog-button" onClick={onClose} disabled={submitting}>
                 ยกเลิก
+                <img src="/images/cross-black.svg" alt="cross-black" />
               </button>
               <button type="submit" className="dialog-button primary" disabled={submitting}>
                 เพิ่มผู้ใช้
-                <span className="dialog-button-icon">+</span>
+                <img className="dialog-button-icon" src="/images/add-wh.svg" alt="add-white" />
               </button>
             </footer>
           </form>

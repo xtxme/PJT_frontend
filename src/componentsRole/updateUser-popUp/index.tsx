@@ -175,7 +175,7 @@ const StyledUpdateUserPopup = styled.div`
   }
 
   .dialog-button {
-    min-width: 200px;
+    min-width: 120px;
     height: 48px;
     border-radius: 16px;
     border: 1.4px solid #141414;
@@ -418,9 +418,11 @@ export default function UpdateUserPopup({ open, user, submitting = false, onClos
             <footer className="dialog-footer">
               <button type="button" className="dialog-button" onClick={onClose} disabled={submitting}>
                 ยกเลิก
+                <img src="/images/cross-black.svg" alt="cross-black" />
               </button>
-              <button type="submit" className="dialog-button primary" disabled={submitting}>
+              <button type="submit" className="dialog-button primary" disabled={submitting} style={{ minWidth: '240px' }}>
                 บันทึกการเปลี่ยนแปลง
+                <img src="/images/updateEdit-wh.svg" alt="updateEdit-wh" />
               </button>
             </footer>
           </form>

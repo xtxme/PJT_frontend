@@ -8,6 +8,7 @@ import RoleAccessAccountRow, { RoleAccessAccount } from '@/componentsRole/roleAc
 import PaginationControls from '@/componentsRole/paginationControls';
 import SearchField from '@/componentsRole/search-field';
 import AddUserPopup from '@/componentsRole/addUser-popUp';
+import DeletePopup from '@/componentsRole/delete-popUp';
 import FilterDropdown from '@/componentsRole/filter-dropDown';
 import UpdateUserPopup, { UpdateUserFormValues } from '@/componentsRole/updateUser-popUp';
 
@@ -202,8 +203,11 @@ export default function RoleAccessAccountBoard() {
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<RoleAccessAccount | null>(null);
+  const [accountToDelete, setAccountToDelete] = useState<RoleAccessAccount | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const filterButtonRef = useRef<HTMLButtonElement>(null);
 
   const rowsPerPage = 5;
@@ -321,6 +325,15 @@ export default function RoleAccessAccountBoard() {
       return;
     }
 
+    const hasDuplicateEmail = accounts.some(
+      (account) => account.email.trim().toLowerCase() === email.toLowerCase(),
+    );
+
+    if (hasDuplicateEmail) {
+      setError('อีเมลนี้ถูกใช้แล้ว โปรดใช้อีเมลอื่น');
+      return;
+    }
+
     setIsAdding(true);
     setError(null);
 
@@ -367,6 +380,17 @@ export default function RoleAccessAccountBoard() {
   };
 
   const handleUpdateUserSubmit = async (values: UpdateUserFormValues) => {
+    const normalizedEmail = values.email.trim().toLowerCase();
+    const hasDuplicateEmail = accounts.some(
+      (account) =>
+        account.id !== values.id && account.email.trim().toLowerCase() === normalizedEmail,
+    );
+
+    if (hasDuplicateEmail) {
+      setError('อีเมลนี้ถูกใช้แล้ว โปรดใช้อีเมลอื่น');
+      return;
+    }
+
     setIsUpdating(true);
     setError(null);
 
@@ -375,7 +399,7 @@ export default function RoleAccessAccountBoard() {
         fname: values.firstName,
         lname: values.lastName,
         username: values.username,
-        email: values.email,
+        email: values.email.trim(),
         tel: values.phone,
         status: values.status,
       };
@@ -419,16 +443,30 @@ export default function RoleAccessAccountBoard() {
     }
   };
 
-  const handleDeleteUser = async (account: RoleAccessAccount) => {
-    const confirmed = window.confirm(`ต้องการลบผู้ใช้ ${account.name} หรือไม่?`);
-    if (!confirmed) {
+  const handleRequestDeleteUser = (account: RoleAccessAccount) => {
+    setAccountToDelete(account);
+    setIsDeleteOpen(true);
+  };
+
+  const handleCloseDelete = () => {
+    if (isDeleting) {
       return;
     }
 
+    setIsDeleteOpen(false);
+    setAccountToDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!accountToDelete) {
+      return;
+    }
+
+    setIsDeleting(true);
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/role-access/users/${account.id}`, {
+      const response = await fetch(`${API_BASE_URL}/role-access/users/${accountToDelete.id}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -447,8 +485,12 @@ export default function RoleAccessAccountBoard() {
       }
 
       await fetchAccounts();
+      setIsDeleteOpen(false);
+      setAccountToDelete(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการลบผู้ใช้');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -464,6 +506,13 @@ export default function RoleAccessAccountBoard() {
 
   return (
     <StyledAccountBoard>
+      <DeletePopup
+        open={isDeleteOpen}
+        isDeleting={isDeleting}
+        onClose={handleCloseDelete}
+        onConfirm={handleConfirmDelete}
+        title={accountToDelete ? `ลบบัญชี ${accountToDelete.name}?` : 'Delete Account?'}
+      />
       <AddUserPopup
         open={isAddUserOpen}
         submitting={isAdding}
@@ -520,7 +569,7 @@ export default function RoleAccessAccountBoard() {
                   key={account.id}
                   account={account}
                   onEdit={handleOpenUpdate}
-                  onDelete={handleDeleteUser}
+                  onDelete={handleRequestDeleteUser}
                 />
               ))}
             </ul>
