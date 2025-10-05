@@ -23,6 +23,7 @@ type UpdateUserPopupProps = {
   onClose?: () => void;
   onSubmit?: (values: UpdateUserFormValues) => void;
   existingEmails?: string[];
+  existingUsers?: Array<{ id: string; firstName: string; lastName: string; username: string }>;
 };
 
 const StyledUpdateUserPopup = styled.div`
@@ -271,6 +272,7 @@ export default function UpdateUserPopup({
   onClose,
   onSubmit,
   existingEmails = [],
+  existingUsers = [],
 }: UpdateUserPopupProps) {
   const normalizedExistingEmails = useMemo(
     () =>
@@ -279,23 +281,38 @@ export default function UpdateUserPopup({
         .filter((email) => email.length > 0),
     [existingEmails],
   );
-  const currentUserEmail = useMemo(
-    () => (user?.email ?? '').trim().toLowerCase(),
-    [user],
+  const currentUserEmail = useMemo(() => (user?.email ?? '').trim().toLowerCase(), [user]);
+  const currentUserId = user?.id ?? null;
+
+  const normalizedExistingUsers = useMemo(
+    () =>
+      existingUsers.map((item) => ({
+        id: item.id,
+        firstName: item.firstName.trim().toLowerCase(),
+        lastName: item.lastName.trim().toLowerCase(),
+        username: item.username.trim().toLowerCase(),
+      })),
+    [existingUsers],
   );
 
   const [formState, setFormState] = useState(emptyFormState);
   const [emailError, setEmailError] = useState('');
   const [phoneError, setPhoneError] = useState('');
+  const [fullNameError, setFullNameError] = useState('');
+  const [usernameError, setUsernameError] = useState('');
 
   const emailErrorId = useId();
   const phoneErrorId = useId();
+  const fullNameErrorId = useId();
+  const usernameErrorId = useId();
 
   useEffect(() => {
     if (!open) {
       setFormState(() => ({ ...emptyFormState }));
       setEmailError('');
       setPhoneError('');
+      setFullNameError('');
+      setUsernameError('');
       return;
     }
 
@@ -303,6 +320,8 @@ export default function UpdateUserPopup({
       setFormState(() => ({ ...emptyFormState }));
       setEmailError('');
       setPhoneError('');
+      setFullNameError('');
+      setUsernameError('');
       return;
     }
 
@@ -328,6 +347,8 @@ export default function UpdateUserPopup({
     });
     setEmailError('');
     setPhoneError('');
+    setFullNameError('');
+    setUsernameError('');
   }, [open, user]);
 
   const validateEmail = (value: string) => {
@@ -343,12 +364,36 @@ export default function UpdateUserPopup({
 
   const validatePhone = (value: string) => {
     if (!value) {
-      return 'กรุณากรอกเบอร์โทร 9-10 หลัก';
+      return 'เบอร์โทรต้องขึ้นต้นด้วย 0 และมีความยาว 9-10 หลัก';
     }
-    if (!/^\d{9,10}$/.test(value)) {
-      return 'กรุณากรอกเบอร์โทร 9-10 หลัก';
+    if (!/^0\d{8,9}$/.test(value)) {
+      return 'เบอร์โทรต้องขึ้นต้นด้วย 0 และมีความยาว 9-10 หลัก';
     }
     return '';
+  };
+
+  const validateFullName = (firstName: string, lastName: string) => {
+    const normalizedFirst = firstName.trim().toLowerCase();
+    const normalizedLast = lastName.trim().toLowerCase();
+    if (!normalizedFirst || !normalizedLast) {
+      return '';
+    }
+    const isDuplicate = normalizedExistingUsers.some(
+      (item) =>
+        item.id !== currentUserId && item.firstName === normalizedFirst && item.lastName === normalizedLast,
+    );
+    return isDuplicate ? 'ชื่อและนามสกุลนี้ถูกใช้แล้วในระบบ' : '';
+  };
+
+  const validateUsername = (value: string) => {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) {
+      return '';
+    }
+    const isDuplicate = normalizedExistingUsers.some(
+      (item) => item.id !== currentUserId && item.username === normalized,
+    );
+    return isDuplicate ? 'ชื่อผู้ใช้นี้ถูกใช้แล้วในระบบ' : '';
   };
 
   const handleChange =
@@ -371,6 +416,14 @@ export default function UpdateUserPopup({
       if (field === 'phone') {
         setPhoneError('');
       }
+
+      if (field === 'firstName' || field === 'lastName') {
+        setFullNameError('');
+      }
+
+      if (field === 'username') {
+        setUsernameError('');
+      }
     };
 
   const handleEmailBlur = () => {
@@ -379,6 +432,14 @@ export default function UpdateUserPopup({
 
   const handlePhoneBlur = () => {
     setPhoneError(validatePhone(formState.phone));
+  };
+
+  const handleFullNameBlur = () => {
+    setFullNameError(validateFullName(formState.firstName, formState.lastName));
+  };
+
+  const handleUsernameBlur = () => {
+    setUsernameError(validateUsername(formState.username));
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -404,10 +465,14 @@ export default function UpdateUserPopup({
 
     const nextEmailError = validateEmail(trimmedState.email);
     const nextPhoneError = validatePhone(trimmedState.phone);
+    const nextFullNameError = validateFullName(trimmedState.firstName, trimmedState.lastName);
+    const nextUsernameError = validateUsername(trimmedState.username);
     setEmailError(nextEmailError);
     setPhoneError(nextPhoneError);
+    setFullNameError(nextFullNameError);
+    setUsernameError(nextUsernameError);
 
-    if (nextEmailError || nextPhoneError) {
+    if (nextEmailError || nextPhoneError || nextFullNameError || nextUsernameError) {
       return;
     }
 
@@ -435,38 +500,57 @@ export default function UpdateUserPopup({
           </header>
           <form className="dialog-form" onSubmit={handleSubmit}>
             <div className="form-grid">
-              <label className="form-field">
+              <label className={`form-field${fullNameError ? ' has-error' : ''}`}>
                 <span className="form-label">ชื่อ</span>
                 <input
                   className="form-input"
                   name="firstName"
                   value={formState.firstName}
                   onChange={handleChange('firstName')}
+                  onBlur={handleFullNameBlur}
                   placeholder="ชื่อ"
                   required
+                  aria-invalid={Boolean(fullNameError)}
+                  aria-describedby={fullNameError ? fullNameErrorId : undefined}
                 />
               </label>
-              <label className="form-field">
+              <label className={`form-field${fullNameError ? ' has-error' : ''}`}>
                 <span className="form-label">นามสกุล</span>
                 <input
                   className="form-input"
                   name="lastName"
                   value={formState.lastName}
                   onChange={handleChange('lastName')}
+                  onBlur={handleFullNameBlur}
                   placeholder="นามสกุล"
                   required
+                  aria-invalid={Boolean(fullNameError)}
+                  aria-describedby={fullNameError ? fullNameErrorId : undefined}
                 />
+                {fullNameError && (
+                  <span id={fullNameErrorId} className="form-error">
+                    {fullNameError}
+                  </span>
+                )}
               </label>
-              <label className="form-field">
+              <label className={`form-field${usernameError ? ' has-error' : ''}`}>
                 <span className="form-label">ชื่อผู้ใช้</span>
                 <input
                   className="form-input"
                   name="username"
                   value={formState.username}
                   onChange={handleChange('username')}
+                  onBlur={handleUsernameBlur}
                   placeholder="ชื่อผู้ใช้"
                   required
+                  aria-invalid={Boolean(usernameError)}
+                  aria-describedby={usernameError ? usernameErrorId : undefined}
                 />
+                {usernameError && (
+                  <span id={usernameErrorId} className="form-error">
+                    {usernameError}
+                  </span>
+                )}
               </label>
               <label className={`form-field${emailError ? ' has-error' : ''}`}>
                 <span className="form-label">อีเมล</span>
@@ -503,8 +587,8 @@ export default function UpdateUserPopup({
                   inputMode="numeric"
                   minLength={9}
                   maxLength={10}
-                  pattern="\\d{9,10}"
-                  title="กรุณากรอกเบอร์โทร 9-10 หลัก"
+                  pattern="0[0-9]{8,9}"
+                  title="เบอร์โทรต้องขึ้นต้นด้วย 0 และมีความยาว 9-10 หลัก"
                   aria-invalid={Boolean(phoneError)}
                   aria-describedby={phoneError ? phoneErrorId : undefined}
                 />

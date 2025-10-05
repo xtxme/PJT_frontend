@@ -220,6 +220,17 @@ export default function RoleAccessAccountBoard() {
     [accounts],
   );
 
+  const existingUsers = useMemo(
+    () =>
+      accounts.map((account) => ({
+        id: account.id,
+        firstName: (account.firstName ?? '').trim(),
+        lastName: (account.lastName ?? '').trim(),
+        username: account.username.trim(),
+      })),
+    [accounts],
+  );
+
   const fetchAccounts = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -527,6 +538,7 @@ export default function RoleAccessAccountBoard() {
         onClose={() => setIsAddUserOpen(false)}
         onSubmit={handleAddUserSubmit}
         existingEmails={existingEmails}
+        existingUsers={existingUsers}
       />
       <UpdateUserPopup
         open={isUpdateOpen}
@@ -535,6 +547,7 @@ export default function RoleAccessAccountBoard() {
         onClose={handleCloseUpdate}
         onSubmit={handleUpdateUserSubmit}
         existingEmails={existingEmails}
+        existingUsers={existingUsers}
       />
       <div className="panel">
         <div className="panel-header">
