@@ -7,7 +7,7 @@ import { Button, TextField } from "@mui/material";
 import GoogleIcon from '@mui/icons-material/Google';
 
 const ImageWrapperStyled = styled.div`
-    flex: 1;
+    flex: 11;
     position: relative;
     height: 100%;
     border-radius: 8px;
@@ -15,7 +15,7 @@ const ImageWrapperStyled = styled.div`
 `;
 
 const LogginFormStyled = styled.div`
-    flex: 1;
+    flex: 9;
     display: flex;
     justify-content: center;
 `;
@@ -88,7 +88,7 @@ const LoginForm = () => {
             </ImageWrapperStyled>
 
             <LogginFormStyled>
-                <div className="flex flex-col items-start justify-center gap-10 w-[50%]">
+                <div className="flex flex-col items-start justify-center gap-10 w-[60%]">
                     <div>
                         <h1 className="text-3xl font-bold">เข้าสู่ระบบ PJT INVENTORY</h1>
                         <h2 className="text-xl font-extralight">เลือกวิธีการเข้าสู่ระบบ</h2>
