@@ -1,5 +1,6 @@
 'use client';
 
+import DataLogBoard from '@/componentsDataLog/board';
 import styled from 'styled-components';
 
 const DataLogPage = styled.div`
@@ -68,6 +69,7 @@ export default function OwnerDataLogPage() {
             <div className="head-text">
                 <h1>กิจกรรมระบบและบันทึกการเข้าใช้</h1>
             </div>
+          <DataLogBoard />
                 
         </DataLogPage>
     );
