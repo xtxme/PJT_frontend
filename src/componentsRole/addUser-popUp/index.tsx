@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useId, useMemo, useState } from 'react';
 import styled from 'styled-components';
 
 type AddUserPopupProps = {
@@ -8,6 +8,7 @@ type AddUserPopupProps = {
   submitting?: boolean;
   onClose?: () => void;
   onSubmit?: (formData: FormData) => void;
+  existingEmails?: string[];
 };
 
 const StyledAddUserPopup = styled.div`
@@ -109,6 +110,12 @@ const StyledAddUserPopup = styled.div`
     gap: 8px;
   }
 
+  .form-field.has-error .form-input,
+  .form-field.has-error .form-select {
+    border-color: #df0404;
+    box-shadow: 0 0 0 3px rgba(223, 4, 4, 0.18);
+  }
+
   .form-label {
     font-size: 16px;
     font-weight: 600;
@@ -202,6 +209,11 @@ const StyledAddUserPopup = styled.div`
     height: 12px;
   }
 
+  .form-error {
+    font-size: 13px;
+    color: #df0404;
+  }
+
   @media (max-width: 920px) {
     .dialog {
       width: min(640px, calc(100vw - 24px));
@@ -230,13 +242,146 @@ const StyledAddUserPopup = styled.div`
   }
 `;
 
-export default function AddUserPopup({ open, submitting = false, onClose, onSubmit }: AddUserPopupProps) {
+type AddUserFormState = {
+  firstName: string;
+  lastName: string;
+  username: string;
+  email: string;
+  phone: string;
+  password: string;
+  role: string;
+};
+
+const initialFormState: AddUserFormState = {
+  firstName: '',
+  lastName: '',
+  username: '',
+  email: '',
+  phone: '',
+  password: '',
+  role: '',
+};
+
+export default function AddUserPopup({
+  open,
+  submitting = false,
+  onClose,
+  onSubmit,
+  existingEmails = [],
+}: AddUserPopupProps) {
+  const normalizedExistingEmails = useMemo(
+    () =>
+      existingEmails
+        .map((email) => email.trim().toLowerCase())
+        .filter((email) => email.length > 0),
+    [existingEmails],
+  );
+
+  const [formState, setFormState] = useState<AddUserFormState>(initialFormState);
+  const [emailError, setEmailError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+
+  const emailErrorId = useId();
+  const phoneErrorId = useId();
+
+  useEffect(() => {
+    if (!open) {
+      setFormState(() => ({ ...initialFormState }));
+      setEmailError('');
+      setPhoneError('');
+    }
+  }, [open]);
+
+  const validateEmail = (value: string) => {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) {
+      return '';
+    }
+    if (normalizedExistingEmails.includes(normalized)) {
+      return 'อีเมลนี้ถูกใช้แล้วในระบบ';
+    }
+    return '';
+  };
+
+  const validatePhone = (value: string) => {
+    if (!value) {
+      return 'กรุณากรอกเบอร์โทร 9-10 หลัก';
+    }
+    if (!/^\d{9,10}$/.test(value)) {
+      return 'กรุณากรอกเบอร์โทร 9-10 หลัก';
+    }
+    return '';
+  };
+
+  const handleFieldChange =
+    (field: keyof AddUserFormState) =>
+    (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      let { value } = event.target;
+      if (field === 'phone') {
+        value = value.replace(/\D/g, '').slice(0, 10);
+      }
+
+      setFormState((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+
+      if (field === 'email') {
+        setEmailError('');
+      }
+
+      if (field === 'phone') {
+        setPhoneError('');
+      }
+    };
+
+  const handleEmailBlur = () => {
+    setEmailError(validateEmail(formState.email));
+  };
+
+  const handlePhoneBlur = () => {
+    setPhoneError(validatePhone(formState.phone));
+  };
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+
+    const formElement = event.currentTarget;
+    if (!formElement.checkValidity()) {
+      formElement.reportValidity();
+      return;
+    }
+
+    const trimmedState = {
+      firstName: formState.firstName.trim(),
+      lastName: formState.lastName.trim(),
+      username: formState.username.trim(),
+      email: formState.email.trim(),
+      phone: formState.phone.trim(),
+      password: formState.password,
+      role: formState.role.trim(),
+    };
+
+    const nextEmailError = validateEmail(trimmedState.email);
+    const nextPhoneError = validatePhone(trimmedState.phone);
+    setEmailError(nextEmailError);
+    setPhoneError(nextPhoneError);
+
+    if (nextEmailError || nextPhoneError) {
+      return;
+    }
+
+    const submission = new FormData();
+    submission.set('firstName', trimmedState.firstName);
+    submission.set('lastName', trimmedState.lastName);
+    submission.set('username', trimmedState.username);
+    submission.set('email', trimmedState.email);
+    submission.set('phone', trimmedState.phone);
+    submission.set('password', trimmedState.password);
+    submission.set('role', trimmedState.role);
 
     if (onSubmit) {
-      onSubmit(formData);
+      onSubmit(submission);
     } else {
       onClose?.();
     }
@@ -261,31 +406,105 @@ export default function AddUserPopup({ open, submitting = false, onClose, onSubm
             <div className="form-grid">
               <label className="form-field">
                 <span className="form-label">ชื่อ</span>
-                <input className="form-input" name="firstName" placeholder="ชื่อ" required />
+                <input
+                  className="form-input"
+                  name="firstName"
+                  value={formState.firstName}
+                  onChange={handleFieldChange('firstName')}
+                  placeholder="ชื่อ"
+                  required
+                />
               </label>
               <label className="form-field">
                 <span className="form-label">นามสกุล</span>
-                <input className="form-input" name="lastName" placeholder="นามสกุล" required />
+                <input
+                  className="form-input"
+                  name="lastName"
+                  value={formState.lastName}
+                  onChange={handleFieldChange('lastName')}
+                  placeholder="นามสกุล"
+                  required
+                />
               </label>
               <label className="form-field">
                 <span className="form-label">ชื่อผู้ใช้</span>
-                <input className="form-input" name="username" placeholder="ชื่อผู้ใช้" required />
+                <input
+                  className="form-input"
+                  name="username"
+                  value={formState.username}
+                  onChange={handleFieldChange('username')}
+                  placeholder="ชื่อผู้ใช้"
+                  required
+                />
               </label>
-              <label className="form-field">
+              <label className={`form-field${emailError ? ' has-error' : ''}`}>
                 <span className="form-label">อีเมล</span>
-                <input className="form-input" type="email" name="email" placeholder="อีเมล" required />
+                <input
+                  className="form-input"
+                  type="email"
+                  name="email"
+                  value={formState.email}
+                  onChange={handleFieldChange('email')}
+                  onBlur={handleEmailBlur}
+                  placeholder="อีเมล"
+                  required
+                  aria-invalid={Boolean(emailError)}
+                  aria-describedby={emailError ? emailErrorId : undefined}
+                  autoComplete="email"
+                />
+                {emailError && (
+                  <span id={emailErrorId} className="form-error">
+                    {emailError}
+                  </span>
+                )}
               </label>
-              <label className="form-field">
+              <label className={`form-field${phoneError ? ' has-error' : ''}`}>
                 <span className="form-label">เบอร์โทร</span>
-                <input className="form-input" name="phone" placeholder="เบอร์โทร" />
+                <input
+                  className="form-input"
+                  type="tel"
+                  name="phone"
+                  value={formState.phone}
+                  onChange={handleFieldChange('phone')}
+                  onBlur={handlePhoneBlur}
+                  placeholder="เบอร์โทร"
+                  required
+                  inputMode="numeric"
+                  minLength={9}
+                  maxLength={10}
+                  pattern="\\d{9,10}"
+                  title="กรุณากรอกเบอร์โทร 9-10 หลัก"
+                  aria-invalid={Boolean(phoneError)}
+                  aria-describedby={phoneError ? phoneErrorId : undefined}
+                />
+                {phoneError && (
+                  <span id={phoneErrorId} className="form-error">
+                    {phoneError}
+                  </span>
+                )}
               </label>
               <label className="form-field">
                 <span className="form-label">รหัสผ่าน</span>
-                <input className="form-input" type="password" name="password" placeholder="รหัสผ่าน" required />
+                <input
+                  className="form-input"
+                  type="password"
+                  name="password"
+                  value={formState.password}
+                  onChange={handleFieldChange('password')}
+                  placeholder="รหัสผ่าน"
+                  required
+                  autoComplete="new-password"
+                />
               </label>
               <label className="form-field">
                 <span className="form-label">บทบาท</span>
-                <select className="form-select" name="role" defaultValue="" required>
+                <select
+                  className="form-select"
+                  name="role"
+                  value={formState.role}
+                  onChange={handleFieldChange('role')}
+                  required
+                >
                   <option value="" disabled>
                     เลือกบทบาท
                   </option>

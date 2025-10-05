@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useId, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import type { RoleAccessAccount } from '@/componentsRole/roleAccessAccountRow';
 
@@ -22,6 +22,7 @@ type UpdateUserPopupProps = {
   submitting?: boolean;
   onClose?: () => void;
   onSubmit?: (values: UpdateUserFormValues) => void;
+  existingEmails?: string[];
 };
 
 const StyledUpdateUserPopup = styled.div`
@@ -123,6 +124,13 @@ const StyledUpdateUserPopup = styled.div`
     gap: 8px;
   }
 
+  .form-field.has-error .form-input,
+  .form-field.has-error .form-select,
+  .form-field.has-error .form-text {
+    border-color: #df0404;
+    box-shadow: 0 0 0 3px rgba(223, 4, 4, 0.18);
+  }
+
   .form-label {
     font-size: 16px;
     font-weight: 600;
@@ -218,6 +226,11 @@ const StyledUpdateUserPopup = styled.div`
     box-shadow: 0 20px 42px rgba(223, 117, 68, 0.42);
   }
 
+  .form-error {
+    font-size: 13px;
+    color: #df0404;
+  }
+
   @media (max-width: 720px) {
     .dialog {
       border-radius: 24px;
@@ -251,12 +264,45 @@ const emptyFormState: Omit<UpdateUserFormValues, 'id'> & { password: string } = 
   password: '',
 };
 
-export default function UpdateUserPopup({ open, user, submitting = false, onClose, onSubmit }: UpdateUserPopupProps) {
+export default function UpdateUserPopup({
+  open,
+  user,
+  submitting = false,
+  onClose,
+  onSubmit,
+  existingEmails = [],
+}: UpdateUserPopupProps) {
+  const normalizedExistingEmails = useMemo(
+    () =>
+      existingEmails
+        .map((email) => email.trim().toLowerCase())
+        .filter((email) => email.length > 0),
+    [existingEmails],
+  );
+  const currentUserEmail = useMemo(
+    () => (user?.email ?? '').trim().toLowerCase(),
+    [user],
+  );
+
   const [formState, setFormState] = useState(emptyFormState);
+  const [emailError, setEmailError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+
+  const emailErrorId = useId();
+  const phoneErrorId = useId();
 
   useEffect(() => {
-    if (!open || !user) {
-      setFormState(emptyFormState);
+    if (!open) {
+      setFormState(() => ({ ...emptyFormState }));
+      setEmailError('');
+      setPhoneError('');
+      return;
+    }
+
+    if (!user) {
+      setFormState(() => ({ ...emptyFormState }));
+      setEmailError('');
+      setPhoneError('');
       return;
     }
 
@@ -274,29 +320,101 @@ export default function UpdateUserPopup({ open, user, submitting = false, onClos
       firstName: user.firstName ?? nameParts[0] ?? '',
       lastName: user.lastName ?? (nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''),
       username: user.username ?? '',
-      email: user.email ?? '',
-      phone: user.phone ?? '',
+      email: (user.email ?? '').trim(),
+      phone: (user.phone ?? '').replace(/\D/g, '').slice(0, 10),
       role: fallbackRole,
       status: user.status ?? 'Active',
       password: '',
     });
+    setEmailError('');
+    setPhoneError('');
   }, [open, user]);
 
-  const handleChange = (field: keyof typeof formState) => (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormState((prev) => ({
-      ...prev,
-      [field]: event.target.value,
-    }));
+  const validateEmail = (value: string) => {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) {
+      return '';
+    }
+    if (normalizedExistingEmails.includes(normalized) && normalized !== currentUserEmail) {
+      return 'อีเมลนี้ถูกใช้แล้วในระบบ';
+    }
+    return '';
+  };
+
+  const validatePhone = (value: string) => {
+    if (!value) {
+      return 'กรุณากรอกเบอร์โทร 9-10 หลัก';
+    }
+    if (!/^\d{9,10}$/.test(value)) {
+      return 'กรุณากรอกเบอร์โทร 9-10 หลัก';
+    }
+    return '';
+  };
+
+  const handleChange =
+    (field: keyof typeof formState) =>
+    (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      let { value } = event.target;
+      if (field === 'phone') {
+        value = value.replace(/\D/g, '').slice(0, 10);
+      }
+
+      setFormState((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+
+      if (field === 'email') {
+        setEmailError('');
+      }
+
+      if (field === 'phone') {
+        setPhoneError('');
+      }
+    };
+
+  const handleEmailBlur = () => {
+    setEmailError(validateEmail(formState.email));
+  };
+
+  const handlePhoneBlur = () => {
+    setPhoneError(validatePhone(formState.phone));
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!user) return;
 
+    const formElement = event.currentTarget;
+    if (!formElement.checkValidity()) {
+      formElement.reportValidity();
+      return;
+    }
+
+    const trimmedState = {
+      firstName: formState.firstName.trim(),
+      lastName: formState.lastName.trim(),
+      username: formState.username.trim(),
+      email: formState.email.trim(),
+      phone: formState.phone.trim(),
+      role: formState.role.trim(),
+      status: formState.status,
+      password: formState.password.trim(),
+    };
+
+    const nextEmailError = validateEmail(trimmedState.email);
+    const nextPhoneError = validatePhone(trimmedState.phone);
+    setEmailError(nextEmailError);
+    setPhoneError(nextPhoneError);
+
+    if (nextEmailError || nextPhoneError) {
+      return;
+    }
+
     onSubmit?.({
       id: user.id,
-      ...formState,
-      password: formState.password.trim() ? formState.password : undefined,
+      ...trimmedState,
+      password: trimmedState.password ? trimmedState.password : undefined,
     });
   };
 
@@ -350,7 +468,7 @@ export default function UpdateUserPopup({ open, user, submitting = false, onClos
                   required
                 />
               </label>
-              <label className="form-field">
+              <label className={`form-field${emailError ? ' has-error' : ''}`}>
                 <span className="form-label">อีเมล</span>
                 <input
                   className="form-input"
@@ -358,19 +476,43 @@ export default function UpdateUserPopup({ open, user, submitting = false, onClos
                   name="email"
                   value={formState.email}
                   onChange={handleChange('email')}
+                  onBlur={handleEmailBlur}
                   placeholder="อีเมล"
                   required
+                  aria-invalid={Boolean(emailError)}
+                  aria-describedby={emailError ? emailErrorId : undefined}
+                  autoComplete="email"
                 />
+                {emailError && (
+                  <span id={emailErrorId} className="form-error">
+                    {emailError}
+                  </span>
+                )}
               </label>
-              <label className="form-field">
+              <label className={`form-field${phoneError ? ' has-error' : ''}`}>
                 <span className="form-label">เบอร์โทร</span>
                 <input
                   className="form-input"
+                  type="tel"
                   name="phone"
                   value={formState.phone}
                   onChange={handleChange('phone')}
+                  onBlur={handlePhoneBlur}
                   placeholder="เบอร์โทร"
+                  required
+                  inputMode="numeric"
+                  minLength={9}
+                  maxLength={10}
+                  pattern="\\d{9,10}"
+                  title="กรุณากรอกเบอร์โทร 9-10 หลัก"
+                  aria-invalid={Boolean(phoneError)}
+                  aria-describedby={phoneError ? phoneErrorId : undefined}
                 />
+                {phoneError && (
+                  <span id={phoneErrorId} className="form-error">
+                    {phoneError}
+                  </span>
+                )}
               </label>
               <label className="form-field">
                 <span className="form-label">บทบาท</span>
@@ -411,6 +553,7 @@ export default function UpdateUserPopup({ open, user, submitting = false, onClos
                   value={formState.password}
                   onChange={handleChange('password')}
                   placeholder="ปล่อยว่างหากไม่เปลี่ยน"
+                  autoComplete="new-password"
                 />
                 <span className="password-hint">ปล่อยว่างหากไม่ต้องการเปลี่ยนรหัสผ่าน</span>
               </label>

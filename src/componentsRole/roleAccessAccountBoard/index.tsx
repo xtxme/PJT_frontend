@@ -212,6 +212,14 @@ export default function RoleAccessAccountBoard() {
 
   const rowsPerPage = 5;
 
+  const existingEmails = useMemo(
+    () =>
+      accounts
+        .map((account) => account.email.trim().toLowerCase())
+        .filter((email) => email.length > 0),
+    [accounts],
+  );
+
   const fetchAccounts = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -518,6 +526,7 @@ export default function RoleAccessAccountBoard() {
         submitting={isAdding}
         onClose={() => setIsAddUserOpen(false)}
         onSubmit={handleAddUserSubmit}
+        existingEmails={existingEmails}
       />
       <UpdateUserPopup
         open={isUpdateOpen}
@@ -525,6 +534,7 @@ export default function RoleAccessAccountBoard() {
         submitting={isUpdating}
         onClose={handleCloseUpdate}
         onSubmit={handleUpdateUserSubmit}
+        existingEmails={existingEmails}
       />
       <div className="panel">
         <div className="panel-header">
