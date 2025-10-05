@@ -57,12 +57,12 @@ export default function OwnerDataLogPage() {
         <DataLogPage>
             <div className="breadcrumb-row">
                 <div className='breadcrumb'>
-                    <img src="/images/RoleAccess-black-icon.svg" 
-                      alt="RoleAccess-black-icon" 
+                    <img src="/images/DataLog-black-icon.svg" 
+                      alt="DataLog-black-icon" 
                       width="24"
                       height="24" />
                     <img src="/images/arrow-left.svg" alt="arrow-left" />
-                    <strong className='data-text'>Role Access</strong>
+                    <strong className='data-text'>Data Log</strong>
                 </div>
             </div>
             <div className="head-text">
