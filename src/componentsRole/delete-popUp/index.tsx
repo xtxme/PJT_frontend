@@ -93,6 +93,7 @@ const StyledDeletePopup = styled.div`
     font-size: 17px;
     font-weight: 500;
     color: #515968;
+    white-space: pre-line;
   }
 
   .loss-list li {
@@ -142,7 +143,7 @@ const StyledDeletePopup = styled.div`
     flex-direction: row;
     justify-content: center;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
     padding: 0 20px;
     
 }
@@ -218,7 +219,7 @@ export default function DeletePopup({
   onClose,
   onConfirm,
   title = 'Delete Account?',
-  description = "คุณกำลังจะลบบัญชีและข้อมูลทั้งหมด ซึ่งไม่สามารถกู้คืนได้",
+  description = "คุณกำลังจะลบบัญชีและข้อมูลทั้งหมด\nซึ่งไม่สามารถกู้คืนได้",
   losses = defaultLosses,
 }: DeletePopupProps) {
   return (
@@ -251,7 +252,7 @@ export default function DeletePopup({
         disabled={isDeleting}
       >
         <span>ยกเลิก</span>
-        <img src="/images/cross-black.svg" alt="cross-black" width={16} height={16} />
+        <img src="/images/cross-black.svg" alt="cross-black" width={24} height={24} />
           </button>
           <button
             type="button"
@@ -259,7 +260,8 @@ export default function DeletePopup({
             onClick={onConfirm}
             disabled={isDeleting}
           >
-            ลบบัญชีผู้ใช้
+            <span>ลบบัญชีผู้ใช้</span>
+            <img src="/images/check-wh.svg" alt="check-white" width={16} height={16} />
           </button>
         </div>
       </div>
