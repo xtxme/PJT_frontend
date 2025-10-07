@@ -59,8 +59,8 @@ export default function OwnerProductPendingPage() {
         <ProductPendingPage>
             <div className="breadcrumb-row">
                 <div className='breadcrumb'>
-                    <img src="/images/RoleAccess-black-icon.svg" 
-                      alt="RoleAccess-black-icon" 
+                    <img src="/images/Pending-black-icon.svg" 
+                      alt="Pending-black-icon" 
                       width="24"
                       height="24" />
                     <img src="/images/arrow-left.svg" alt="arrow-left" />

@@ -10,7 +10,8 @@ type ActivityLogRowProps = {
 
 const StyledActivityLogRow = styled.div`
   display: grid;
-  grid-template-columns: 1.4fr 1.2fr 1.1fr 2.1fr auto;
+  grid-template-columns: var(--log-columns);
+  column-gap: var(--log-gap);
   align-items: center;
   padding: 16px 18px;
   border-radius: 14px;
@@ -26,6 +27,7 @@ const StyledActivityLogRow = styled.div`
     font-size: 15px;
     font-weight: 500;
     color: #323232;
+    justify-self: flex-start;
   }
 
   .cell--user {
@@ -43,6 +45,7 @@ const StyledActivityLogRow = styled.div`
       'user date status'
       'detail detail status'
       'time time status';
+    column-gap: 16px;
     row-gap: 8px;
 
     .cell--user {
@@ -63,10 +66,9 @@ const StyledActivityLogRow = styled.div`
       grid-area: detail;
     }
 
-    .cell--status {
-      grid-area: status;
-      justify-self: end;
-    }
+  .cell--status {
+    grid-area: status;
+  }
   }
 
   @media (max-width: 640px) {
@@ -77,6 +79,7 @@ const StyledActivityLogRow = styled.div`
       'time'
       'detail'
       'status';
+    column-gap: 0;
     text-align: left;
 
     .cell {

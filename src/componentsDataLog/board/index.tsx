@@ -1,8 +1,10 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import ActivityLogTable from '@/componentsDataLog/logTable';
 import { DataLogEntry } from '@/componentsDataLog/types';
+import PaginationControls from '@/componentsRole/paginationControls';
 
 const activityLogs: DataLogEntry[] = [
   {
@@ -60,6 +62,8 @@ const activityLogs: DataLogEntry[] = [
     statusLabel: 'Cancel Order',
   },
 ];
+
+const ROWS_PER_PAGE = 5;
 
 const StyledDataLogBoard = styled.section`
   width: 100%;
@@ -131,6 +135,17 @@ const StyledDataLogBoard = styled.section`
     height: 16px;
   }
 
+  .pagination-row {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .pagination-row nav {
+    width: auto;
+    justify-content: flex-end;
+  }
+
   @media (max-width: 1024px) {
     .panel {
       padding: 28px 24px;
@@ -151,10 +166,29 @@ const StyledDataLogBoard = styled.section`
     .filter-button {
       align-self: flex-end;
     }
+
+    .pagination-row {
+      justify-content: center;
+    }
+
+    .pagination-row nav {
+      justify-content: center;
+    }
   }
 `;
 
 export default function DataLogBoard() {
+  const [page, setPage] = useState(1);
+
+  const pageCount = Math.max(1, Math.ceil(activityLogs.length / ROWS_PER_PAGE));
+
+  useEffect(() => {
+    setPage((previous) => Math.min(previous, pageCount));
+  }, [pageCount]);
+
+  const startIndex = (page - 1) * ROWS_PER_PAGE;
+  const paginatedEntries = activityLogs.slice(startIndex, startIndex + ROWS_PER_PAGE);
+
   return (
     <StyledDataLogBoard>
       <div className="panel">
@@ -168,7 +202,10 @@ export default function DataLogBoard() {
             <img src="/images/dropdown-icon.svg" alt="filter dropdown icon" />
           </button>
         </div>
-        <ActivityLogTable entries={activityLogs} />
+        <ActivityLogTable entries={paginatedEntries} />
+        <div className="pagination-row">
+          <PaginationControls currentPage={page} totalPages={pageCount} onPageChange={setPage} />
+        </div>
       </div>
     </StyledDataLogBoard>
   );
