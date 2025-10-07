@@ -63,7 +63,7 @@ const activityLogs: DataLogEntry[] = [
   },
 ];
 
-const ROWS_PER_PAGE = 5;
+const ROWS_PER_PAGE = 6;
 
 const StyledDataLogBoard = styled.section`
   width: 100%;
@@ -75,7 +75,7 @@ const StyledDataLogBoard = styled.section`
     max-width: 1120px;
     padding: 32px 36px;
     border-radius: 24px;
-    background: linear-gradient(140deg, rgba(255, 255, 255, 0.95) 0%, rgba(246, 248, 255, 0.95) 46%, rgba(237, 240, 254, 0.95) 100%);
+    background: #ffffff;
     box-shadow: 0 20px 48px rgba(15, 15, 15, 0.08);
     display: flex;
     flex-direction: column;
@@ -110,40 +110,16 @@ const StyledDataLogBoard = styled.section`
     color: #6c6c6c;
   }
 
-  .filter-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 18px;
-    border-radius: 999px;
-    border: 1px solid rgba(79, 79, 79, 0.16);
-    background: #f6f7fb;
-    color: #202020;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s ease, box-shadow 0.2s ease;
-  }
-
-  .filter-button:hover {
-    background: #eef0f8;
-    box-shadow: inset 0 0 0 1px rgba(52, 52, 52, 0.08);
-  }
-
-  .filter-button img {
-    width: 16px;
-    height: 16px;
-  }
-
   .pagination-row {
     width: 100%;
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
+    margin-top: auto;
   }
 
   .pagination-row nav {
     width: auto;
-    justify-content: flex-end;
+    justify-content: center;
   }
 
   @media (max-width: 1024px) {
@@ -163,15 +139,7 @@ const StyledDataLogBoard = styled.section`
       align-items: stretch;
     }
 
-    .filter-button {
-      align-self: flex-end;
-    }
-
     .pagination-row {
-      justify-content: center;
-    }
-
-    .pagination-row nav {
       justify-content: center;
     }
   }
@@ -197,10 +165,6 @@ export default function DataLogBoard() {
             <h2>Activity Log</h2>
             <p>กิจกรรมล่าสุดที่เกิดขึ้นในระบบ</p>
           </div>
-          <button type="button" className="filter-button">
-            <span>All</span>
-            <img src="/images/dropdown-icon.svg" alt="filter dropdown icon" />
-          </button>
         </div>
         <ActivityLogTable entries={paginatedEntries} />
         <div className="pagination-row">
