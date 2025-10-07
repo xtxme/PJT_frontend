@@ -1,9 +1,11 @@
-import styled from "styled-components";
-import ActivityLogRow from "../ActivityLogRow";
-import type { ActivityLogEntry } from "../board/types";
+'use client';
+
+import styled from 'styled-components';
+import ActivityLogRow from '@/componentsDataLog/logRow';
+import { DataLogEntry } from '@/componentsDataLog/types';
 
 type ActivityLogTableProps = {
-  entries: ActivityLogEntry[];
+  entries: DataLogEntry[];
 };
 
 const StyledActivityLogTable = styled.div`
@@ -11,26 +13,35 @@ const StyledActivityLogTable = styled.div`
   flex-direction: column;
   gap: 12px;
 
-  .table-head {
+  .table-header {
     display: grid;
-    grid-template-columns: 1.3fr 1fr 1fr 2.2fr 1.3fr;
+    grid-template-columns: 1.4fr 1.2fr 1.1fr 2.1fr auto;
+    align-items: center;
     padding: 0 18px;
-    color: #9d9dad;
-    font-size: 16px;
+    color: #7f7f7f;
+    font-size: 14px;
     font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
   }
 
   .table-body {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
+  }
+
+  @media (max-width: 960px) {
+    .table-header {
+      display: none;
+    }
   }
 `;
 
 export default function ActivityLogTable({ entries }: ActivityLogTableProps) {
   return (
     <StyledActivityLogTable>
-      <div className="table-head">
+      <div className="table-header">
         <span>User</span>
         <span>Date</span>
         <span>Time</span>
@@ -39,7 +50,7 @@ export default function ActivityLogTable({ entries }: ActivityLogTableProps) {
       </div>
       <div className="table-body">
         {entries.map((entry) => (
-          <ActivityLogRow key={`${entry.user}-${entry.date}-${entry.time}`} entry={entry} />
+          <ActivityLogRow key={entry.id} entry={entry} />
         ))}
       </div>
     </StyledActivityLogTable>

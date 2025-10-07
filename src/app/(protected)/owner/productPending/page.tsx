@@ -64,7 +64,7 @@ export default function OwnerProductPendingPage() {
                       width="24"
                       height="24" />
                     <img src="/images/arrow-left.svg" alt="arrow-left" />
-                    <strong className='data-text'>Role Access</strong>
+                    <strong className='data-text'>Product Pending</strong>
                 </div>
             </div>
             <div className="head-text">

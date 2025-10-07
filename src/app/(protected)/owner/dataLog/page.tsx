@@ -9,6 +9,7 @@ const DataLogPage = styled.div`
     gap: 24px;
     min-height: 100%;
     color: #0f0f0f;
+    padding-bottom: 32px;
 
     .data-text {
     font-size: 20px;
@@ -51,6 +52,19 @@ const DataLogPage = styled.div`
     font-weight: 700;
     line-height: 1.2;
   }
+
+  .head-text p {
+    font-size: 18px;
+    font-weight: 500;
+    color: #555;
+    margin: 0;
+  }
+
+  .board-wrapper {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-start;
+  }
 `;
 
 export default function OwnerDataLogPage() {
@@ -68,9 +82,11 @@ export default function OwnerDataLogPage() {
             </div>
             <div className="head-text">
                 <h1>กิจกรรมระบบและบันทึกการเข้าใช้</h1>
+                <p>ตรวจสอบประวัติการทำงานและความเคลื่อนไหวของผู้ใช้ทั้งหมด</p>
             </div>
-          <DataLogBoard />
-                
+            <div className="board-wrapper">
+                <DataLogBoard />
+            </div>
         </DataLogPage>
     );
 }
