@@ -38,14 +38,17 @@ const StyledPendingSummary = styled.section`
   }
 
   .card {
-    display: flex;
-    justify-content: space-between;
-    align-items: stretch;
-    gap: 16px;
-    padding: 20px 22px;
-    border-radius: 18px;
-    background: #dcdce0;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    background: #ffffff;
+  border-radius: 10px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  width: 256px;
+  height: 160px;
+  box-shadow: 0 12px 32px rgba(15, 15, 15, 0.08);
+  margin: 0;
   }
 
   .card-details {

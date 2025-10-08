@@ -10,7 +10,6 @@ const ProductPendingPage = styled.div`
   display: flex;
   background: #f5f6fb;
   min-height: 100%;
-  padding: 32px 24px 80px;
   color: #0f0f0f;
 
   .page-inner {
@@ -18,7 +17,7 @@ const ProductPendingPage = styled.div`
     max-width: 1120px;
     display: flex;
     flex-direction: column;
-    gap: 32px;
+    gap: 24px;
     margin: 0;
   }
 
