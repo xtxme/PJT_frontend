@@ -21,6 +21,10 @@ const currencyFormatter = new Intl.NumberFormat("th-TH", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
+const percentFormatter = new Intl.NumberFormat("th-TH", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
 const DashboardPage = styled.div`
   display: flex;
@@ -130,6 +134,7 @@ export default function OwnerDashboardPage() {
   const [monthlySalesTotal, setMonthlySalesTotal] = useState<number | null>(null);
   const [isLoadingMonthlySales, setIsLoadingMonthlySales] = useState(true);
   const [monthlySalesError, setMonthlySalesError] = useState<string | null>(null);
+  const [monthlySalesPercentChange, setMonthlySalesPercentChange] = useState<number | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -153,13 +158,24 @@ export default function OwnerDashboardPage() {
           throw new Error(`Request failed with status ${response.status}`);
         }
 
-        const data: { currentMonthTotal?: unknown } = await response.json();
+        const data: {
+          currentMonthTotal?: unknown;
+          previousMonthTotal?: unknown;
+          percentChange?: unknown;
+        } = await response.json();
         const rawTotal = data?.currentMonthTotal;
         const parsedTotal =
           typeof rawTotal === "number"
             ? rawTotal
             : rawTotal != null
               ? Number(rawTotal)
+              : null;
+        const rawPercentChange = data?.percentChange;
+        const parsedPercentChange =
+          typeof rawPercentChange === "number"
+            ? rawPercentChange
+            : rawPercentChange != null
+              ? Number(rawPercentChange)
               : null;
 
         if (isMounted) {
@@ -169,6 +185,11 @@ export default function OwnerDashboardPage() {
               : 0;
 
           setMonthlySalesTotal(sanitizedTotal);
+          setMonthlySalesPercentChange(
+            typeof parsedPercentChange === "number" && Number.isFinite(parsedPercentChange)
+              ? parsedPercentChange
+              : null
+          );
         }
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") {
@@ -178,6 +199,7 @@ export default function OwnerDashboardPage() {
         if (isMounted) {
           setMonthlySalesError("ไม่สามารถโหลดข้อมูลได้");
           setMonthlySalesTotal(null);
+          setMonthlySalesPercentChange(null);
         }
       } finally {
         if (isMounted) {
@@ -204,6 +226,38 @@ export default function OwnerDashboardPage() {
     }
 
     return currencyFormatter.format(monthlySalesTotal ?? 0);
+  })();
+
+  const { monthlySalesTrendText, monthlySalesTrendDirection } = (() => {
+    if (monthlySalesError) {
+      return { monthlySalesTrendText: "--", monthlySalesTrendDirection: "down" as const };
+    }
+
+    if (isLoadingMonthlySales) {
+      return { monthlySalesTrendText: "...", monthlySalesTrendDirection: "up" as const };
+    }
+
+    if (
+      typeof monthlySalesPercentChange !== "number" ||
+      Number.isNaN(monthlySalesPercentChange)
+    ) {
+      return { monthlySalesTrendText: "0.00", monthlySalesTrendDirection: "up" as const };
+    }
+
+    const direction: "up" | "down" =
+      monthlySalesPercentChange >= 0 ? "up" : "down";
+    const formattedPercent = percentFormatter.format(Math.abs(monthlySalesPercentChange));
+    const sign =
+      monthlySalesPercentChange > 0
+        ? "+"
+        : monthlySalesPercentChange < 0
+          ? "-"
+          : "";
+
+    return {
+      monthlySalesTrendText: `${sign}${formattedPercent}`,
+      monthlySalesTrendDirection: direction,
+    };
   })();
 
   return (
@@ -234,8 +288,9 @@ export default function OwnerDashboardPage() {
               unit="฿"
               unitValue="฿"
               value={monthlySalesValue}
-              trendText="+xx.xx"
+              trendText={monthlySalesTrendText}
               fixTrendText="% จากเดือนที่แล้ว"
+              trendDirection={monthlySalesTrendDirection}
             />
 
             <SummaryCard
