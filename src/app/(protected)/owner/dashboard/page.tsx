@@ -1,4 +1,5 @@
 'use client';
+import { useEffect, useState } from "react";
 import DashButton from "@/components/dash-button/DashButton";
 import Image from "next/image";
 import styled from "styled-components";
@@ -11,6 +12,15 @@ import TopSellersChart from "@/components/top-sellers-chart/TopSellersChart";
 import DeadStockChart from "@/components/dead-stock-chart/DeadStockChart";
 import HighestOrderCustomerChart from "@/components/highestOrderCustomer-chart/HighestOrderCustomerChart";
 import HighestOrderCompanyChart from "@/components/highestOrderCompany-chart/HighestOrderCompanyChart";
+
+const backendDomain = (process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL ?? "http://localhost").replace(/\/$/, "");
+const backendPort = process.env.NEXT_PUBLIC_BACKEND_PORT ?? "5002";
+const backendBaseUrl = `${backendDomain}:${backendPort}`;
+
+const currencyFormatter = new Intl.NumberFormat("th-TH", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
 const DashboardPage = styled.div`
   display: flex;
@@ -117,6 +127,85 @@ const RightColumn = styled.div`
 `;
 
 export default function OwnerDashboardPage() {
+  const [monthlySalesTotal, setMonthlySalesTotal] = useState<number | null>(null);
+  const [isLoadingMonthlySales, setIsLoadingMonthlySales] = useState(true);
+  const [monthlySalesError, setMonthlySalesError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
+    async function fetchMonthlySalesTotal() {
+      if (!isMounted) {
+        return;
+      }
+
+      setIsLoadingMonthlySales(true);
+      setMonthlySalesError(null);
+
+      try {
+        const response = await fetch(`${backendBaseUrl}/analytics/sales/monthly-total`, {
+          signal: controller.signal,
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const data: { currentMonthTotal?: unknown } = await response.json();
+        const rawTotal = data?.currentMonthTotal;
+        const parsedTotal =
+          typeof rawTotal === "number"
+            ? rawTotal
+            : rawTotal != null
+              ? Number(rawTotal)
+              : null;
+
+        if (isMounted) {
+          const sanitizedTotal =
+            typeof parsedTotal === "number" && Number.isFinite(parsedTotal)
+              ? parsedTotal
+              : 0;
+
+          setMonthlySalesTotal(sanitizedTotal);
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        if (isMounted) {
+          setMonthlySalesError("ไม่สามารถโหลดข้อมูลได้");
+          setMonthlySalesTotal(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingMonthlySales(false);
+        }
+      }
+    }
+
+    fetchMonthlySalesTotal();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, []);
+
+  const monthlySalesValue = (() => {
+    if (monthlySalesError) {
+      return "ไม่สามารถโหลดข้อมูลได้";
+    }
+
+    if (isLoadingMonthlySales) {
+      return "กำลังโหลด...";
+    }
+
+    return currencyFormatter.format(monthlySalesTotal ?? 0);
+  })();
+
   return (
     <DashboardPage>
       <div className="breadcrumb-row">
@@ -144,7 +233,7 @@ export default function OwnerDashboardPage() {
               title="ยอดขายรวม"
               unit="฿"
               unitValue="฿"
-              value="xxx,xxx"
+              value={monthlySalesValue}
               trendText="+xx.xx"
               fixTrendText="% จากเดือนที่แล้ว"
             />
