@@ -112,6 +112,46 @@ app.post("/auth/login", (req, res) => {
     }
 });
 
+/**
+ * Helper to calculate percentage change between current and previous values.
+ * Returns null when previous value is 0 to avoid dividing by zero.
+ */
+function getPercentChange(current, previous) {
+    if (typeof current !== "number" || typeof previous !== "number") {
+        return null;
+    }
+
+    if (previous === 0) {
+        return null;
+    }
+
+    const diff = current - previous;
+    return (diff / Math.abs(previous)) * 100;
+}
+
+// --- Mock analytics endpoints for dashboard ---
+app.get("/analytics/sales/monthly-total", (_req, res) => {
+    const previousMonthTotal = 1123456.78;
+    const currentMonthTotal = 1234567.89;
+
+    res.json({
+        currentMonthTotal,
+        previousMonthTotal,
+        percentChange: getPercentChange(currentMonthTotal, previousMonthTotal),
+    });
+});
+
+app.get("/analytics/profit/monthly-total", (_req, res) => {
+    const previousMonthNetProfit = 245678.9;
+    const currentMonthNetProfit = 268910.25;
+
+    res.json({
+        currentMonthNetProfit,
+        previousMonthNetProfit,
+        percentChange: getPercentChange(currentMonthNetProfit, previousMonthNetProfit),
+    });
+});
+
 app.listen(process.env.BACKEND_PORT, () => {
     console.log(
         `Server running on ${process.env.BACKEND_DOMAIN_URL}:${process.env.BACKEND_PORT}`

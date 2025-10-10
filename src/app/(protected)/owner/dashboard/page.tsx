@@ -17,6 +17,12 @@ const backendDomain = (process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL ?? "http://loc
 const backendPort = process.env.NEXT_PUBLIC_BACKEND_PORT ?? "5002";
 const backendBaseUrl = `${backendDomain}:${backendPort}`;
 
+type EmployeeSalesLeaderboardRow = {
+  rank: number;
+  name: string;
+  totalSales: number;
+};
+
 const currencyFormatter = new Intl.NumberFormat("th-TH", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -135,6 +141,14 @@ export default function OwnerDashboardPage() {
   const [isLoadingMonthlySales, setIsLoadingMonthlySales] = useState(true);
   const [monthlySalesError, setMonthlySalesError] = useState<string | null>(null);
   const [monthlySalesPercentChange, setMonthlySalesPercentChange] = useState<number | null>(null);
+  const [monthlyNetProfit, setMonthlyNetProfit] = useState<number | null>(null);
+  const [isLoadingMonthlyProfit, setIsLoadingMonthlyProfit] = useState(true);
+  const [monthlyProfitError, setMonthlyProfitError] = useState<string | null>(null);
+  const [monthlyProfitPercentChange, setMonthlyProfitPercentChange] = useState<number | null>(null);
+  const [leaderboardRows, setLeaderboardRows] = useState<EmployeeSalesLeaderboardRow[]>([]);
+  const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(true);
+  const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
+  const [leaderboardMonth, setLeaderboardMonth] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -216,6 +230,194 @@ export default function OwnerDashboardPage() {
     };
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
+    async function fetchMonthlyNetProfit() {
+      if (!isMounted) {
+        return;
+      }
+
+      setIsLoadingMonthlyProfit(true);
+      setMonthlyProfitError(null);
+
+      try {
+        const response = await fetch(`${backendBaseUrl}/analytics/profit/monthly-total`, {
+          signal: controller.signal,
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const data: {
+          currentMonthNetProfit?: unknown;
+          percentChange?: unknown;
+        } = await response.json();
+
+        const rawNetProfit = data?.currentMonthNetProfit;
+        const parsedNetProfit =
+          typeof rawNetProfit === "number"
+            ? rawNetProfit
+            : rawNetProfit != null
+              ? Number(rawNetProfit)
+              : null;
+
+        const rawPercentChange = data?.percentChange;
+        const parsedPercentChange =
+          typeof rawPercentChange === "number"
+            ? rawPercentChange
+            : rawPercentChange != null
+              ? Number(rawPercentChange)
+              : null;
+
+        if (isMounted) {
+          const sanitizedNetProfit =
+            typeof parsedNetProfit === "number" && Number.isFinite(parsedNetProfit)
+              ? parsedNetProfit
+              : 0;
+
+          setMonthlyNetProfit(sanitizedNetProfit);
+          setMonthlyProfitPercentChange(
+            typeof parsedPercentChange === "number" && Number.isFinite(parsedPercentChange)
+              ? parsedPercentChange
+              : null
+          );
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        if (isMounted) {
+          setMonthlyProfitError("ไม่สามารถโหลดข้อมูลได้");
+          setMonthlyNetProfit(null);
+          setMonthlyProfitPercentChange(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingMonthlyProfit(false);
+        }
+      }
+    }
+
+    fetchMonthlyNetProfit();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
+    async function fetchLeaderboard() {
+      if (!isMounted) {
+        return;
+      }
+
+      setIsLoadingLeaderboard(true);
+      setLeaderboardError(null);
+
+      try {
+        const response = await fetch(`${backendBaseUrl}/analytics/sales/by-employee`, {
+          signal: controller.signal,
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const data: {
+          month?: unknown;
+          rows?: unknown;
+        } = await response.json();
+
+        const monthValue =
+          typeof data?.month === "string" && data.month.trim().length > 0
+            ? data.month
+            : null;
+
+        const rawRows = Array.isArray(data?.rows) ? data.rows : [];
+        const sanitizedRows = rawRows
+          .map((item) => {
+            if (!item || typeof item !== "object") {
+              return null;
+            }
+
+            const record = item as Record<string, unknown>;
+            const rankRaw = record.rank;
+            const nameRaw = record.name;
+            const totalSalesRaw = record.totalSales;
+
+            const rankParsed =
+              typeof rankRaw === "number"
+                ? rankRaw
+                : rankRaw != null
+                  ? Number(rankRaw)
+                  : NaN;
+
+            if (!Number.isFinite(rankParsed)) {
+              return null;
+            }
+
+            const nameValue =
+              typeof nameRaw === "string" && nameRaw.trim().length > 0
+                ? nameRaw.trim()
+                : "ไม่ระบุชื่อ";
+
+            const totalParsed =
+              typeof totalSalesRaw === "number"
+                ? totalSalesRaw
+                : totalSalesRaw != null
+                  ? Number(totalSalesRaw)
+                  : 0;
+
+            const totalSalesValue = Number.isFinite(totalParsed) ? Number(totalParsed) : 0;
+
+            return {
+              rank: Number(rankParsed),
+              name: nameValue,
+              totalSales: totalSalesValue,
+            } satisfies EmployeeSalesLeaderboardRow;
+          })
+          .filter((row): row is EmployeeSalesLeaderboardRow => Boolean(row))
+          .sort((a, b) => a.rank - b.rank);
+
+        if (isMounted) {
+          setLeaderboardRows(sanitizedRows);
+          setLeaderboardMonth(monthValue);
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        if (isMounted) {
+          setLeaderboardError("ไม่สามารถโหลดข้อมูลได้");
+          setLeaderboardRows([]);
+          setLeaderboardMonth(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingLeaderboard(false);
+        }
+      }
+    }
+
+    fetchLeaderboard();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, []);
+
   const monthlySalesValue = (() => {
     if (monthlySalesError) {
       return "ไม่สามารถโหลดข้อมูลได้";
@@ -260,6 +462,50 @@ export default function OwnerDashboardPage() {
     };
   })();
 
+  const monthlyProfitValue = (() => {
+    if (monthlyProfitError) {
+      return "ไม่สามารถโหลดข้อมูลได้";
+    }
+
+    if (isLoadingMonthlyProfit) {
+      return "กำลังโหลด...";
+    }
+
+    return currencyFormatter.format(monthlyNetProfit ?? 0);
+  })();
+
+  const { monthlyProfitTrendText, monthlyProfitTrendDirection } = (() => {
+    if (monthlyProfitError) {
+      return { monthlyProfitTrendText: "--", monthlyProfitTrendDirection: "down" as const };
+    }
+
+    if (isLoadingMonthlyProfit) {
+      return { monthlyProfitTrendText: "...", monthlyProfitTrendDirection: "up" as const };
+    }
+
+    if (
+      typeof monthlyProfitPercentChange !== "number" ||
+      Number.isNaN(monthlyProfitPercentChange)
+    ) {
+      return { monthlyProfitTrendText: "0.00", monthlyProfitTrendDirection: "up" as const };
+    }
+
+    const direction: "up" | "down" =
+      monthlyProfitPercentChange >= 0 ? "up" : "down";
+    const formattedPercent = percentFormatter.format(Math.abs(monthlyProfitPercentChange));
+    const sign =
+      monthlyProfitPercentChange > 0
+        ? "+"
+        : monthlyProfitPercentChange < 0
+          ? "-"
+          : "";
+
+    return {
+      monthlyProfitTrendText: `${sign}${formattedPercent}`,
+      monthlyProfitTrendDirection: direction,
+    };
+  })();
+
   return (
     <DashboardPage>
       <div className="breadcrumb-row">
@@ -297,9 +543,10 @@ export default function OwnerDashboardPage() {
               title="กำไรสุทธิ"
               unit="฿"
               unitValue="฿"
-              value="xxx,xxx"
-              trendText="-xx.xx"
+              value={monthlyProfitValue}
+              trendText={monthlyProfitTrendText}
               fixTrendText="% จากเดือนที่แล้ว"
+              trendDirection={monthlyProfitTrendDirection}
             />
           </SummaryCardsRow>
           <SaleSummaryChart />
@@ -308,7 +555,12 @@ export default function OwnerDashboardPage() {
           <HighestOrderCompanyChart/>
         </LeftColumn>
         <RightColumn>
-          <Leaderboard />
+          <Leaderboard
+            rows={leaderboardRows}
+            isLoading={isLoadingLeaderboard}
+            error={leaderboardError}
+            monthLabel={leaderboardMonth}
+          />
           <Saleboard />
           <TopSellersChart />
           <DeadStockChart />

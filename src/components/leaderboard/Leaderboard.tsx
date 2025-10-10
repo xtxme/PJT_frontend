@@ -2,14 +2,23 @@
 
 import styled from "styled-components";
 
-type TrendDirection = "up" | "down";
-
-type SalesLeader = {
+type LeaderboardRow = {
   rank: number;
   name: string;
-  sales: string;
-  trend?: TrendDirection;
+  totalSales: number;
 };
+
+type LeaderboardProps = {
+  rows: LeaderboardRow[];
+  isLoading?: boolean;
+  error?: string | null;
+  monthLabel?: string | null;
+};
+
+const currencyFormatter = new Intl.NumberFormat("th-TH", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
 const LeaderboardCard = styled.article`
   background: #ffffff;
@@ -21,7 +30,7 @@ const LeaderboardCard = styled.article`
   box-shadow: 0 20px 40px rgba(15, 15, 15, 0.06);
   border: 1px solid rgba(15, 15, 15, 0.08);
   width: 540px;
-  height: 340px;
+  height: 420px;
   justify-self: end;
 
   @media (max-width: 1200px) {
@@ -30,10 +39,22 @@ const LeaderboardCard = styled.article`
   }
 `;
 
+const Header = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
 const Title = styled.h2`
   font-size: 18px;
   font-weight: 600;
   color: #0f0f0f;
+  font-family: var(--font-ibm-plex-sans-thai), 'IBM Plex Sans Thai', sans-serif;
+`;
+
+const Subtitle = styled.span`
+  font-size: 13px;
+  color: rgba(15, 15, 15, 0.6);
   font-family: var(--font-ibm-plex-sans-thai), 'IBM Plex Sans Thai', sans-serif;
 `;
 
@@ -74,6 +95,15 @@ const TableCell = styled.td`
   }
 `;
 
+const TableMessageRow = styled.tr``;
+
+const TableMessageCell = styled.td`
+  padding: 32px 0;
+  text-align: center;
+  color: rgba(15, 15, 15, 0.6);
+  font-weight: 500;
+`;
+
 const RankCellContent = styled.span`
   display: inline-flex;
   align-items: center;
@@ -85,7 +115,7 @@ const Rank = styled.span`
   width: 24px;
   height: 24px;
   border-radius: 5px;
-  background: #EFBE46;
+  background: #efbe46;
   align-items: center;
   justify-content: center;
   font-weight: 600;
@@ -103,44 +133,58 @@ const LeaderboardName = styled.span`
   font-weight: 500;
 `;
 
-const TrendIcon = styled.span<{ $trend: TrendDirection }>`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  color: ${({ $trend }) => ($trend === "up" ? "#2abf75" : "#e25c5c")};
-`;
+export default function Leaderboard({
+  rows,
+  isLoading = false,
+  error = null,
+  monthLabel = null,
+}: LeaderboardProps) {
+  const renderTableBody = () => {
+    if (isLoading) {
+      return (
+        <TableMessageRow>
+          <TableMessageCell colSpan={3}>กำลังโหลดข้อมูล...</TableMessageCell>
+        </TableMessageRow>
+      );
+    }
 
-const TrendPlaceholder = styled.span`
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-`;
+    if (error) {
+      return (
+        <TableMessageRow>
+          <TableMessageCell colSpan={3}>{error}</TableMessageCell>
+        </TableMessageRow>
+      );
+    }
 
-function TrendArrow({ direction }: { direction: TrendDirection }) {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-      {direction === "up" ? (
-        <path d="M6 2l4 4H2L6 2z" fill="currentColor" />
-      ) : (
-        <path d="M6 10l4-4H2l4 4z" fill="currentColor" />
-      )}
-    </svg>
-  );
-}
+    if (!rows || rows.length === 0) {
+      return (
+        <TableMessageRow>
+          <TableMessageCell colSpan={3}>ยังไม่มีข้อมูลยอดขาย</TableMessageCell>
+        </TableMessageRow>
+      );
+    }
 
-const salesLeaders: SalesLeader[] = [
-  { rank: 1, name: "สมชาย ใจดี", sales: "฿ xxxx", trend: "up" },
-  { rank: 2, name: "สมหญิง รักงาน", sales: "฿ xxxx", trend: "down" },
-  { rank: 3, name: "วิชัย ขยัน", sales: "฿ xxxx", trend: "down" },
-  { rank: 4, name: "มาลี ใส่ใจ", sales: "฿ xxxx", trend: "down" },
-];
+    return rows.map((leader) => (
+      <TableRow key={leader.rank}>
+        <TableCell>
+          <RankCellContent>
+            <Rank>{leader.rank}</Rank>
+          </RankCellContent>
+        </TableCell>
+        <TableCell>
+          <LeaderboardName>{leader.name}</LeaderboardName>
+        </TableCell>
+        <TableCell>{currencyFormatter.format(leader.totalSales ?? 0)}</TableCell>
+      </TableRow>
+    ));
+  };
 
-export default function Leaderboard() {
   return (
     <LeaderboardCard>
-      <Title>ยอดขายรายบุคคลของพนักงาน</Title>
+      <Header>
+        <Title>ยอดขายรายบุคคลของพนักงาน</Title>
+        {monthLabel ? <Subtitle>เดือน {monthLabel}</Subtitle> : null}
+      </Header>
       <LeaderboardTable>
         <thead>
           <tr>
@@ -149,28 +193,7 @@ export default function Leaderboard() {
             <TableHeaderCell>ยอดการขาย</TableHeaderCell>
           </tr>
         </thead>
-        <tbody>
-          {salesLeaders.map((leader) => (
-            <TableRow key={leader.rank}>
-              <TableCell>
-                <RankCellContent>
-                  <Rank>{leader.rank}</Rank>
-                  {leader.trend ? (
-                    <TrendIcon $trend={leader.trend}>
-                      <TrendArrow direction={leader.trend} />
-                    </TrendIcon>
-                  ) : (
-                    <TrendPlaceholder aria-hidden />
-                  )}
-                </RankCellContent>
-              </TableCell>
-              <TableCell>
-                <LeaderboardName>{leader.name}</LeaderboardName>
-              </TableCell>
-              <TableCell>{leader.sales}</TableCell>
-            </TableRow>
-          ))}
-        </tbody>
+        <tbody>{renderTableBody()}</tbody>
       </LeaderboardTable>
     </LeaderboardCard>
   );
