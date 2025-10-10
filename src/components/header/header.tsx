@@ -1,4 +1,4 @@
-
+'use client';
 import { useState } from 'react';
 import styled from 'styled-components';
 
@@ -72,7 +72,7 @@ const HeaderBar = styled.header`
     display: flex;
     line-height: 24px;
     font-size: 16px;
-    font-weight: 500;
+    font-weight: 700;
     color: #111a44;
     text-transform: uppercase;
   }
@@ -189,8 +189,8 @@ export default function AppHeader() {
         <div className="user-profile">
           <img className="admin-icon" src="/images/admin-icon.svg" alt="admin-icon" />
           <div className="user-details">
-            <span className="user-name">xxxxx</span>
-            <span className="user-role">Admin</span>
+            <strong className="user-name">xxxxx</strong>
+            <strong className="user-role">Admin</strong>
           </div>
         </div>
         <span className="user-divider" aria-hidden="true" />

@@ -1,7 +1,7 @@
 'use client';
 
 import AppHeader from "@/components/header/header";
-import Sidebar from "@/components/sidebar/Sidebar";
+import Sidebar_sale from "@/components/sidebar/Sidebar_sale";
 import styled from "styled-components";
 
 const Shell = styled.div`
@@ -26,7 +26,7 @@ const Main = styled.main`
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   return (
     <Shell>
-      <Sidebar />
+      <Sidebar_sale />
       <div className="content">
         <AppHeader />
         <Main>{children}</Main>
