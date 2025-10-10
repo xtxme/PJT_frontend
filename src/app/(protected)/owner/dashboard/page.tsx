@@ -23,6 +23,11 @@ type EmployeeSalesLeaderboardRow = {
   totalSales: number;
 };
 
+type SaleSummaryPoint = {
+  month: string;
+  totalSales: number;
+};
+
 const currencyFormatter = new Intl.NumberFormat("th-TH", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -149,6 +154,9 @@ export default function OwnerDashboardPage() {
   const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(true);
   const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
   const [leaderboardMonth, setLeaderboardMonth] = useState<string | null>(null);
+  const [saleSummaryPoints, setSaleSummaryPoints] = useState<SaleSummaryPoint[]>([]);
+  const [isLoadingSaleSummary, setIsLoadingSaleSummary] = useState(true);
+  const [saleSummaryError, setSaleSummaryError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -223,6 +231,91 @@ export default function OwnerDashboardPage() {
     }
 
     fetchMonthlySalesTotal();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
+    async function fetchSaleSummary() {
+      if (!isMounted) {
+        return;
+      }
+
+      setIsLoadingSaleSummary(true);
+      setSaleSummaryError(null);
+
+      try {
+        const response = await fetch(`${backendBaseUrl}/analytics/sales/monthly-summary`, {
+          signal: controller.signal,
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const data: { months?: unknown } = await response.json();
+
+        const rawMonths = Array.isArray(data?.months) ? data.months : [];
+        const sanitizedPoints = rawMonths
+          .map((item) => {
+            if (!item || typeof item !== "object") {
+              return null;
+            }
+
+            const record = item as Record<string, unknown>;
+            const monthRaw = record.month;
+            const totalSalesRaw = record.totalSales;
+
+            if (typeof monthRaw !== "string" || monthRaw.trim().length === 0) {
+              return null;
+            }
+
+            const totalParsed =
+              typeof totalSalesRaw === "number"
+                ? totalSalesRaw
+                : totalSalesRaw != null
+                  ? Number(totalSalesRaw)
+                  : 0;
+
+            const totalSalesValue =
+              typeof totalParsed === "number" && Number.isFinite(totalParsed)
+                ? totalParsed
+                : 0;
+
+            return {
+              month: monthRaw.trim(),
+              totalSales: totalSalesValue,
+            } satisfies SaleSummaryPoint;
+          })
+          .filter((point): point is SaleSummaryPoint => Boolean(point));
+
+        if (isMounted) {
+          setSaleSummaryPoints(sanitizedPoints);
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        if (isMounted) {
+          setSaleSummaryError("ไม่สามารถโหลดข้อมูลได้");
+          setSaleSummaryPoints([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingSaleSummary(false);
+        }
+      }
+    }
+
+    fetchSaleSummary();
 
     return () => {
       isMounted = false;
@@ -539,17 +632,21 @@ export default function OwnerDashboardPage() {
               trendDirection={monthlySalesTrendDirection}
             />
 
-            <SummaryCard
-              title="กำไรสุทธิ"
-              unit="฿"
-              unitValue="฿"
-              value={monthlyProfitValue}
-              trendText={monthlyProfitTrendText}
-              fixTrendText="% จากเดือนที่แล้ว"
-              trendDirection={monthlyProfitTrendDirection}
-            />
+          <SummaryCard
+            title="กำไรสุทธิ"
+            unit="฿"
+            unitValue="฿"
+            value={monthlyProfitValue}
+            trendText={monthlyProfitTrendText}
+            fixTrendText="% จากเดือนที่แล้ว"
+            trendDirection={monthlyProfitTrendDirection}
+          />
           </SummaryCardsRow>
-          <SaleSummaryChart />
+          <SaleSummaryChart
+            points={saleSummaryPoints}
+            isLoading={isLoadingSaleSummary}
+            error={saleSummaryError}
+          />
           <PurchaseSummaryChart />
           <HighestOrderCustomerChart />
           <HighestOrderCompanyChart/>
