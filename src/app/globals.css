@@ -35,3 +35,10 @@ body {
           0 2px 8px rgba(0, 0, 0, 0.04);
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
+
+@layer base {
+  input:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 100px theme('colors.gray.50') inset !important;
+    -webkit-text-fill-color: theme('colors.gray.900') !important;
+  }
+}
