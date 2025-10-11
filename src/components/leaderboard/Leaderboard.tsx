@@ -140,6 +140,7 @@ export default function Leaderboard({
   monthLabel = null,
 }: LeaderboardProps) {
   const renderTableBody = () => {
+    const topRows = rows ? rows.slice(0, 5) : [];
     if (isLoading) {
       return (
         <TableMessageRow>
@@ -156,7 +157,7 @@ export default function Leaderboard({
       );
     }
 
-    if (!rows || rows.length === 0) {
+    if (topRows.length === 0) {
       return (
         <TableMessageRow>
           <TableMessageCell colSpan={3}>ยังไม่มีข้อมูลยอดขาย</TableMessageCell>
