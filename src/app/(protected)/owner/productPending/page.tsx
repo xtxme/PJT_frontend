@@ -1,8 +1,6 @@
 'use client';
 
 import styled from 'styled-components';
-
-import PendingSummary from '@/componentsProductPending/pendingSummary';
 import ActivityLog from '@/componentsProductPending/activityLog';
 
 const ProductPendingPage = styled.div`
@@ -90,9 +88,6 @@ export default function OwnerProductPendingPage() {
             <strong>Product Pending</strong>
           </span>
         </div>
-
-        <PendingSummary heading="สินค้ารอดำเนินการ" items={pendingSummaryItems} />
-
         <ActivityLog sectionTitle="รายการทั้งหมด" title="Activity Log" filterLabel="All" items={activityLogItems} />
       </div>
     </ProductPendingPage>
