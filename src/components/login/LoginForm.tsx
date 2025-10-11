@@ -80,7 +80,7 @@ export default function LoginForm() {
         <div className="w-full h-screen flex flex-row items-center justify-center">
             <ImageWrapperStyled>
                 <Image
-                    src="/images/login-page.webp"
+                    src="https://res.cloudinary.com/dkft5klt4/image/upload/v1760169060/login-page_t0q4pp.webp"
                     alt="login image"
                     fill
                     className="object-cover"
