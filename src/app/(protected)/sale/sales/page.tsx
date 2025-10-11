@@ -18,7 +18,7 @@ const mockCustomers = [
 
 // 💼 Mock ข้อมูลสินค้า
 const mockProducts = [
-  { id: 'p1', name: 'Laptop', price: 25000, stock: 5 },
+  { id: 'p1', name: 'Laptop', price: 25000, stock: 500 },
   { id: 'p2', name: 'Mouse', price: 500, stock: 3 },
   { id: 'p3', name: 'Keyboard', price: 1500, stock: 10 },
   { id: 'p4', name: 'Monitor', price: 7000, stock: 4 },
