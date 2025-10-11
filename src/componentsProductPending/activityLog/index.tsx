@@ -95,6 +95,19 @@ const StyledActivityLog = styled.section`
     color: #81818f;
   }
 
+  .table-head .head-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    line-height: 1.1;
+  }
+
+  .table-head .head-cell .sub {
+    font-size: 12px;
+    font-weight: 600;
+    color: #b0b0ba;
+  }
+
   .table-row {
     display: grid;
     grid-template-columns: 2.5fr 1.3fr 1fr 0.4fr;
@@ -194,10 +207,14 @@ export default function ActivityLog({ sectionTitle, title, filterLabel, items }:
         </div>
         <div className="table">
           <div className="table-head">
-            <span>ชื่อสินค้า</span>
-            <span>รหัสสินค้า</span>
-            <span>ราคาขาย</span>
-            <span />
+            <div className="head-cell">
+              <span>ชื่อสินค้า</span>
+              <span>รหัสสินค้า</span>
+              <span>ราคาขาย</span>
+              <span>คงเหลือ</span>
+              <span>อัพเดทสต็อก</span>
+              <span>แก้ไข</span>
+            </div>
           </div>
           {items.map((item, index) => (
             <div
@@ -206,8 +223,8 @@ export default function ActivityLog({ sectionTitle, title, filterLabel, items }:
             >
               <span data-label="ชื่อสินค้า">{item.productName}</span>
               <span data-label="รหัสสินค้า">{item.productCode}</span>
-              <span data-label="ราคาขาย">{item.price}</span>
-              <span data-label="จัดการ" className="table-action">
+              <span data-label="คงเหลือ">{item.price}</span>
+              <span data-label="อัพเดทสต็อก" className="table-action">
                 <img src="/images/edit.svg" alt="edit" />
               </span>
             </div>
