@@ -38,8 +38,8 @@ const GridLayout = styled.div`
 export default function SalesPage() {
   const employeeName = 'John Doe';
   const [selectedCustomer, setSelectedCustomer] = useState('');
-  const [invoiceNo] = useState(`INV-${Date.now().toString().slice(-6)}`);
-  const [date] = useState(new Date().toLocaleDateString('th-TH'));
+  const [invoiceNo, setInvoiceNo] = useState(`INV-${Date.now().toString().slice(-6)}`);
+  const [date, setDate] = useState(new Date().toLocaleDateString('th-TH'));
   const [products, setProducts] = useState(mockProducts);
   const [productsInBill, setProductsInBill] = useState<any[]>([]);
   const [productQtys, setProductQtys] = useState<Record<string, number | ''>>({});
@@ -49,7 +49,7 @@ export default function SalesPage() {
     p.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  // ✅ เพิ่มสินค้าในบิล (พร้อมป้องกัน stock ติดลบ)
+  // ✅ เพิ่มสินค้าในบิล
   const addProductToBill = (product: any) => {
     const qty = productQtys[product.id] || 1;
 
@@ -113,14 +113,20 @@ export default function SalesPage() {
   const total = productsInBill.reduce((sum, p) => sum + p.price * p.qty, 0);
   const vattotal = total * 1.07;
 
+  // ✅ Export PDF (ปิดปุ่มถ้าไม่มีข้อมูล)
   const exportPDF = () => {
+    const customer = mockCustomers.find((c) => c.id === selectedCustomer);
+    if (!customer || productsInBill.length === 0) {
+      alert('⚠️ กรุณาเลือก “ลูกค้า” และ “เพิ่มสินค้า” ก่อนออกบิล');
+      return;
+    }
+
     const doc = new jsPDF();
     doc.text(`Invoice: ${invoiceNo}`, 20, 20);
     doc.text(`Date: ${date}`, 20, 28);
     doc.text(`Employee: ${employeeName}`, 20, 36);
-    const customer = mockCustomers.find((c) => c.id === selectedCustomer);
-    doc.text(`Customer: ${customer ? customer.name : '-'}`, 20, 44);
-    doc.text(`Address: ${customer ? customer.address : '-'}`, 20, 52);
+    doc.text(`Customer: ${customer.name}`, 20, 44);
+    doc.text(`Address: ${customer.address}`, 20, 52);
 
     let y = 64;
     productsInBill.forEach((p) => {
@@ -129,11 +135,24 @@ export default function SalesPage() {
     });
     doc.text(`Total: ${vattotal.toFixed(2)}฿`, 20, y + 10);
     doc.save(`${invoiceNo}.pdf`);
+
+    // ✅ รีเซ็ตข้อมูลหลังจากออกบิลเสร็จ
+    setProducts(mockProducts);
+    setProductsInBill([]);
+    setProductQtys({});
+    setSelectedCustomer('');
+    setSearch('');
+    setInvoiceNo(`INV-${Date.now().toString().slice(-6)}`);
+    setDate(new Date().toLocaleDateString('th-TH'));
+    alert('✅ ออกบิลสำเร็จ และรีเซ็ตข้อมูลเรียบร้อยแล้ว!');
   };
 
   const selectedCustomerData = mockCustomers.find(
     (c) => c.id === selectedCustomer
   );
+
+  // ตรวจสอบว่าปุ่มควร disable ไหม
+  const isExportDisabled = !selectedCustomer || productsInBill.length === 0;
 
   return (
     <PageContainer>
@@ -168,6 +187,7 @@ export default function SalesPage() {
           setProductsInBill={setProductsInBill}
           updateProductStock={updateProductStock}
           exportPDF={exportPDF}
+          isExportDisabled={isExportDisabled} // 🔹 ส่งสถานะไปให้ปุ่ม disable
         />
       </GridLayout>
     </PageContainer>
