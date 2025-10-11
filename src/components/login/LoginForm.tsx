@@ -1,13 +1,23 @@
 'use client';
 
-import React, { useState } from "react";
-import Image from "next/image";
-import styled from 'styled-components';
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
 import { Button, TextField } from "@mui/material";
-import GoogleIcon from '@mui/icons-material/Google';
+import GoogleIcon from "@mui/icons-material/Google";
+import Image from "next/image";
+import styled from "styled-components";
+
+const loginSchema = z.object({
+    email: z.string().email("กรุณากรอกอีเมลให้ถูกต้อง"),
+    password: z.string().min(1, "กรุณากรอกรหัสผ่าน"),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 const ImageWrapperStyled = styled.div`
-    flex: 1;
+    flex: 11;
     position: relative;
     height: 100%;
     border-radius: 8px;
@@ -15,65 +25,55 @@ const ImageWrapperStyled = styled.div`
 `;
 
 const LogginFormStyled = styled.div`
-    flex: 1;
+    flex: 9;
     display: flex;
     justify-content: center;
 `;
 
-const LoginForm = () => {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+export default function LoginForm() {
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<LoginFormData>({
+        resolver: zodResolver(loginSchema),
+    });
 
-    const handleLogin = async () => {
-        console.log("👉 เริ่ม login ด้วย email/password", { email, password });
-
-        // ✅ Validation
-        if (!email.trim() || !password.trim()) {
-            console.warn("❌ Email หรือ Password ว่าง");
-            alert("กรุณากรอก Email และ Password ให้ครบ");
-            return;
-        }
-
-        // Basic email regex check
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            console.warn("❌ Email ไม่ถูกต้อง:", email);
-            alert("กรุณากรอก Email ให้ถูกต้อง");
-            return;
-        }
-
-        try {
+    // --- 🧠 Tanstack Query Mutation ---
+    const loginMutation = useMutation({
+        mutationFn: async (data: LoginFormData) => {
             const url = `${process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/auth/login`;
-            
             console.log("📡 กำลัง fetch:", url);
 
             const res = await fetch(url, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify(data),
             });
 
-            console.log("📥 Response status:", res.status);
-            const data = await res.json();
-            console.log("📥 Response body:", data);
-
-            if (res.ok) {
-                console.log("✅ Login success → redirect:", data.redirect);
-                window.location.href = data.redirect;
-            } else {
-                console.warn("❌ Login failed:", data.message);
-                alert(data.message || "Login failed");
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.message || "เข้าสู่ระบบล้มเหลว");
             }
-        } catch (err) {
-            console.error("🚨 Login error:", err);
-            alert("เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
-        }
-    };
 
+            return res.json();
+        },
+        onSuccess: (data) => {
+            console.log("✅ Login success:", data);
+            window.location.href = data.redirect;
+        },
+        onError: (err: any) => {
+            alert(err.message || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
+        },
+    });
+
+    // --- 🧩 Form Submit Handler ---
+    const onSubmit = (data: LoginFormData) => {
+        loginMutation.mutate(data);
+    };
 
     const handleGoogleLogin = () => {
         const googleUrl = `${process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/auth/google`;
-        console.log("👉 กำลัง redirect ไป Google:", googleUrl);
         window.location.href = googleUrl;
     };
 
@@ -81,7 +81,7 @@ const LoginForm = () => {
         <div className="w-full h-screen flex flex-row items-center justify-center">
             <ImageWrapperStyled>
                 <Image
-                    src="/images/login-page.webp"
+                    src="https://res.cloudinary.com/dkft5klt4/image/upload/v1760169060/login-page_t0q4pp.webp"
                     alt="login image"
                     fill
                     className="object-cover"
@@ -89,7 +89,10 @@ const LoginForm = () => {
             </ImageWrapperStyled>
 
             <LogginFormStyled>
-                <div className="flex flex-col items-start justify-center gap-10 w-[50%]">
+                <form
+                    onSubmit={handleSubmit(onSubmit)}
+                    className="flex flex-col items-start justify-center gap-10 w-[60%]"
+                >
                     <div>
                         <h1 className="text-3xl font-bold">เข้าสู่ระบบ PJT INVENTORY</h1>
                         <h2 className="text-xl font-extralight">เลือกวิธีการเข้าสู่ระบบ</h2>
@@ -101,16 +104,18 @@ const LoginForm = () => {
                             fullWidth
                             label="อีเมล"
                             variant="outlined"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            {...register("email")}
+                            error={!!errors.email}
+                            helperText={errors.email?.message}
                         />
                         <TextField
                             fullWidth
                             label="รหัสผ่าน"
                             type="password"
                             variant="outlined"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            {...register("password")}
+                            error={!!errors.password}
+                            helperText={errors.password?.message}
                         />
                     </div>
 
@@ -119,10 +124,11 @@ const LoginForm = () => {
                         <Button
                             variant="contained"
                             size="large"
-                            sx={{ textTransform: 'none', fontWeight: 'bold' }}
-                            onClick={handleLogin}
+                            sx={{ textTransform: "none", fontWeight: "bold" }}
+                            type="submit"
+                            disabled={loginMutation.isPending}
                         >
-                            เข้าสู่ระบบ
+                            {loginMutation.isPending ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
                         </Button>
                     </div>
 
@@ -139,17 +145,14 @@ const LoginForm = () => {
                             variant="outlined"
                             size="large"
                             startIcon={<GoogleIcon />}
-                            component="a"
-                            href={`${process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/auth/google`}
-                            sx={{ textTransform: 'none', fontWeight: 'bold' }}
+                            onClick={handleGoogleLogin}
+                            sx={{ textTransform: "none", fontWeight: "bold" }}
                         >
                             เข้าสู่ระบบด้วย Google
                         </Button>
                     </div>
-                </div>
+                </form>
             </LogginFormStyled>
         </div>
     );
-};
-
-export default LoginForm;
+}
