@@ -68,12 +68,55 @@ export default function OwnerProductPendingPage() {
   ];
 
   const activityLogItems = [
-    { productName: 'เสื้อยืดคอกลม', productCode: 'PJT-0010', price: '199.00' },
-    { productName: 'กางเกงยีนส์ทรงกระบอก', productCode: 'PJT-0009', price: '790.00', highlighted: true },
-    { productName: 'เสื้อเชิ้ตแขนยาว', productCode: 'PJT-0006', price: '490.00' },
-    { productName: 'กระโปรงพลีทยาว', productCode: 'PJT-0007', price: '390.00' },
-    { productName: 'เช็กเก็ตกันลม', productCode: 'PJT-0008', price: '890.00' },
-    { productName: 'น้ำดื่ม 600 มล.', productCode: 'PJT-0001', price: '12.00' },
+    {
+      productName: 'เสื้อยืดคอกลม',
+      productCode: 'PJT-0010',
+      salePrice: '199.00',
+      remaining: '120',
+      status: 'รอตรวจสอบ',
+      stockUpdate: '19/07/2024',
+    },
+    {
+      productName: 'กางเกงยีนส์ทรงกระบอก',
+      productCode: 'PJT-0009',
+      salePrice: '790.00',
+      remaining: '80',
+      status: 'รอดำเนินการ',
+      stockUpdate: '18/07/2024',
+      highlighted: true,
+    },
+    {
+      productName: 'เสื้อเชิ้ตแขนยาว',
+      productCode: 'PJT-0006',
+      salePrice: '490.00',
+      remaining: '58',
+      status: 'รอตรวจสอบ',
+      stockUpdate: '15/07/2024',
+    },
+    {
+      productName: 'กระโปรงพลีทยาว',
+      productCode: 'PJT-0007',
+      salePrice: '390.00',
+      remaining: '96',
+      status: 'รอดำเนินการ',
+      stockUpdate: '14/07/2024',
+    },
+    {
+      productName: 'เช็กเก็ตกันลม',
+      productCode: 'PJT-0008',
+      salePrice: '890.00',
+      remaining: '42',
+      status: 'รอตรวจสอบ',
+      stockUpdate: '12/07/2024',
+    },
+    {
+      productName: 'น้ำดื่ม 600 มล.',
+      productCode: 'PJT-0001',
+      salePrice: '12.00',
+      remaining: '200',
+      status: 'พร้อมขาย',
+      stockUpdate: '11/07/2024',
+    },
   ];
 
   return (

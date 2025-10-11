@@ -1,11 +1,16 @@
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
+import PaginationControls from '@/componentsRole/paginationControls';
 import styled from 'styled-components';
 
 type ActivityLogItem = {
   productName: string;
   productCode: string;
-  price: string;
+  salePrice: string;
+  remaining: string;
+  status: string;
+  stockUpdate: string;
   highlighted?: boolean;
 };
 
@@ -88,29 +93,25 @@ const StyledActivityLog = styled.section`
 
   .table-head {
     display: grid;
-    grid-template-columns: 2.5fr 1.3fr 1fr 0.4fr;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     padding: 0 16px;
     font-size: 14px;
     font-weight: 700;
     color: #81818f;
   }
 
-  .table-head .head-cell {
+  .table-head span {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
-    line-height: 1.1;
-  }
-
-  .table-head .head-cell .sub {
-    font-size: 12px;
-    font-weight: 600;
-    color: #b0b0ba;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.2;
+    white-space: nowrap;
   }
 
   .table-row {
     display: grid;
-    grid-template-columns: 2.5fr 1.3fr 1fr 0.4fr;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     align-items: center;
     padding: 18px 20px;
     border-radius: 20px;
@@ -119,6 +120,13 @@ const StyledActivityLog = styled.section`
     font-size: 15px;
     font-weight: 600;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .table-row span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
   }
 
   .table-row.highlighted {
@@ -138,6 +146,7 @@ const StyledActivityLog = styled.section`
     height: 36px;
     border-radius: 50%;
     background: #ebebf2;
+    justify-self: center;
   }
 
   .table-action img {
@@ -166,6 +175,7 @@ const StyledActivityLog = styled.section`
       justify-content: space-between;
       gap: 12px;
       font-size: 14px;
+      text-align: right;
     }
 
     .table-row span::before {
@@ -192,6 +202,22 @@ const StyledActivityLog = styled.section`
 `;
 
 export default function ActivityLog({ sectionTitle, title, filterLabel, items }: ActivityLogProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 6;
+
+  const totalPages = Math.max(1, Math.ceil(items.length / rowsPerPage));
+
+  const paginatedItems = useMemo(
+    () => items.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage),
+    [items, currentPage],
+  );
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+  
   return (
     <StyledActivityLog>
       <h2 className="section-title">{sectionTitle}</h2>
@@ -207,29 +233,36 @@ export default function ActivityLog({ sectionTitle, title, filterLabel, items }:
         </div>
         <div className="table">
           <div className="table-head">
-            <div className="head-cell">
-              <span>ชื่อสินค้า</span>
-              <span>รหัสสินค้า</span>
-              <span>ราคาขาย</span>
-              <span>คงเหลือ</span>
-              <span>อัพเดทสต็อก</span>
-              <span>แก้ไข</span>
-            </div>
+            <span>ชื่อสินค้า</span>
+            <span>รหัสสินค้า</span>
+            <span>ราคาขาย</span>
+            <span>คงเหลือ</span>
+            <span>สถานะ</span>
+            <span>อัพเดทสต็อก</span>
+            <span>แก้ไข</span>
           </div>
-          {items.map((item, index) => (
+          {paginatedItems.map((item, index) => (
             <div
               key={`${item.productCode}-${index}`}
               className={`table-row${item.highlighted ? ' highlighted' : ''}`}
             >
               <span data-label="ชื่อสินค้า">{item.productName}</span>
               <span data-label="รหัสสินค้า">{item.productCode}</span>
-              <span data-label="คงเหลือ">{item.price}</span>
-              <span data-label="อัพเดทสต็อก" className="table-action">
+              <span data-label="ราคาขาย">{item.salePrice}</span>
+              <span data-label="คงเหลือ">{item.remaining}</span>
+              <span data-label="สถานะ">{item.status}</span>
+              <span data-label="อัพเดทสต็อก">{item.stockUpdate}</span>
+              <span data-label="แก้ไข" className="table-action">
                 <img src="/images/edit.svg" alt="edit" />
               </span>
             </div>
           ))}
         </div>
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </div>
     </StyledActivityLog>
   );
