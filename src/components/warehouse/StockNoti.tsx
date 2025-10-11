@@ -42,10 +42,10 @@ const NitisCardStyled = styled.div`
 export default function StockNoti({ notis }: { notis: any }) {
     return (
         <div className="mb-5">
-            <h2 className="text-lg font-semibold flex items-center gap-2 mb-3">
+            <h2 className="text-xl font-semibold flex items-center gap-2 mb-3">
                 <span>🔔</span> การแจ้งเตือน
             </h2>
-            <p className="text-gray-500 mb-3 text-sm">แจ้งเตือนสินค้าสำคัญที่ต้องดำเนินการ</p>
+            <p className="text-gray-500 mb-3 text-sm pl-7">แจ้งเตือนสินค้าสำคัญที่ต้องดำเนินการ</p>
             <div className="flex flex-col gap-3">
                 {notis.map((noti:any) => (
                     <NitisCardStyled key={noti.id} className="border-for-card">
