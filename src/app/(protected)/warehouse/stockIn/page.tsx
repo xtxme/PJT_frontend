@@ -39,7 +39,7 @@ export default function StockInPage() {
     const receivedItems = selectedPO ? allReceivedItems[selectedPO.id] || [] : [];
 
     return (
-        <>
+        <div className="p-2">
             {/* --- Notifications Section --- */}
             <StockNoti notis={notifications} />
 
@@ -59,6 +59,6 @@ export default function StockInPage() {
                     onCancel={() => setSelectedPO(null)}
                 />
             </div>
-        </>
+        </div>
     );
 }
