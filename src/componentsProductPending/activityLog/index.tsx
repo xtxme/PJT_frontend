@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import PaginationControls from '@/componentsRole/paginationControls';
 import EditPopup from '@/componentsProductPending/editPopup';
 import styled from 'styled-components';
+import FilterButton from '@/componentsRole/filter';
+import FilterDropdown from '@/componentsRole/filter-dropDown';
 
 type ActivityLogItem = {
   productName: string;
@@ -53,6 +55,7 @@ const StyledActivityLog = styled.section`
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 16px;
   }
 
   .panel-title {
@@ -74,21 +77,10 @@ const StyledActivityLog = styled.section`
     font-weight: 500;
   }
 
-  .panel-filter {
+  .filter-control {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 16px;
-    border-radius: 14px;
-    background: #f0f0f4;
-    font-size: 14px;
-    font-weight: 600;
-    color: #4c4c55;
-  }
-
-  .panel-filter img {
-    width: 12px;
-    height: 12px;
   }
 
   .table {
@@ -133,10 +125,6 @@ const StyledActivityLog = styled.section`
     align-items: center;
     justify-content: center;
     text-align: center;
-  }
-
-  .table-row.highlighted {
-    background: #e9f0ff;
   }
 
   .table-row:hover {
@@ -211,6 +199,13 @@ export default function ActivityLog({ sectionTitle, title, filterLabel, items }:
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedItem, setSelectedItem] = useState<ActivityLogItem | null>(null);
   const rowsPerPage = 6;
+  const filterButtonRef = useRef<HTMLButtonElement>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const handleFilterSelect = (group: 'status' | 'role', value: string) => {
+    // TODO: integrate filter logic once backend/state requirements are defined.
+    // eslint-disable-next-line no-console
+    console.info('Selected filter', { group, value });
+  };
 
   const totalPages = Math.max(1, Math.ceil(items.length / rowsPerPage));
 
@@ -253,9 +248,19 @@ export default function ActivityLog({ sectionTitle, title, filterLabel, items }:
           <div className="panel-title">
             <h3>{title}</h3>
           </div>
-          <div className="panel-filter">
-            <span>{filterLabel}</span>
-            <img src="/images/dropdown-icon.svg" alt="filter" />
+          <div className="filter-control">
+            <FilterButton
+              aria-label="กรองและจัดเรียงบัญชีผู้ใช้"
+              label={filterLabel === 'All' ? 'Filter' : filterLabel}
+              ref={filterButtonRef}
+              onClick={() => setIsFilterOpen((prev) => !prev)}
+            />
+            <FilterDropdown
+              open={isFilterOpen}
+              onClose={() => setIsFilterOpen(false)}
+              onSelect={handleFilterSelect}
+              anchorRef={filterButtonRef}
+            />
           </div>
         </div>
         <div className="table">
