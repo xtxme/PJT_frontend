@@ -208,6 +208,7 @@ export default function RoleAccessAccountBoard() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [statusUpdating, setStatusUpdating] = useState<Record<string, boolean>>({});
   const filterButtonRef = useRef<HTMLButtonElement>(null);
 
   const rowsPerPage = 5;
@@ -328,6 +329,74 @@ export default function RoleAccessAccountBoard() {
     }
 
     setIsFilterOpen(false);
+  };
+
+  const handleToggleStatus = async (
+    account: RoleAccessAccount,
+    nextStatus: RoleAccessAccount['status'],
+  ) => {
+    if (account.status === nextStatus) {
+      return;
+    }
+
+    const previousStatus = account.status;
+
+    setStatusUpdating((prev) => ({ ...prev, [account.id]: true }));
+    setAccounts((prev) =>
+      prev.map((item) =>
+        item.id === account.id
+          ? {
+              ...item,
+              status: nextStatus,
+            }
+          : item,
+      ),
+    );
+    setError(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/role-access/users/${account.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ status: nextStatus }),
+      });
+
+      if (!response.ok) {
+        let message = 'ไม่สามารถอัปเดตสถานะผู้ใช้ได้';
+        try {
+          const body = await response.json();
+          if (body?.message) {
+            message = body.message;
+          }
+        } catch (err) {
+          // ignore json parse errors
+        }
+        throw new Error(message);
+      }
+    } catch (err) {
+      setAccounts((prev) =>
+        prev.map((item) =>
+          item.id === account.id
+            ? {
+                ...item,
+                status: previousStatus,
+              }
+            : item,
+        ),
+      );
+      setError(
+        err instanceof Error ? err.message : 'ไม่สามารถอัปเดตสถานะผู้ใช้ได้',
+      );
+    } finally {
+      setStatusUpdating((prev) => {
+        const next = { ...prev };
+        delete next[account.id];
+        return next;
+      });
+    }
   };
 
   const handleAddUserSubmit = async (formData: FormData) => {
@@ -593,6 +662,8 @@ export default function RoleAccessAccountBoard() {
                   account={account}
                   onEdit={handleOpenUpdate}
                   onDelete={handleRequestDeleteUser}
+                  onToggleStatus={handleToggleStatus}
+                  isStatusUpdating={Boolean(statusUpdating[account.id])}
                 />
               ))}
             </ul>

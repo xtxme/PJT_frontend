@@ -95,6 +95,31 @@ const StyledAccountRow = styled.li`
     justify-content: flex-end;
   }
 
+  .status-toggle {
+    border: none;
+    background: transparent;
+    padding: 0;
+    line-height: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+
+  .status-toggle:not(:disabled):hover {
+    transform: translateY(-1px);
+  }
+
+  .status-toggle:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  .status-toggle img {
+    display: block;
+  }
+
   .row-badge {
     display: inline-flex;
     align-items: center;
@@ -189,10 +214,24 @@ type RoleAccessAccountRowProps = {
   account: RoleAccessAccount;
   onEdit?: (account: RoleAccessAccount) => void;
   onDelete?: (account: RoleAccessAccount) => void;
+  onToggleStatus?: (
+    account: RoleAccessAccount,
+    nextStatus: RoleAccessAccount['status'],
+  ) => void;
+  isStatusUpdating?: boolean;
 };
 
-export default function RoleAccessAccountRow({ account, onEdit, onDelete }: RoleAccessAccountRowProps) {
+export default function RoleAccessAccountRow({
+  account,
+  onEdit,
+  onDelete,
+  onToggleStatus,
+  isStatusUpdating,
+}: RoleAccessAccountRowProps) {
   const statusModifier = account.status === 'Active' ? 'active' : 'inactive';
+  const isActive = account.status === 'Active';
+  const nextStatus = isActive ? 'Inactive' : 'Active';
+  const isToggleDisabled = !onToggleStatus || isStatusUpdating;
 
   return (
     <StyledAccountRow>
@@ -212,10 +251,21 @@ export default function RoleAccessAccountRow({ account, onEdit, onDelete }: Role
           <span className={`row-badge row-badge--status row-badge--status-${statusModifier}`}>
             {account.status}
           </span>
-          {/* //todo
-          <span className=''>
-            {account.}
-          </span> */}
+          <button
+            type="button"
+            className="status-toggle"
+            onClick={() => onToggleStatus?.(account, nextStatus)}
+            disabled={isToggleDisabled}
+            aria-pressed={isActive}
+            aria-label={`เปลี่ยนสถานะเป็น ${nextStatus}`}
+          >
+            <img
+              src={isActive ? '/images/on.svg' : '/images/off.svg'}
+              alt=""
+              width={64}
+              height={30}
+            />
+          </button>
           <button
             className="row-icon-button"
             type="button"
