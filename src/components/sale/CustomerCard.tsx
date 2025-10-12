@@ -1,96 +1,109 @@
 'use client';
 
 import styled from 'styled-components';
-import { Button } from '@mui/material';
+import { Card, CardContent, Typography, Divider, Box, Button } from '@mui/material';
+import { useState } from 'react';
 
-const CustomerCardStyled = styled.div`
-  background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  padding: 16px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: transform 0.2s, box-shadow 0.2s;
+// 💡 type safety — รับ props จาก backend
+interface Customer {
+  id: number;
+  name: string;
+  address: string;
+  totalPaid: number;
+  email?: string | null;
+  tel?: string | null;
+}
 
+interface Props {
+  customer: Customer;
+}
+
+// 💅 styled-components
+const StyledCard = styled(Card)`
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease-in-out;
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
   }
-
-  .info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .name {
-    font-size: 18px;
-    font-weight: 600;
-    color: #1c4bb9;
-  }
-
-  .id {
-    font-size: 14px;
-    color: #777;
-  }
-
-  .address {
-    font-size: 14px;
-    color: #444;
-    line-height: 1.4;
-    max-width: 500px;
-  }
-
-  .total {
-    font-size: 16px;
-    font-weight: bold;
-    color: #2e7d32;
-  }
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-
-    .address {
-      max-width: 100%;
-    }
-
-    button {
-      align-self: flex-end;
-    }
-  }
-
 `;
 
-export default function CustomerCard({ customer }: { customer: any }) {
-  return (
-    <CustomerCardStyled>
-      <div className="info">
-        <p className="name">{customer.name}</p>
-        <p className="id">ID: {customer.id}</p>
-        <p className="address">📍 {customer.address}</p>
-        <p className="total">ยอดจ่าย: {customer.totalPaid.toLocaleString()} THB</p>
-      </div>
+const CustomerInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
 
-      <Button
-        variant="contained"
-        color="primary"
-        sx={{
-          textWrap: 'nowrap',
-          padding: '10px 16px',
-          borderRadius: '10px',
-          boxShadow: 1,
-          textTransform: 'none',
-          fontWeight: 500,
-        }}
-        onClick={() => {
-          alert(`เปิดข้อมูลลูกค้า: ${customer.name}`);
-        }}
-      >
-        รายละเอียด
-      </Button>
-    </CustomerCardStyled>
+const InfoRow = styled.div`
+  font-size: 14px;
+  color: #555;
+`;
+
+export default function CustomerCard({ customer }: Props) {
+  const [showAddress, setShowAddress] = useState(false);
+
+  return (
+    <StyledCard>
+      <CardContent>
+        {/* 🧾 Header */}
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            {customer.name || 'ไม่ระบุชื่อ'}
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              backgroundColor: '#e5f3ff',
+              color: '#2563eb',
+              px: 1.5,
+              py: 0.5,
+              borderRadius: '8px',
+              fontWeight: 500,
+            }}
+          >
+            💰 {customer.totalPaid?.toLocaleString()} THB
+          </Typography>
+        </Box>
+
+        <Divider sx={{ my: 1 }} />
+
+        {/* 📍 ข้อมูลเพิ่มเติม */}
+        <CustomerInfo>
+          {customer.email && (
+            <InfoRow>
+              <strong>อีเมล:</strong> {customer.email}
+            </InfoRow>
+          )}
+          {customer.tel && (
+            <InfoRow>
+              <strong>เบอร์โทร:</strong> {customer.tel}
+            </InfoRow>
+          )}
+
+          {showAddress && (
+            <InfoRow>
+              <strong>ที่อยู่:</strong> {customer.address || 'ไม่ระบุ'}
+            </InfoRow>
+          )}
+        </CustomerInfo>
+
+        {/* 🔘 ปุ่ม toggle ที่อยู่ */}
+        <Box display="flex" justifyContent="flex-end" mt={2}>
+          <Button
+            size="small"
+            sx={{
+              textTransform: 'none',
+              borderRadius: '8px',
+              fontSize: '13px',
+              color: '#2563eb',
+            }}
+            onClick={() => setShowAddress((v) => !v)}
+          >
+            {showAddress ? 'ซ่อนที่อยู่' : 'แสดงที่อยู่'}
+          </Button>
+        </Box>
+      </CardContent>
+    </StyledCard>
   );
 }
