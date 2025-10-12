@@ -67,6 +67,38 @@ type TopSellerRange = {
   end: string;
 };
 
+type DeadStockChange = {
+  absolute: number;
+  percent: number | null;
+};
+
+type DeadStockTotals = {
+  dead_products: number;
+  dead_qty: number;
+  dead_value: number;
+};
+
+type DeadStockProduct = {
+  product_id: number | null;
+  product_name: string;
+  dead_qty: number;
+  dead_value: number;
+};
+
+type DeadStockMonth = {
+  month_key: string;
+  totals: DeadStockTotals;
+  products: DeadStockProduct[];
+};
+
+type DeadStockLatestSummary = DeadStockMonth & {
+  compare_to_previous: {
+    dead_products: DeadStockChange;
+    dead_qty: DeadStockChange;
+    dead_value: DeadStockChange;
+  } | null;
+};
+
 const currencyFormatter = new Intl.NumberFormat("th-TH", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -212,6 +244,10 @@ export default function OwnerDashboardPage() {
   const [topSellersRange, setTopSellersRange] = useState<TopSellerRange | null>(null);
   const [isLoadingTopSellers, setIsLoadingTopSellers] = useState(true);
   const [topSellersError, setTopSellersError] = useState<string | null>(null);
+  const [, setDeadStockMonths] = useState<DeadStockMonth[]>([]);
+  const [isLoadingDeadStock, setIsLoadingDeadStock] = useState(true);
+  const [deadStockError, setDeadStockError] = useState<string | null>(null);
+  const [deadStockLatest, setDeadStockLatest] = useState<DeadStockLatestSummary | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -315,7 +351,7 @@ export default function OwnerDashboardPage() {
           throw new Error(`Request failed with status ${response.status}`);
         }
 
-        const data: { months?: unknown } = await response.json();
+        const data: { months?: unknown; latest?: unknown } = await response.json();
 
         const rawMonths = Array.isArray(data?.months) ? data.months : [];
         const sanitizedPoints = rawMonths
@@ -516,7 +552,15 @@ export default function OwnerDashboardPage() {
       setTopSellersError(null);
 
       try {
-        const response = await fetch(`${backendBaseUrl}/analytics/products/top-sellers`, {
+        const now = new Date();
+        const targetMonth = now.getMonth() + 1;
+        const targetYear = now.getFullYear();
+
+        const url = new URL(`${backendBaseUrl}/analytics/products/top-sellers`);
+        url.searchParams.set("month", String(targetMonth));
+        url.searchParams.set("year", String(targetYear));
+
+        const response = await fetch(url.toString(), {
           signal: controller.signal,
           credentials: "include",
         });
@@ -645,7 +689,229 @@ export default function OwnerDashboardPage() {
     };
   }, []);
 
-//purchaseSummary
+  useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
+    async function fetchDeadStockSummary() {
+      if (!isMounted) {
+        return;
+      }
+
+      setIsLoadingDeadStock(true);
+      setDeadStockError(null);
+
+      try {
+        const response = await fetch(`${backendBaseUrl}/analytics/dead-stock/monthly-summary`, {
+          signal: controller.signal,
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const data: { months?: unknown; latest?: unknown } = await response.json();
+
+        const parseNumber = (value: unknown): number => {
+          if (typeof value === "number") {
+            return Number.isFinite(value) ? value : 0;
+          }
+          if (typeof value === "string" && value.trim().length > 0) {
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : 0;
+          }
+          return 0;
+        };
+
+        const sanitizeChange = (value: unknown): DeadStockChange | null => {
+          if (!value || typeof value !== "object") {
+            return null;
+          }
+
+          const record = value as Record<string, unknown>;
+          const absolute = parseNumber(record.absolute);
+          const percentRaw = record.percent;
+          const percentParsed =
+            typeof percentRaw === "number"
+              ? percentRaw
+              : percentRaw != null
+                ? Number(percentRaw)
+                : null;
+
+          return {
+            absolute,
+            percent:
+              typeof percentParsed === "number" && Number.isFinite(percentParsed)
+                ? percentParsed
+                : null,
+          };
+        };
+
+        const sanitizeProducts = (value: unknown): DeadStockProduct[] => {
+          if (!Array.isArray(value)) {
+            return [];
+          }
+
+          return value
+            .map((item) => {
+              if (!item || typeof item !== "object") {
+                return null;
+              }
+
+              const record = item as Record<string, unknown>;
+              const idRaw = record.product_id ?? record.productId ?? record.id;
+              const nameRaw = record.product_name ?? record.productName ?? record.name;
+
+              const productId = parseNumber(idRaw);
+              const productName =
+                typeof nameRaw === "string" && nameRaw.trim().length > 0
+                  ? nameRaw.trim()
+                  : productId > 0
+                    ? `สินค้า #${productId}`
+                    : "ไม่ระบุสินค้า";
+
+              const deadQty = parseNumber(record.dead_qty ?? record.quantity ?? record.deadQty);
+              const deadValue = parseNumber(record.dead_value ?? record.deadValue ?? record.value);
+
+              return {
+                product_id: Number.isFinite(productId) && productId > 0 ? productId : null,
+                product_name: productName,
+                dead_qty: deadQty,
+                dead_value: deadValue,
+              } satisfies DeadStockProduct;
+            })
+            .filter((product): product is DeadStockProduct => Boolean(product));
+        };
+
+        const rawMonths = Array.isArray(data?.months) ? data.months : [];
+        const sanitizedMonths = rawMonths
+          .map((item) => {
+            if (!item || typeof item !== "object") {
+              return null;
+            }
+
+            const record = item as Record<string, unknown>;
+            const monthKeyRaw = record.month_key ?? record.monthKey ?? record.month;
+
+            if (typeof monthKeyRaw !== "string" || monthKeyRaw.trim().length === 0) {
+              return null;
+            }
+
+            const totalsRaw = record.totals;
+            const totals: DeadStockTotals =
+              totalsRaw && typeof totalsRaw === "object"
+                ? {
+                    dead_products: parseNumber((totalsRaw as Record<string, unknown>).dead_products),
+                    dead_qty: parseNumber((totalsRaw as Record<string, unknown>).dead_qty),
+                    dead_value: parseNumber((totalsRaw as Record<string, unknown>).dead_value),
+                  }
+                : {
+                    dead_products: 0,
+                    dead_qty: 0,
+                    dead_value: 0,
+                  };
+
+            const products = sanitizeProducts(record.products);
+
+            return {
+              month_key: monthKeyRaw.trim(),
+              totals,
+              products,
+            } satisfies DeadStockMonth;
+          })
+          .filter((month): month is DeadStockMonth => Boolean(month));
+
+        const latestRaw = data?.latest;
+        const sanitizedLatest =
+          latestRaw && typeof latestRaw === "object" && latestRaw !== null
+            ? (() => {
+                const record = latestRaw as Record<string, unknown>;
+                const monthKeyRaw = record.month_key ?? record.monthKey ?? record.month;
+
+                if (typeof monthKeyRaw !== "string" || monthKeyRaw.trim().length === 0) {
+                  return null;
+                }
+
+                const totalsRaw = record.totals;
+                const totals: DeadStockTotals =
+                  totalsRaw && typeof totalsRaw === "object"
+                    ? {
+                        dead_products: parseNumber((totalsRaw as Record<string, unknown>).dead_products),
+                        dead_qty: parseNumber((totalsRaw as Record<string, unknown>).dead_qty),
+                        dead_value: parseNumber((totalsRaw as Record<string, unknown>).dead_value),
+                      }
+                    : {
+                        dead_products: 0,
+                        dead_qty: 0,
+                        dead_value: 0,
+                      };
+
+                let compareSummary: DeadStockLatestSummary["compare_to_previous"] = null;
+
+                const compareRaw = record.compare_to_previous;
+                if (compareRaw && typeof compareRaw === "object") {
+                  const compareRecord = compareRaw as Record<string, unknown>;
+                  const productsChange = sanitizeChange(compareRecord.dead_products);
+                  const qtyChange = sanitizeChange(compareRecord.dead_qty);
+                  const valueChange = sanitizeChange(compareRecord.dead_value);
+
+                  if (productsChange && qtyChange && valueChange) {
+                    compareSummary = {
+                      dead_products: productsChange,
+                      dead_qty: qtyChange,
+                      dead_value: valueChange,
+                    };
+                  }
+                }
+
+                return {
+                  month_key: monthKeyRaw.trim(),
+                  totals,
+                  products: sanitizeProducts(record.products),
+                  compare_to_previous: compareSummary,
+                } satisfies DeadStockLatestSummary;
+              })()
+            : null;
+
+        const resolvedLatest = sanitizedLatest
+          ?? (sanitizedMonths.length > 0
+            ? {
+                ...sanitizedMonths[sanitizedMonths.length - 1],
+                compare_to_previous: null,
+              }
+            : null);
+
+        if (isMounted) {
+          setDeadStockMonths(sanitizedMonths);
+          setDeadStockLatest(resolvedLatest);
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        if (isMounted) {
+          setDeadStockError("ไม่สามารถโหลดข้อมูลได้");
+          setDeadStockMonths([]);
+          setDeadStockLatest(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingDeadStock(false);
+        }
+      }
+    }
+
+    fetchDeadStockSummary();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, []);
+
+  //purchaseSummary
   useEffect(() => {
     let isMounted = true;
     const controller = new AbortController();
@@ -743,7 +1009,15 @@ export default function OwnerDashboardPage() {
       setHighestOrderCustomersError(null);
 
       try {
-        const response = await fetch(`${backendBaseUrl}/analytics/customers/top-order-value`, {
+        const now = new Date();
+        const targetMonth = now.getMonth() + 1;
+        const targetYear = now.getFullYear();
+
+        const url = new URL(`${backendBaseUrl}/analytics/customers/top-order-value`);
+        url.searchParams.set("month", String(targetMonth));
+        url.searchParams.set("year", String(targetYear));
+
+        const response = await fetch(url.toString(), {
           signal: controller.signal,
           credentials: "include",
         });
@@ -1214,7 +1488,12 @@ export default function OwnerDashboardPage() {
             error={topSellersError}
             range={topSellersRange}
           />
-          <DeadStockChart />
+          <DeadStockChart
+            products={deadStockLatest?.products ?? []}
+            latest={deadStockLatest}
+            isLoading={isLoadingDeadStock}
+            error={deadStockError}
+          />
         </RightColumn>
       </ContentGrid>
     </DashboardPage>

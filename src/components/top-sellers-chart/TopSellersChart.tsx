@@ -94,6 +94,10 @@ const Placeholder = styled.div`
 `;
 
 const quantityFormatter = new Intl.NumberFormat('th-TH');
+const rangeFormatter = new Intl.DateTimeFormat('th-TH', {
+  month: 'short',
+  year: 'numeric',
+});
 
 export default function TopSellersChart({
   products,
@@ -156,23 +160,39 @@ export default function TopSellersChart({
   }, [maxOrders]);
 
   const formattedRange = useMemo(() => {
-    if (!range?.start || !range?.end) {
+    if (!range?.start) {
       return null;
     }
 
     const startDate = new Date(range.start);
-    const endDate = new Date(range.end);
-
-    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    if (Number.isNaN(startDate.getTime())) {
       return null;
     }
 
-    const formatter = new Intl.DateTimeFormat('th-TH', {
-      month: 'short',
-      year: 'numeric',
-    });
+    let endDate: Date | null = null;
+    if (range.end) {
+      const parsedEnd = new Date(range.end);
+      if (!Number.isNaN(parsedEnd.getTime())) {
+        endDate = new Date(parsedEnd.getTime() - 1);
+      }
+    }
 
-    return `${formatter.format(startDate)} - ${formatter.format(endDate)}`;
+    const startLabel = rangeFormatter.format(startDate);
+
+    if (!endDate) {
+      return `ข้อมูล: ${startLabel}`;
+    }
+
+    const sameMonth =
+      startDate.getFullYear() === endDate.getFullYear() &&
+      startDate.getMonth() === endDate.getMonth();
+
+    if (sameMonth) {
+      return `ข้อมูล: ${startLabel}`;
+    }
+
+    const endLabel = rangeFormatter.format(endDate);
+    return `ข้อมูล: ${startLabel} - ${endLabel}`;
   }, [range]);
 
   const renderChart = () => {
