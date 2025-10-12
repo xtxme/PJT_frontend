@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import PaginationControls from '@/componentsRole/paginationControls';
+import EditPopup from '@/componentsProductPending/editPopup';
 import styled from 'styled-components';
 
 type ActivityLogItem = {
@@ -12,6 +13,11 @@ type ActivityLogItem = {
   status: string;
   stockUpdate: string;
   highlighted?: boolean;
+  costPerUnit?: string;
+  currentPrice?: string;
+  currentMargin?: string;
+  minimumApproved?: string;
+  forecastMargin?: string;
 };
 
 type ActivityLogProps = {
@@ -203,6 +209,7 @@ const StyledActivityLog = styled.section`
 
 export default function ActivityLog({ sectionTitle, title, filterLabel, items }: ActivityLogProps) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedItem, setSelectedItem] = useState<ActivityLogItem | null>(null);
   const rowsPerPage = 6;
 
   const totalPages = Math.max(1, Math.ceil(items.length / rowsPerPage));
@@ -217,6 +224,26 @@ export default function ActivityLog({ sectionTitle, title, filterLabel, items }:
       setCurrentPage(totalPages);
     }
   }, [currentPage, totalPages]);
+
+  const handleEditClick = (item: ActivityLogItem) => {
+    setSelectedItem(item);
+  };
+
+  const handleClosePopup = () => {
+    setSelectedItem(null);
+  };
+
+  const handleSavePrice = (price: string) => {
+    if (selectedItem) {
+      // Placeholder callback; integrate with API or state update when available.
+      // eslint-disable-next-line no-console
+      console.info('New price requested', {
+        productCode: selectedItem.productCode,
+        productName: selectedItem.productName,
+        price,
+      });
+    }
+  };
   
   return (
     <StyledActivityLog>
@@ -252,7 +279,19 @@ export default function ActivityLog({ sectionTitle, title, filterLabel, items }:
               <span data-label="คงเหลือ">{item.remaining}</span>
               <span data-label="สถานะ">{item.status}</span>
               <span data-label="อัพเดทสต็อก">{item.stockUpdate}</span>
-              <span data-label="แก้ไข" className="table-action">
+              <span
+                data-label="แก้ไข"
+                className="table-action"
+                role="button"
+                tabIndex={0}
+                onClick={() => handleEditClick(item)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    handleEditClick(item);
+                  }
+                }}
+              >
                 <img src="/images/edit.svg" alt="edit" />
               </span>
             </div>
@@ -264,6 +303,9 @@ export default function ActivityLog({ sectionTitle, title, filterLabel, items }:
           onPageChange={setCurrentPage}
         />
       </div>
+      {selectedItem && (
+        <EditPopup item={selectedItem} onClose={handleClosePopup} onSave={handleSavePrice} />
+      )}
     </StyledActivityLog>
   );
 }
