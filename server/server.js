@@ -11,9 +11,48 @@ const app = express();
 
 app.use(express.json()); // ต้องมีเพื่ออ่าน JSON body
 
+function normalizeOrigin(origin) {
+    if (typeof origin !== "string") {
+        return null;
+    }
+
+    return origin.trim().replace(/\/$/, "");
+}
+
+const frontendDomain = normalizeOrigin(process.env.FRONTEND_DOMAIN_URL);
+const frontendPort = process.env.FRONTEND_PORT;
+const defaultFrontendOrigin =
+    frontendDomain && frontendPort
+        ? `${frontendDomain}:${frontendPort}`
+        : frontendDomain;
+
+const extraFrontendOrigins = (process.env.FRONTEND_ALLOWED_ORIGINS ?? "")
+    .split(",")
+    .map((origin) => normalizeOrigin(origin))
+    .filter(Boolean);
+
+const allowedOrigins = new Set(
+    [defaultFrontendOrigin, ...extraFrontendOrigins].filter(Boolean)
+);
+
 app.use(
     cors({
-        origin: `${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}`,
+        origin: (origin, callback) => {
+            if (!origin) {
+                // Allow non-browser or same-origin requests (e.g., curl, server-to-server)
+                return callback(null, true);
+            }
+
+            const normalizedOrigin = normalizeOrigin(origin);
+
+            if (normalizedOrigin && allowedOrigins.has(normalizedOrigin)) {
+                return callback(null, true);
+            }
+
+            return callback(
+                new Error(`Origin ${origin} not allowed by CORS configuration`)
+            );
+        },
         credentials: true, // เผื่อใช้ session/cookie
     })
 );

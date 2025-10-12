@@ -33,6 +33,17 @@ type PurchaseSummaryPoint = {
   total_value: number;
 };
 
+type HighestOrderCustomerPoint = {
+  customerId: number;
+  name: string;
+  value: number;
+};
+
+type HighestOrderCustomerRange = {
+  start: string;
+  end: string;
+};
+
 const currencyFormatter = new Intl.NumberFormat("th-TH", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -166,6 +177,10 @@ export default function OwnerDashboardPage() {
   const [purchaseSummaryPoints, setPurchaseSummaryPoints] = useState<PurchaseSummaryPoint[]>([]);
   const [isLoadingPurchaseSummary, setIsLoadingPurchaseSummary] = useState(true);
   const [purchaseSummaryError, setPurchaseSummaryError] = useState<string | null>(null);
+  const [highestOrderCustomers, setHighestOrderCustomers] = useState<HighestOrderCustomerPoint[]>([]);
+  const [highestOrderCustomersRange, setHighestOrderCustomersRange] = useState<HighestOrderCustomerRange | null>(null);
+  const [isLoadingHighestOrderCustomers, setIsLoadingHighestOrderCustomers] = useState(true);
+  const [highestOrderCustomersError, setHighestOrderCustomersError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -410,6 +425,134 @@ export default function OwnerDashboardPage() {
     }
 
     fetchPurchaseSummary();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
+    async function fetchHighestOrderCustomers() {
+      if (!isMounted) {
+        return;
+      }
+
+      setIsLoadingHighestOrderCustomers(true);
+      setHighestOrderCustomersError(null);
+
+      try {
+        const response = await fetch(`${backendBaseUrl}/analytics/customers/top-order-value`, {
+          signal: controller.signal,
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const data: {
+          customers?: unknown;
+          range?: { start?: unknown; end?: unknown } | null;
+        } = await response.json();
+
+        const rawCustomers = Array.isArray(data?.customers) ? data.customers : [];
+        const sanitizedCustomers = rawCustomers
+          .map((item) => {
+            if (!item || typeof item !== "object") {
+              return null;
+            }
+
+            const record = item as Record<string, unknown>;
+            const idRaw = record.customerId ?? record.customer_id;
+            const nameRaw = record.name;
+            const valueRaw = record.value ?? record.totalAmount ?? record.total_amount;
+
+            const idValue =
+              typeof idRaw === "number"
+                ? idRaw
+                : idRaw != null
+                  ? Number(idRaw)
+                  : NaN;
+
+            if (!Number.isFinite(idValue)) {
+              return null;
+            }
+
+            const nameValue =
+              typeof nameRaw === "string" && nameRaw.trim().length > 0
+                ? nameRaw.trim()
+                : `ลูกค้า ${idValue}`;
+
+            const numericValue =
+              typeof valueRaw === "number"
+                ? valueRaw
+                : valueRaw != null
+                  ? Number(valueRaw)
+                  : 0;
+
+            const sanitizedValue =
+              typeof numericValue === "number" && Number.isFinite(numericValue)
+                ? numericValue
+                : 0;
+
+            return {
+              customerId: idValue,
+              name: nameValue,
+              value: sanitizedValue,
+            } satisfies HighestOrderCustomerPoint;
+          })
+        .filter(
+          (customer): customer is HighestOrderCustomerPoint =>
+            customer !== null && Number.isFinite(customer.value)
+        );
+
+        const rangeRaw = data?.range;
+        const sanitizedRange =
+          rangeRaw && typeof rangeRaw === "object" && rangeRaw !== null
+            ? (() => {
+                const record = rangeRaw as Record<string, unknown>;
+                const startRaw = record.start;
+                const endRaw = record.end;
+                const startValue = typeof startRaw === "string" ? startRaw : null;
+                const endValue = typeof endRaw === "string" ? endRaw : null;
+
+                if (!startValue || !endValue) {
+                  return null;
+                }
+
+                return {
+                  start: startValue,
+                  end: endValue,
+                } satisfies HighestOrderCustomerRange;
+              })()
+            : null;
+
+        if (isMounted) {
+          setHighestOrderCustomers(sanitizedCustomers);
+          setHighestOrderCustomersRange(sanitizedRange);
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        if (isMounted) {
+          setHighestOrderCustomersError("ไม่สามารถโหลดข้อมูลได้");
+          setHighestOrderCustomers([]);
+          setHighestOrderCustomersRange(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingHighestOrderCustomers(false);
+        }
+      }
+    }
+
+    fetchHighestOrderCustomers();
 
     return () => {
       isMounted = false;
@@ -746,7 +889,12 @@ export default function OwnerDashboardPage() {
             isLoading={isLoadingPurchaseSummary}
             error={purchaseSummaryError}
           />
-          <HighestOrderCustomerChart />
+          <HighestOrderCustomerChart
+            customers={highestOrderCustomers}
+            isLoading={isLoadingHighestOrderCustomers}
+            error={highestOrderCustomersError}
+            range={highestOrderCustomersRange}
+          />
           <HighestOrderCompanyChart/>
         </LeftColumn>
         <RightColumn>

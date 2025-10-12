@@ -9,7 +9,6 @@ const nextConfig: NextConfig = {
       displayName: true,
     },
   },
-  compiler: { styledComponents: true },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'res.cloudinary.com', pathname: '/**' },
