@@ -132,12 +132,6 @@ const SummaryValue = styled.span`
   color: #1f2024;
 `;
 
-const SummaryLabel = styled.span`
-  font-size: 14px;
-  color: #6d7e9c;
-  font-weight: 500;
-`;
-
 const ChangeBadge = styled.span<{ $tone: 'positive' | 'negative' | 'neutral' }>`
   font-size: 13px;
   font-weight: 600;
@@ -226,8 +220,6 @@ export default function DeadStockChart({ products, isLoading, error, latest }: D
 
   const latestMonthLabel = latest ? formatMonthLabel(latest.month_key) : null;
   const latestQty = latest?.totals.dead_qty ?? null;
-  const latestProducts = latest?.totals.dead_products ?? null;
-  const latestValue = latest?.totals.dead_value ?? null;
   const change = latest?.compare_to_previous?.dead_qty ?? null;
 
   const summaryValueText = (() => {
@@ -244,34 +236,6 @@ export default function DeadStockChart({ products, isLoading, error, latest }: D
     }
 
     return `${quantityFormatter.format(Math.max(0, Math.round(latestQty)))} ชิ้น`;
-  })();
-
-  const summaryLabelText = (() => {
-    if (isLoading) {
-      return 'กำลังเตรียมข้อมูล';
-    }
-
-    if (error) {
-      return 'ไม่สามารถโหลดข้อมูลล่าสุดได้';
-    }
-
-    const segments: string[] = [];
-
-    if (latestMonthLabel) {
-      segments.push(`เดือน ${latestMonthLabel}`);
-    }
-
-    if (latestProducts != null) {
-      segments.push(
-        `สินค้า Dead ${quantityFormatter.format(Math.max(0, Math.round(latestProducts)))} รายการ`,
-      );
-    }
-
-    if (latestValue != null) {
-      segments.push(`มูลค่า ฿${currencyFormatter.format(Math.max(0, latestValue))}`);
-    }
-
-    return segments.length > 0 ? segments.join(' • ') : 'ไม่มีข้อมูลล่าสุด';
   })();
 
   const changeBadge = (() => {
@@ -401,7 +365,6 @@ export default function DeadStockChart({ products, isLoading, error, latest }: D
       <SummarySection>
         <SummaryBlock>
           <SummaryValue>{summaryValueText}</SummaryValue>
-          <SummaryLabel>{summaryLabelText}</SummaryLabel>
         </SummaryBlock>
         <ChangeBadge $tone={changeBadge.tone}>{changeBadge.text}</ChangeBadge>
       </SummarySection>

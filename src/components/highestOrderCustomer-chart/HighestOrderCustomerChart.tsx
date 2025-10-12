@@ -175,31 +175,7 @@ export default function HighestOrderCustomerChart({
       return null;
     }
 
-    let endDate: Date | null = null;
-    if (range.end) {
-      const parsedEnd = new Date(range.end);
-      if (!Number.isNaN(parsedEnd.getTime())) {
-        endDate = new Date(parsedEnd.getTime() - 1);
-      }
-    }
-
-    const startLabel = rangeFormatter.format(startDate);
-
-    if (!endDate) {
-      return `ข้อมูล: ${startLabel}`;
-    }
-
-    const sameMonth =
-      startDate.getFullYear() === endDate.getFullYear() &&
-      startDate.getMonth() === endDate.getMonth();
-
-    if (sameMonth) {
-      return `ข้อมูล: ${startLabel}`;
-    }
-
-    const endLabel = rangeFormatter.format(endDate);
-
-    return `ข้อมูล: ${startLabel} - ${endLabel}`;
+    return rangeFormatter.format(startDate);
   }, [range]);
 
   const hasData = chartData.length > 0;
@@ -273,7 +249,7 @@ export default function HighestOrderCustomerChart({
   return (
     <ChartCard>
       <ChartTitle>Highest Order Value by Customer</ChartTitle>
-      {formattedRange ? <RangeText>{formattedRange}</RangeText> : null}
+      {formattedRange ? <RangeText>ข้อมูลเดือน {formattedRange}</RangeText> : null}
       <ChartWrapper>
         <ChartShadow>
           <ChartCanvas>

@@ -31,8 +31,9 @@ type TopSellersChartProps = {
   range?: RangeInfo | null;
 };
 
-const formatQuantityTick = (value: number) =>
-  value === 0 ? '0' : `${Math.round(value / 1000)}K`;
+const quantityFormatter = new Intl.NumberFormat('th-TH');
+
+const formatQuantityTick = (value: number) => quantityFormatter.format(value);
 
 const ChartCard = styled.article`
   background: #ffffff;
@@ -48,13 +49,14 @@ const ChartCard = styled.article`
 `;
 
 const Text = styled.div`
-    display: flex;
-    width: 58px;
-    height: 22px;
-    flex-direction: column;
-    justify-content: center;
-    font-size: 13px;
-    color: #6d7e9c;
+  display: flex;
+  min-width: max-content;
+  height: 22px;
+  flex-direction: column;
+  justify-content: center;
+  font-size: 13px;
+  color: #6d7e9c;
+  white-space: nowrap;
 `;
 
 const ChartTitle = styled.h2`
@@ -93,7 +95,6 @@ const Placeholder = styled.div`
   font-size: 14px;
 `;
 
-const quantityFormatter = new Intl.NumberFormat('th-TH');
 const rangeFormatter = new Intl.DateTimeFormat('th-TH', {
   month: 'short',
   year: 'numeric',

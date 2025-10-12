@@ -59,7 +59,7 @@ type TopSellerPoint = {
   productId: number;
   name: string;
   orders: number;
-  company?: string | null;
+  company: string | null;
 };
 
 type TopSellerRange = {
@@ -1009,15 +1009,7 @@ export default function OwnerDashboardPage() {
       setHighestOrderCustomersError(null);
 
       try {
-        const now = new Date();
-        const targetMonth = now.getMonth() + 1;
-        const targetYear = now.getFullYear();
-
-        const url = new URL(`${backendBaseUrl}/analytics/customers/top-order-value`);
-        url.searchParams.set("month", String(targetMonth));
-        url.searchParams.set("year", String(targetYear));
-
-        const response = await fetch(url.toString(), {
+        const response = await fetch(`${backendBaseUrl}/analytics/customers/top-order-value`, {
           signal: controller.signal,
           credentials: "include",
         });
@@ -1247,7 +1239,7 @@ export default function OwnerDashboardPage() {
 
         const rawRows = Array.isArray(data?.rows) ? data.rows : [];
         const sanitizedRows = rawRows
-          .map((item) => {
+          .map((item, index) => {
             if (!item || typeof item !== "object") {
               return null;
             }
@@ -1256,17 +1248,21 @@ export default function OwnerDashboardPage() {
             const rankRaw = record.rank;
             const nameRaw = record.name;
             const totalSalesRaw = record.totalSales;
+            const fallbackRank = index + 1;
 
-            const rankParsed =
-              typeof rankRaw === "number"
-                ? rankRaw
-                : rankRaw != null
-                  ? Number(rankRaw)
-                  : NaN;
+            let rankValue = fallbackRank;
 
-            if (!Number.isFinite(rankParsed)) {
-              return null;
+            if (typeof rankRaw === "number") {
+              rankValue = rankRaw;
+            } else if (typeof rankRaw === "string") {
+              const maybeNumber = Number(rankRaw);
+              rankValue = Number.isFinite(maybeNumber) ? maybeNumber : fallbackRank;
+            } else if (rankRaw != null) {
+              const maybeNumber = Number(rankRaw);
+              rankValue = Number.isFinite(maybeNumber) ? maybeNumber : fallbackRank;
             }
+
+            rankValue = Number.isFinite(rankValue) ? Number(rankValue) : fallbackRank;
 
             const nameValue =
               typeof nameRaw === "string" && nameRaw.trim().length > 0
@@ -1283,7 +1279,7 @@ export default function OwnerDashboardPage() {
             const totalSalesValue = Number.isFinite(totalParsed) ? Number(totalParsed) : 0;
 
             return {
-              rank: Number(rankParsed),
+              rank: rankValue,
               name: nameValue,
               totalSales: totalSalesValue,
             } satisfies EmployeeSalesLeaderboardRow;

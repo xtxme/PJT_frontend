@@ -167,18 +167,17 @@ export default function HighestOrderCompanyChart({
   }, [companies]);
 
   const formattedRange = useMemo(() => {
-    if (!range?.start || !range?.end) {
+    if (!range?.start) {
       return null;
     }
 
     const startDate = new Date(range.start);
-    const endDate = new Date(range.end);
 
-    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    if (Number.isNaN(startDate.getTime())) {
       return null;
     }
 
-    return `${rangeFormatter.format(startDate)} - ${rangeFormatter.format(endDate)}`;
+    return rangeFormatter.format(startDate);
   }, [range]);
 
   const hasData = chartData.length > 0;
@@ -252,7 +251,7 @@ export default function HighestOrderCompanyChart({
   return (
     <ChartCard>
       <ChartTitle>Highest Order Value by Company</ChartTitle>
-      {formattedRange ? <RangeText>{formattedRange}</RangeText> : null}
+      {formattedRange ? <RangeText>ข้อมูลเดือน {formattedRange}</RangeText> : null}
       <ChartWrapper>
         <ChartShadow>
           <ChartCanvas>

@@ -212,6 +212,10 @@ export default function RoleAccessAccountRow({ account, onEdit, onDelete }: Role
           <span className={`row-badge row-badge--status row-badge--status-${statusModifier}`}>
             {account.status}
           </span>
+          {/* //todo
+          <span className=''>
+            {account.}
+          </span> */}
           <button
             className="row-icon-button"
             type="button"
