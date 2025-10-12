@@ -28,6 +28,11 @@ type SaleSummaryPoint = {
   totalSales: number;
 };
 
+type PurchaseSummaryPoint = {
+  month_key: string;
+  total_value: number;
+};
+
 const currencyFormatter = new Intl.NumberFormat("th-TH", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -157,6 +162,10 @@ export default function OwnerDashboardPage() {
   const [saleSummaryPoints, setSaleSummaryPoints] = useState<SaleSummaryPoint[]>([]);
   const [isLoadingSaleSummary, setIsLoadingSaleSummary] = useState(true);
   const [saleSummaryError, setSaleSummaryError] = useState<string | null>(null);
+  //purchaseSummary
+  const [purchaseSummaryPoints, setPurchaseSummaryPoints] = useState<PurchaseSummaryPoint[]>([]);
+  const [isLoadingPurchaseSummary, setIsLoadingPurchaseSummary] = useState(true);
+  const [purchaseSummaryError, setPurchaseSummaryError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -316,6 +325,91 @@ export default function OwnerDashboardPage() {
     }
 
     fetchSaleSummary();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, []);
+
+//purchaseSummary
+  useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
+    async function fetchPurchaseSummary() {
+      if (!isMounted) {
+        return;
+      }
+
+      setIsLoadingPurchaseSummary(true);
+      setPurchaseSummaryError(null);
+
+      try {
+        const response = await fetch(`${backendBaseUrl}/analytics/stock-in/summary`, {
+          signal: controller.signal,
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const data: { data?: unknown } = await response.json();
+        const rawPoints = Array.isArray(data?.data) ? data.data : [];
+        const sanitizedPoints = rawPoints
+          .map((item) => {
+            if (!item || typeof item !== "object") {
+              return null;
+            }
+
+            const record = item as Record<string, unknown>;
+            const monthRaw = record.month_key; //month_key and total_value ส่งมาจาก backend
+            const totalValueRaw = record.total_value;
+
+            if (typeof monthRaw !== "string" || monthRaw.trim().length === 0) {
+              return null;
+            }
+
+            const totalParsed =
+              typeof totalValueRaw === "number"
+                ? totalValueRaw
+                : totalValueRaw != null
+                  ? Number(totalValueRaw)
+                  : 0;
+
+            const totalValue =
+              typeof totalParsed === "number" && Number.isFinite(totalParsed)
+                ? totalParsed
+                : 0;
+
+            return {
+              month_key: monthRaw.trim(),
+              total_value: totalValue,
+            } satisfies PurchaseSummaryPoint;
+          })
+          .filter((point): point is PurchaseSummaryPoint => Boolean(point));
+
+        if (isMounted) {
+          setPurchaseSummaryPoints(sanitizedPoints);
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        if (isMounted) {
+          setPurchaseSummaryError("ไม่สามารถโหลดข้อมูลได้");
+          setPurchaseSummaryPoints([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingPurchaseSummary(false);
+        }
+      }
+    }
+
+    fetchPurchaseSummary();
 
     return () => {
       isMounted = false;
@@ -647,7 +741,11 @@ export default function OwnerDashboardPage() {
             isLoading={isLoadingSaleSummary}
             error={saleSummaryError}
           />
-          <PurchaseSummaryChart />
+          <PurchaseSummaryChart
+            points={purchaseSummaryPoints}
+            isLoading={isLoadingPurchaseSummary}
+            error={purchaseSummaryError}
+          />
           <HighestOrderCustomerChart />
           <HighestOrderCompanyChart/>
         </LeftColumn>
