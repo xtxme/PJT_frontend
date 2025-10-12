@@ -222,14 +222,6 @@ export default function RoleAccessAccountRow({ account, onEdit, onDelete }: Role
                   width={10}
                   height={10}/>
           </button>
-          <button
-            className="row-icon-button row-icon-button--danger"
-            type="button"
-            aria-label="ลบผู้ใช้"
-            onClick={() => onDelete?.(account)}
-          >
-            <img src="/images/delete.svg" alt="delete" />
-          </button>
         </div>
       </div>
     </StyledAccountRow>
