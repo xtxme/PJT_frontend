@@ -1,11 +1,9 @@
 'use client';
-
 import styled from 'styled-components';
 import { Card, CardContent, Typography, Divider, Box, Button } from '@mui/material';
 import { useState } from 'react';
 
-// 💡 type safety — รับ props จาก backend
-interface Customer {
+export interface Customer {
   id: number;
   name: string;
   address: string;
@@ -16,9 +14,9 @@ interface Customer {
 
 interface Props {
   customer: Customer;
+  onEdit?: (customer: Customer) => void;
 }
 
-// 💅 styled-components
 const StyledCard = styled(Card)`
   border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -29,27 +27,20 @@ const StyledCard = styled(Card)`
   }
 `;
 
-const CustomerInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-`;
-
 const InfoRow = styled.div`
   font-size: 14px;
   color: #555;
 `;
 
-export default function CustomerCard({ customer }: Props) {
+export default function CustomerCard({ customer, onEdit }: Props) {
   const [showAddress, setShowAddress] = useState(false);
 
   return (
     <StyledCard>
       <CardContent>
-        {/* 🧾 Header */}
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            {customer.name || 'ไม่ระบุชื่อ'}
+            {customer.name}
           </Typography>
           <Typography
             variant="body2"
@@ -67,29 +58,11 @@ export default function CustomerCard({ customer }: Props) {
         </Box>
 
         <Divider sx={{ my: 1 }} />
+        <InfoRow>✉️ {customer.email || '-'}</InfoRow>
+        <InfoRow>📞 {customer.tel || '-'}</InfoRow>
+        {showAddress && <InfoRow>📍 {customer.address || '-'}</InfoRow>}
 
-        {/* 📍 ข้อมูลเพิ่มเติม */}
-        <CustomerInfo>
-          {customer.email && (
-            <InfoRow>
-              <strong>อีเมล:</strong> {customer.email}
-            </InfoRow>
-          )}
-          {customer.tel && (
-            <InfoRow>
-              <strong>เบอร์โทร:</strong> {customer.tel}
-            </InfoRow>
-          )}
-
-          {showAddress && (
-            <InfoRow>
-              <strong>ที่อยู่:</strong> {customer.address || 'ไม่ระบุ'}
-            </InfoRow>
-          )}
-        </CustomerInfo>
-
-        {/* 🔘 ปุ่ม toggle ที่อยู่ */}
-        <Box display="flex" justifyContent="flex-end" mt={2}>
+        <Box display="flex" justifyContent="space-between" mt={2}>
           <Button
             size="small"
             sx={{
@@ -102,6 +75,16 @@ export default function CustomerCard({ customer }: Props) {
           >
             {showAddress ? 'ซ่อนที่อยู่' : 'แสดงที่อยู่'}
           </Button>
+          {onEdit && (
+            <Button
+              variant="outlined"
+              size="small"
+              sx={{ textTransform: 'none', borderRadius: '8px', fontSize: '13px' }}
+              onClick={() => onEdit(customer)}
+            >
+              ✏️ แก้ไข
+            </Button>
+          )}
         </Box>
       </CardContent>
     </StyledCard>
