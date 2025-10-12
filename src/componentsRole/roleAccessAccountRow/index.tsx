@@ -174,6 +174,12 @@ const StyledAccountRow = styled.li`
     background: #e6e6e6;
   }
 
+  .row-icon-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    background: #f3f3f3;
+  }
+
   .row-icon-button--danger {
     background: #fde6e6;
     box-shadow: inset 0 0 0 1px #f2b1b1;
@@ -232,6 +238,7 @@ export default function RoleAccessAccountRow({
   const isActive = account.status === 'Active';
   const nextStatus = isActive ? 'Inactive' : 'Active';
   const isToggleDisabled = !onToggleStatus || isStatusUpdating;
+  const canEdit = account.status === 'Active';
 
   return (
     <StyledAccountRow>
@@ -270,7 +277,8 @@ export default function RoleAccessAccountRow({
             className="row-icon-button"
             type="button"
             aria-label="แก้ไขสิทธิ์"
-            onClick={() => onEdit?.(account)}
+            onClick={() => canEdit && onEdit?.(account)}
+            disabled={!canEdit}
           >
             <img src="/images/edit.svg" alt="edit" 
                   width={10}
