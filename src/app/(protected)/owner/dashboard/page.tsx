@@ -44,6 +44,29 @@ type HighestOrderCustomerRange = {
   end: string;
 };
 
+type HighestOrderCompanyPoint = {
+  company: string;
+  name: string;
+  value: number;
+};
+
+type HighestOrderCompanyRange = {
+  start: string;
+  end: string;
+};
+
+type TopSellerPoint = {
+  productId: number;
+  name: string;
+  orders: number;
+  company?: string | null;
+};
+
+type TopSellerRange = {
+  start: string;
+  end: string;
+};
+
 const currencyFormatter = new Intl.NumberFormat("th-TH", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -181,6 +204,14 @@ export default function OwnerDashboardPage() {
   const [highestOrderCustomersRange, setHighestOrderCustomersRange] = useState<HighestOrderCustomerRange | null>(null);
   const [isLoadingHighestOrderCustomers, setIsLoadingHighestOrderCustomers] = useState(true);
   const [highestOrderCustomersError, setHighestOrderCustomersError] = useState<string | null>(null);
+  const [highestOrderCompanies, setHighestOrderCompanies] = useState<HighestOrderCompanyPoint[]>([]);
+  const [highestOrderCompaniesRange, setHighestOrderCompaniesRange] = useState<HighestOrderCompanyRange | null>(null);
+  const [isLoadingHighestOrderCompanies, setIsLoadingHighestOrderCompanies] = useState(true);
+  const [highestOrderCompaniesError, setHighestOrderCompaniesError] = useState<string | null>(null);
+  const [topSellers, setTopSellers] = useState<TopSellerPoint[]>([]);
+  const [topSellersRange, setTopSellersRange] = useState<TopSellerRange | null>(null);
+  const [isLoadingTopSellers, setIsLoadingTopSellers] = useState(true);
+  const [topSellersError, setTopSellersError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -340,6 +371,273 @@ export default function OwnerDashboardPage() {
     }
 
     fetchSaleSummary();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
+    async function fetchHighestOrderCompanies() {
+      if (!isMounted) {
+        return;
+      }
+
+      setIsLoadingHighestOrderCompanies(true);
+      setHighestOrderCompaniesError(null);
+
+      try {
+        const response = await fetch(`${backendBaseUrl}/analytics/company/top-order-value`, {
+          signal: controller.signal,
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const data: {
+          companies?: unknown;
+          range?: { start?: unknown; end?: unknown } | null;
+        } = await response.json();
+
+        const rawCompanies = Array.isArray(data?.companies) ? data.companies : [];
+        const sanitizedCompanies = rawCompanies
+          .map((item) => {
+            if (!item || typeof item !== "object") {
+              return null;
+            }
+
+            const record = item as Record<string, unknown>;
+            const nameRaw = record.name ?? record.company;
+            const companyRaw = record.company ?? record.name;
+            const valueRaw =
+              record.value ?? record.totalOrderValue ?? record.totalAmount ?? record.total_amount;
+
+            const nameValue =
+              typeof nameRaw === "string" && nameRaw.trim().length > 0
+                ? nameRaw.trim()
+                : typeof companyRaw === "string" && companyRaw.trim().length > 0
+                  ? companyRaw.trim()
+                  : "ไม่ระบุบริษัท";
+
+            const companyValue =
+              typeof companyRaw === "string" && companyRaw.trim().length > 0
+                ? companyRaw.trim()
+                : nameValue;
+
+            const numericValue =
+              typeof valueRaw === "number"
+                ? valueRaw
+                : valueRaw != null
+                  ? Number(valueRaw)
+                  : 0;
+
+            const sanitizedValue =
+              typeof numericValue === "number" && Number.isFinite(numericValue)
+                ? numericValue
+                : 0;
+
+            return {
+              company: companyValue,
+              name: nameValue,
+              value: sanitizedValue,
+            } satisfies HighestOrderCompanyPoint;
+          })
+          .filter(
+            (company): company is HighestOrderCompanyPoint =>
+              company !== null && Number.isFinite(company.value)
+          );
+
+        const rangeRaw = data?.range;
+        const sanitizedRange =
+          rangeRaw && typeof rangeRaw === "object" && rangeRaw !== null
+            ? (() => {
+                const record = rangeRaw as Record<string, unknown>;
+                const startRaw = record.start;
+                const endRaw = record.end;
+                const startValue = typeof startRaw === "string" ? startRaw : null;
+                const endValue = typeof endRaw === "string" ? endRaw : null;
+
+                if (!startValue || !endValue) {
+                  return null;
+                }
+
+                return {
+                  start: startValue,
+                  end: endValue,
+                } satisfies HighestOrderCompanyRange;
+              })()
+            : null;
+
+        if (isMounted) {
+          setHighestOrderCompanies(sanitizedCompanies);
+          setHighestOrderCompaniesRange(sanitizedRange);
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        if (isMounted) {
+          setHighestOrderCompaniesError("ไม่สามารถโหลดข้อมูลได้");
+          setHighestOrderCompanies([]);
+          setHighestOrderCompaniesRange(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingHighestOrderCompanies(false);
+        }
+      }
+    }
+
+    fetchHighestOrderCompanies();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
+    async function fetchTopSellers() {
+      if (!isMounted) {
+        return;
+      }
+
+      setIsLoadingTopSellers(true);
+      setTopSellersError(null);
+
+      try {
+        const response = await fetch(`${backendBaseUrl}/analytics/products/top-sellers`, {
+          signal: controller.signal,
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const data: {
+          products?: unknown;
+          range?: { start?: unknown; end?: unknown } | null;
+        } = await response.json();
+
+        const rawProducts = Array.isArray(data?.products) ? data.products : [];
+        const sanitizedProducts = rawProducts
+          .map((item) => {
+            if (!item || typeof item !== "object") {
+              return null;
+            }
+
+            const record = item as Record<string, unknown>;
+            const idRaw = record.productId ?? record.id;
+            const nameRaw = record.name ?? record.productName ?? record.company;
+            const companyRaw = record.company;
+            const ordersRaw =
+              record.orders ??
+              record.quantitySold ??
+              record.totalQuantity ??
+              record.total_quantity;
+
+            const idNumeric =
+              typeof idRaw === "number"
+                ? idRaw
+                : typeof idRaw === "string"
+                  ? Number(idRaw)
+                  : null;
+
+            const productId =
+              typeof idNumeric === "number" && Number.isFinite(idNumeric) ? idNumeric : null;
+
+            if (productId === null) {
+              return null;
+            }
+
+            const nameValue =
+              typeof nameRaw === "string" && nameRaw.trim().length > 0
+                ? nameRaw.trim()
+                : `สินค้า #${productId}`;
+
+            const ordersNumeric =
+              typeof ordersRaw === "number"
+                ? ordersRaw
+                : ordersRaw != null
+                  ? Number(ordersRaw)
+                  : 0;
+
+            const sanitizedOrders =
+              typeof ordersNumeric === "number" && Number.isFinite(ordersNumeric)
+                ? ordersNumeric
+                : 0;
+
+            const companyValue =
+              typeof companyRaw === "string" && companyRaw.trim().length > 0
+                ? companyRaw.trim()
+                : null;
+
+            return {
+              productId,
+              name: nameValue,
+              orders: sanitizedOrders,
+              company: companyValue,
+            } satisfies TopSellerPoint;
+          })
+          .filter(
+            (product): product is TopSellerPoint =>
+              product !== null && Number.isFinite(product.orders),
+          );
+
+        const rangeRaw = data?.range;
+        const sanitizedRange =
+          rangeRaw && typeof rangeRaw === "object" && rangeRaw !== null
+            ? (() => {
+                const record = rangeRaw as Record<string, unknown>;
+                const startRaw = record.start;
+                const endRaw = record.end;
+                const startValue = typeof startRaw === "string" ? startRaw : null;
+                const endValue = typeof endRaw === "string" ? endRaw : null;
+
+                if (!startValue || !endValue) {
+                  return null;
+                }
+
+                return {
+                  start: startValue,
+                  end: endValue,
+                } satisfies TopSellerRange;
+              })()
+            : null;
+
+        if (isMounted) {
+          setTopSellers(sanitizedProducts);
+          setTopSellersRange(sanitizedRange);
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        if (isMounted) {
+          setTopSellersError("ไม่สามารถโหลดข้อมูลได้");
+          setTopSellers([]);
+          setTopSellersRange(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingTopSellers(false);
+        }
+      }
+    }
+
+    fetchTopSellers();
 
     return () => {
       isMounted = false;
@@ -895,7 +1193,12 @@ export default function OwnerDashboardPage() {
             error={highestOrderCustomersError}
             range={highestOrderCustomersRange}
           />
-          <HighestOrderCompanyChart/>
+          <HighestOrderCompanyChart
+            companies={highestOrderCompanies}
+            isLoading={isLoadingHighestOrderCompanies}
+            error={highestOrderCompaniesError}
+            range={highestOrderCompaniesRange}
+          />
         </LeftColumn>
         <RightColumn>
           <Leaderboard
@@ -905,7 +1208,12 @@ export default function OwnerDashboardPage() {
             monthLabel={leaderboardMonth}
           />
           <Saleboard />
-          <TopSellersChart />
+          <TopSellersChart
+            products={topSellers}
+            isLoading={isLoadingTopSellers}
+            error={topSellersError}
+            range={topSellersRange}
+          />
           <DeadStockChart />
         </RightColumn>
       </ContentGrid>

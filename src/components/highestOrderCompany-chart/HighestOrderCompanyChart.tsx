@@ -1,17 +1,26 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Pie, PieChart, ResponsiveContainer, Tooltip, Cell } from 'recharts';
 import styled from 'styled-components';
 
-const highestOrderCustomers = [
-  { name: 'นาย A', value: 480000 },
-  { name: 'นาย B', value: 360000 },
-  { name: 'นาย C', value: 240000 },
-  { name: 'นาย D', value: 180000 },
-  { name: 'นาย E', value: 180000 },
-  { name: 'นาย F', value: 120000 },
+type HighestOrderCompany = {
+  company: string;
+  name: string;
+  value: number;
+};
 
-];
+type RangeInfo = {
+  start: string;
+  end: string;
+};
+
+type HighestOrderCompanyChartProps = {
+  companies: HighestOrderCompany[];
+  isLoading: boolean;
+  error: string | null;
+  range?: RangeInfo | null;
+};
 
 const SLICE_COLORS = ['#5aac71', '#73C48E', '#8CCFA5', '#A9DCBC', '#C7E9D3', '#E3F4E9'];
 
@@ -34,6 +43,13 @@ const ChartTitle = styled.h2`
   font-weight: 600;
   color: #1f2024;
   margin: 0;
+  text-align: center;
+`;
+
+const RangeText = styled.p`
+  font-size: 14px;
+  color: #6d7e9c;
+  margin: -24px 0 8px;
   text-align: center;
 `;
 
@@ -84,49 +100,167 @@ const LegendDot = styled.span<{ $color: string }>`
   background: ${({ $color }) => $color};
 `;
 
-export default function HighestOrderCompanyChart() {
-  return (
-    <ChartCard>
-      <ChartTitle>Highest Order Value by Company</ChartTitle>
-      <ChartWrapper>
-        <ChartShadow>
-          <ChartCanvas>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={highestOrderCustomers}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={72}
-                  outerRadius={112}
-                  paddingAngle={2}
-                  startAngle={90}
-                  endAngle={-270}
-                  stroke="none"
-                >
-                  {highestOrderCustomers.map((entry, index) => (
-                    <Cell key={entry.name} fill={SLICE_COLORS[index % SLICE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value: number | string) => [`฿${Number(value).toLocaleString()}`, 'มูลค่าการสั่งซื้อ']}
-                  labelStyle={{ color: '#1f2024', fontWeight: 600 }}
-                  wrapperStyle={{ borderRadius: 12, border: '1px solid rgba(15, 15, 15, 0.08)' }}
-                  cursor={{ fill: 'rgba(159, 166, 176, 0.08)' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </ChartCanvas>
-        </ChartShadow>
-      </ChartWrapper>
+const Placeholder = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6d7e9c;
+  font-size: 14px;
+  text-align: center;
+`;
+
+const LegendPlaceholder = styled.div`
+  color: #6d7e9c;
+  font-size: 14px;
+  text-align: center;
+`;
+
+const rangeFormatter = new Intl.DateTimeFormat('th-TH', {
+  month: 'short',
+  year: 'numeric',
+});
+
+export default function HighestOrderCompanyChart({
+  companies,
+  isLoading,
+  error,
+  range,
+}: HighestOrderCompanyChartProps) {
+  const chartData = useMemo(() => {
+    return companies
+      .map((company) => {
+        if (!company || typeof company !== 'object') {
+          return null;
+        }
+
+        const nameValue =
+          typeof company.name === 'string' && company.name.trim().length > 0
+            ? company.name.trim()
+            : typeof company.company === 'string' && company.company.trim().length > 0
+              ? company.company.trim()
+              : 'ไม่ระบุบริษัท';
+
+        const numericValue =
+          typeof company.value === 'number'
+            ? company.value
+            : Number(company.value ?? 0);
+
+        const sanitizedValue =
+          typeof numericValue === 'number' && Number.isFinite(numericValue)
+            ? numericValue
+            : 0;
+
+        const key =
+          typeof company.company === 'string' && company.company.trim().length > 0
+            ? company.company.trim()
+            : nameValue;
+
+        return {
+          key,
+          name: nameValue,
+          value: sanitizedValue,
+        };
+      })
+      .filter((item): item is { key: string; name: string; value: number } => Boolean(item));
+  }, [companies]);
+
+  const formattedRange = useMemo(() => {
+    if (!range?.start || !range?.end) {
+      return null;
+    }
+
+    const startDate = new Date(range.start);
+    const endDate = new Date(range.end);
+
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+      return null;
+    }
+
+    return `${rangeFormatter.format(startDate)} - ${rangeFormatter.format(endDate)}`;
+  }, [range]);
+
+  const hasData = chartData.length > 0;
+
+  const renderChart = () => {
+    if (isLoading) {
+      return <Placeholder>กำลังโหลด...</Placeholder>;
+    }
+
+    if (error) {
+      return <Placeholder>{error}</Placeholder>;
+    }
+
+    if (!hasData) {
+      return <Placeholder>ไม่มีข้อมูลสำหรับช่วงเวลานี้</Placeholder>;
+    }
+
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={chartData}
+            dataKey="value"
+            nameKey="name"
+            innerRadius={72}
+            outerRadius={112}
+            paddingAngle={2}
+            startAngle={90}
+            endAngle={-270}
+            stroke="none"
+          >
+            {chartData.map((entry, index) => (
+              <Cell key={entry.key} fill={SLICE_COLORS[index % SLICE_COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip
+            formatter={(value: number | string) => [
+              `฿${Number(value).toLocaleString()}`,
+              'มูลค่าการสั่งซื้อ',
+            ]}
+            labelStyle={{ color: '#1f2024', fontWeight: 600 }}
+            wrapperStyle={{ borderRadius: 12, border: '1px solid rgba(15, 15, 15, 0.08)' }}
+            cursor={{ fill: 'rgba(159, 166, 176, 0.08)' }}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  const renderLegend = () => {
+    if (isLoading || error) {
+      return null;
+    }
+
+    if (!hasData) {
+      return <LegendPlaceholder>ไม่มีข้อมูลสำหรับแสดงกราฟ</LegendPlaceholder>;
+    }
+
+    return (
       <LegendGrid>
-        {highestOrderCustomers.map((customer, index) => (
-          <LegendItem key={customer.name}>
+        {chartData.map((company, index) => (
+          <LegendItem key={company.key}>
             <LegendDot $color={SLICE_COLORS[index % SLICE_COLORS.length]} />
-            {customer.name}
+            {company.name}
           </LegendItem>
         ))}
       </LegendGrid>
+    );
+  };
+
+  return (
+    <ChartCard>
+      <ChartTitle>Highest Order Value by Company</ChartTitle>
+      {formattedRange ? <RangeText>{formattedRange}</RangeText> : null}
+      <ChartWrapper>
+        <ChartShadow>
+          <ChartCanvas>
+            {renderChart()}
+          </ChartCanvas>
+        </ChartShadow>
+      </ChartWrapper>
+      {renderLegend()}
     </ChartCard>
   );
 }

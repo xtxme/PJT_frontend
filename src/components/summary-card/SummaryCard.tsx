@@ -69,12 +69,12 @@ const UnitBadge = styled.span`
   }
 `;
 
-const Trend = styled.div<{ negative?: boolean }>`
+const Trend = styled.div<{ $negative?: boolean }>`
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 14px;
-  color: ${({ negative }) => (negative ? "#c0392b" : "#3f3f3f")};
+  color: ${({ $negative }) => ($negative ? "#c0392b" : "#3f3f3f")};
   font-family: var(--font-ibm-plex-sans-thai), 'IBM Plex Sans Thai', sans-serif;
 
   img,
@@ -118,7 +118,7 @@ export default function SummaryCard({
       <ValueRow>
         <ValueText>{unitValue ? `${unitValue} ${value}` : value}</ValueText>
       </ValueRow>
-      <Trend negative={isNegative}>
+      <Trend $negative={isNegative}>
         {isNegative ? (
           <Image
             src="/images/ArrowFall.svg"
