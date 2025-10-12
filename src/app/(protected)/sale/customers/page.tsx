@@ -1,4 +1,4 @@
-import CustomerList from '@/components/sale/CustomerList';
+import CustomerList from '@/components/sale/customers/CustomerList';
 
 export default function CustomersPage() {
   return <CustomerList />;

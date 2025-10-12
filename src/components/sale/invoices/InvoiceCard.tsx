@@ -19,7 +19,6 @@ const InvoiceCardStyled = styled.div`
     box-shadow: 0 5px 12px rgba(0, 0, 0, 0.08);
   }
 
-  /* ให้ระยะห่างของแต่ละบิลเท่ากัน */
   > div {
     display: flex;
     align-items: center;
@@ -66,44 +65,37 @@ const StatusBadge = styled.span<{ status: string }>`
     status === 'สำเร็จ'
       ? '#2e7d32'
       : status === 'ยกเลิก'
-      ? '#EF4444'
-      : '#FACC15'};
+        ? '#EF4444'
+        : '#FACC15'};
 
   color: ${({ status }) =>
     status === 'ยกเลิก' || status === 'สำเร็จ' ? '#fff' : '#000'};
 `;
 
-export default function InvoiceCard({
-  invoice,
-  onCancel,
-}: {
-  invoice: any;
-  onCancel: (id: string) => void;
-}) {
+interface Props {
+  invoice: {
+    id: number;
+    date: string;
+    customer: string;
+    total: number;
+    fileUrl: string;
+    status: string;
+  };
+  onCancel: (id: number) => void;
+}
+
+export default function InvoiceCard({ invoice, onCancel }: Props) {
   const isCancelled = invoice.status === 'ยกเลิก';
 
   return (
     <InvoiceCardStyled>
-      {/* 📅 วันที่ */}
       <div className="date">📅 {invoice.date}</div>
-
-      {/* 🧾 รหัสบิล */}
       <div className="id">{invoice.id}</div>
-
-      {/* 👤 ลูกค้า */}
       <div className="customer">👤 {invoice.customer}</div>
-
-      {/* 💰 ยอดรวม */}
-      <div className="total">
-        💰 {invoice.total.toLocaleString()} ฿
-      </div>
-
-      {/* 🔹 สถานะ */}
+      <div className="total">💰 {invoice.total.toLocaleString()} ฿</div>
       <div style={{ justifyContent: 'center' }}>
         <StatusBadge status={invoice.status}>{invoice.status}</StatusBadge>
       </div>
-
-      {/* 🔘 ปุ่ม */}
       <div className="buttons">
         <Button
           variant="contained"
