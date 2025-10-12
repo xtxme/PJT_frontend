@@ -39,10 +39,14 @@ export default function LoginForm() {
         resolver: zodResolver(loginSchema),
     });
 
+    const backendDomain = (process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL ?? "http://localhost").replace(/\/$/, "");
+    const backendPort = process.env.NEXT_PUBLIC_BACKEND_PORT ?? "5002";
+    const backendBaseUrl = `${backendDomain}:${backendPort}`;
+
     // --- 🧠 Tanstack Query Mutation ---
     const loginMutation = useMutation({
         mutationFn: async (data: LoginFormData) => {
-            const url = `${process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/auth/login`;
+            const url = `${backendBaseUrl}/auth/login`;
             console.log("📡 กำลัง fetch:", url);
 
             const res = await fetch(url, {
@@ -73,7 +77,7 @@ export default function LoginForm() {
     };
 
     const handleGoogleLogin = () => {
-        const googleUrl = `${process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/auth/google`;
+        const googleUrl = `${backendBaseUrl}/auth/google`;
         window.location.href = googleUrl;
     };
 
