@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@mui/material";
 import color from "@/app/styles/color";
 
-// ---- Types ----
+/* ----------------------------- Types ----------------------------- */
 type OpenReceiveItem = {
     batch_id: number;
     item_id: number;
@@ -20,7 +20,7 @@ type OpenReceiveItem = {
     status: string;
 };
 
-// ---- Fetcher ----
+/* ---------------------------- Fetchers --------------------------- */
 async function fetchOpenReceives(): Promise<OpenReceiveItem[]> {
     const res = await fetch("/warehouse/stock-in/open", { cache: "no-store" });
     if (!res.ok) throw new Error("โหลดรายการค้างรับไม่สำเร็จ");
@@ -28,13 +28,22 @@ async function fetchOpenReceives(): Promise<OpenReceiveItem[]> {
     return Array.isArray(json) ? json : json.data ?? [];
 }
 
-// ---- Component ----
+/* --------------------------- Component --------------------------- */
 export default function Receiving() {
-    const { data: openItems = [], isLoading, isError, refetch } = useQuery({
+    const queryClient = useQueryClient();
+
+    const {
+        data: openItems = [],
+        isLoading,
+        isError,
+        refetch,
+    } = useQuery({
         queryKey: ["warehouse", "stock-in-open"],
         queryFn: fetchOpenReceives,
         staleTime: 20_000,
-        refetchOnWindowFocus: false,
+        refetchOnWindowFocus: true,
+        refetchInterval: 10_000,              // ← auto-refresh ทุก 10s
+        refetchIntervalInBackground: true,    // ← แม้ไม่โฟกัสหน้า
     });
 
     const [receiveQtys, setReceiveQtys] = useState<Record<number, number>>({});
@@ -47,7 +56,7 @@ export default function Receiving() {
         }));
     };
 
-    // ---- Mutation: รับของ ----
+    /* ------------------------ Optimistic update ------------------------ */
     const { mutate: receiveItem, isPending } = useMutation({
         mutationFn: async (payload: { itemId: number; qty: number }) => {
             const res = await fetch(`/warehouse/stock-in/items/${payload.itemId}/receive`, {
@@ -61,12 +70,46 @@ export default function Receiving() {
             }
             return res.json();
         },
-        onSuccess: () => {
+
+        // 1) ทำ optimistic update
+        onMutate: async ({ itemId, qty }) => {
+            await queryClient.cancelQueries({ queryKey: ["warehouse", "stock-in-open"] });
+            const previous = queryClient.getQueryData<OpenReceiveItem[]>(["warehouse", "stock-in-open"]) ?? [];
+
+            // อัปเดต remain/received_qty ของไอเท็มที่รับ
+            const next = previous
+                .map((it) => {
+                    if (it.item_id !== itemId) return it;
+                    const dec = Math.min(qty, it.remain);      // กันติดลบ
+                    return {
+                        ...it,
+                        received_qty: it.received_qty + dec,
+                        remain: Math.max(0, it.remain - dec),
+                    };
+                })
+                // กรองตัวที่ remain = 0 ออกไปให้หายทันที (ถ้าดีไซน์คือเสร็จแล้วหายจากคิว)
+                .filter((it) => it.remain > 0);
+
+            queryClient.setQueryData(["warehouse", "stock-in-open"], next);
+
+            // ส่งตัวคืนไว้ rollback ถ้า fail
+            return { previous };
+        },
+
+        // 2) ถ้า fail rollback กลับค่าเดิม
+        onError: (_err, _vars, ctx) => {
+            if (ctx?.previous) {
+                queryClient.setQueryData(["warehouse", "stock-in-open"], ctx.previous);
+            }
+        },
+
+        // 3) สำเร็จหรือไม่ สำทับด้วย refetch ให้ตรง backend แน่น
+        onSettled: () => {
             refetch();
         },
     });
 
-    // ---- Group by Batch ----
+    /* ------------------------- Group by batch ------------------------- */
     const batches = Object.values(
         openItems.reduce((acc, item) => {
             if (!acc[item.batch_id]) acc[item.batch_id] = { batch_id: item.batch_id, items: [] as OpenReceiveItem[] };
@@ -79,13 +122,13 @@ export default function Receiving() {
         <div className="bg-white rounded-xl shadow p-4">
             <h3 className="font-semibold mb-3">รับสินค้า</h3>
 
-            {isLoading && (
-                <p className="text-gray-500 text-sm text-center py-8">กำลังโหลดข้อมูล…</p>
-            )}
+            {isLoading && <p className="text-gray-500 text-sm text-center py-8">กำลังโหลดข้อมูล…</p>}
             {isError && (
                 <p className="text-red-500 text-sm text-center py-8">
                     โหลดข้อมูลไม่สำเร็จ
-                    <button onClick={() => refetch()} className="underline ml-1">ลองอีกครั้ง</button>
+                    <button onClick={() => refetch()} className="underline ml-1">
+                        ลองอีกครั้ง
+                    </button>
                 </p>
             )}
 
@@ -94,29 +137,30 @@ export default function Receiving() {
             )}
 
             {batches.map((batch) => (
-                <div key={batch.batch_id} className="border rounded-lg mb-5 overflow-hidden" style={{ borderColor: color.colors.orange }}>
+                <div
+                    key={batch.batch_id}
+                    className="border rounded-lg mb-5 overflow-hidden"
+                    style={{ borderColor: color.colors.orange }}
+                >
                     <div className="px-4 py-2 font-medium text-white" style={{ backgroundColor: color.colors.orange }}>
                         บิล #{batch.batch_id}
                     </div>
 
                     {batch.items.map((item) => {
-                        const current = receiveQtys[item.item_id] ?? item.remain;
                         const remain = item.remain;
+                        const current = Math.min(receiveQtys[item.item_id] ?? remain, remain); // กันเกิน
+
                         return (
-                            <div
-                                key={item.item_id}
-                                className="flex justify-between items-center px-4 py-3 border-t text-sm"
-                            >
+                            <div key={item.item_id} className="flex justify-between items-center px-4 py-3 border-t text-sm">
                                 <div>
                                     <p className="font-medium text-gray-800">{item.name}</p>
-                                    <p className="text-gray-500">
-                                        ค้างรับ {remain} / สั่ง {item.ordered_qty}
-                                    </p>
+                                    <p className="text-gray-500">ค้างรับ {remain} / สั่ง {item.ordered_qty}</p>
                                 </div>
+
                                 <div className="flex items-center gap-2">
                                     <input
                                         type="number"
-                                        min={1}
+                                        min={0}
                                         max={remain}
                                         value={current}
                                         onChange={(e) => updateQty(item.item_id, e.target.value)}
@@ -124,16 +168,10 @@ export default function Receiving() {
                                     />
                                     <Button
                                         variant="contained"
-                                        color="primary"
                                         size="small"
-                                        disabled={isPending || current <= 0}
+                                        disabled={isPending || current <= 0 || remain <= 0}
                                         onClick={() => receiveItem({ itemId: item.item_id, qty: current })}
-                                        sx={{
-                                            px: 2.5,
-                                            py: 0.6,
-                                            borderRadius: "8px",
-                                            textTransform: "none",
-                                        }}
+                                        sx={{ px: 2.5, py: 0.6, borderRadius: "8px", textTransform: "none" }}
                                     >
                                         รับสินค้า
                                     </Button>

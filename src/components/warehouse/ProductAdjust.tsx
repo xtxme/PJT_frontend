@@ -18,7 +18,7 @@ type NewProductForm = {
 };
 
 type ProductRow = {
-    company: string; // ← เปลี่ยนจาก id เป็น company
+    company?: string | null; // <-- เดิมเป็น string แข็งไป ทำให้ undefined ไม่ขึ้น
     name: string;
     image?: string | null;
     quantity?: number | null;
@@ -69,15 +69,16 @@ export default function ProductAdjust({
         try {
             const res = await fetch("/warehouse/products", { cache: "no-store" });
             if (!res.ok) throw new Error(`โหลดรายการสินค้าไม่สำเร็จ (${res.status})`);
-            const json = (await res.json()) as ProductRow[];
-            setRows(json ?? []);
+
+            const json = await res.json();
+            const rows: ProductRow[] = Array.isArray(json) ? json : (json?.data ?? []);
+            setRows(rows ?? []);
         } catch (err: any) {
             setListError(err?.message ?? "โหลดรายการสินค้าไม่สำเร็จ");
         } finally {
             setLoadingList(false);
         }
     }
-
     useEffect(() => {
         fetchProducts();
     }, []);
@@ -188,39 +189,90 @@ export default function ProductAdjust({
                 <div className="p-6 text-zinc-600">ยังไม่มีสินค้าในระบบ</div>
             ) : (
                 <div className="flex flex-col gap-3">
-                    {rows.map((r,index:number) => (
-                        <div
-                            key={index}
-                            className="flex items-center justify-between border border-zinc-200 rounded-lg p-3 hover:bg-zinc-50 transition-colors"
-                        >
-                            <div className="flex items-center gap-3">
-                                {r.image ? (
-                                    <div className="relative h-20 w-20 rounded-md border border-zinc-200 overflow-hidden">
-                                        <Image
-                                            src={r.image}
-                                            alt={r.name}
-                                            fill
-                                            className="object-cover"
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className="h-20 w-20 rounded-md bg-zinc-100 border border-zinc-200" />
-                                )}
+                    {rows.map((r) => {
+                        const key = `${r.company ?? '—'}::${r.name}`; // key เสถียรกว่า index
+                        return (
+                            <div key={key} className="flex items-center justify-between border border-zinc-200 rounded-lg p-3 hover:bg-zinc-50 transition-colors">
+                                <div className="flex items-center gap-3">
+                                    {r.image ? (
+                                        <div className="relative h-20 w-20 rounded-md border border-zinc-200 overflow-hidden">
+                                            <Image src={r.image} alt={r.name} fill className="object-cover" />
+                                        </div>
+                                    ) : (
+                                        <div className="h-20 w-20 rounded-md bg-zinc-100 border border-zinc-200" />
+                                    )}
 
-                                <div>
-                                    <div className="font-semibold">{r.name}</div>
-                                    <div className="text-xs text-zinc-500">#{r.company}</div>
-                                    <div className="text-xs text-zinc-500 mt-1">
-                                        คลัง: {r.quantity ?? 0} | ค้างเข้า: {r.quantity_pending ?? 0}
+                                    <div>
+                                        <div className="font-semibold">{r.name}</div>
+                                        <div className="text-xs text-zinc-500"># {r.company ? ` บริษัท ${r.company}` : ' —'}</div>
+                                        <div className="text-xs text-zinc-500 mt-1">
+                                            คลัง: {r.quantity ?? 0} | ค้างเข้า: {r.quantity_pending ?? 0}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div>{statusChip(r.product_status)}</div>
-                        </div>
-                    ))}
+                                <div>{statusChip(r.product_status)}</div>
+                            </div>
+                        );
+                    })}
                 </div>
             )}
+
+            <Dialog open={openAdd} onClose={() => setOpenAdd(false)} fullWidth maxWidth="sm">
+                <DialogTitle>เพิ่มสินค้าใหม่</DialogTitle>
+                <DialogContent className="!pt-4">
+                    <div className="flex flex-col gap-3">
+                        <TextField
+                            label="ชื่อสินค้า"
+                            value={form.name ?? ""}
+                            onChange={onChange("name")}
+                            fullWidth
+                            autoFocus
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") handleSave();
+                            }}
+                        />
+
+                        <TextField
+                            label="ลิงก์รูปภาพ (เช่น Cloudinary URL)"
+                            value={form.image ?? ""}
+                            onChange={onChange("image")}
+                            fullWidth
+                            placeholder="https://res.cloudinary.com/.../image.jpg"
+                        />
+
+                        <TextField
+                            label="หน่วยนับ (เช่น ชิ้น, กล่อง)"
+                            value={form.unit ?? ""}
+                            onChange={onChange("unit")}
+                            fullWidth
+                        />
+
+                        <CategorySelect
+                            form={form}
+                            setForm={setForm}
+                            categories={categories}
+                            setCategories={setCategories}
+                            loadingCategories={!!loadingCategories}
+                        />
+
+                        <TextField
+                            label="คำอธิบาย"
+                            value={form.description ?? ""}
+                            onChange={onChange("description")}
+                            fullWidth
+                            multiline
+                            minRows={3}
+                        />
+                    </div>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenAdd(false)}>ยกเลิก</Button>
+                    <Button onClick={handleSave} disabled={saving} variant="contained">
+                        {saving ? "กำลังบันทึก..." : "บันทึก"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </div>
     );
 }
