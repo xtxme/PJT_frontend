@@ -5,6 +5,7 @@ import CustomerSection from '@/components/sale/sales/CustomerSection';
 import ProductSection from '@/components/sale/sales/ProductSection';
 import SummarySection from '@/components/sale/sales/SummarySection';
 import InvoiceDetailSection from '@/components/sale/sales/InvoiceDetailSection';
+import useUserStore from '@/store/userStore';
 
 const PageContainer = styled.div`
   padding: 20px;
@@ -26,6 +27,8 @@ export default function SalesPage() {
   const [productsInBill, setProductsInBill] = useState<any[]>([]);
   const [productQtys, setProductQtys] = useState<Record<string, number | ''>>({});
   const [search, setSearch] = useState('');
+  const saleName = useUserStore((state) => state.name);
+  const saleId = useUserStore((state) => state.id);
 
   // 🧩 โหลดข้อมูลลูกค้า/สินค้า/เลขบิล
   useEffect(() => {
@@ -149,7 +152,7 @@ export default function SalesPage() {
         <InvoiceDetailSection
           invoiceNo={invoiceNo}
           date={date}
-          sale_name={'ยังไม่มี อย่าลืมเติมน้า'}
+          sale_name={saleName}
         />
 
         <ProductSection
@@ -162,6 +165,8 @@ export default function SalesPage() {
         />
 
         <SummarySection
+          saleId={saleId}
+          saleName={saleName}
           productsInBill={productsInBill}
           total={total}
           vattotal={vattotal}

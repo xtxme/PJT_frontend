@@ -23,7 +23,7 @@ export default function InvoiceDetailSection({ invoiceNo, date, sale_name }: any
     <Frame>
       <p className="font-semibold mb-2">🧾 เลขที่บิล: {invoiceNo}</p>
       <p className="font-semibold mb-2">📅 วันที่: {date}</p>
-      <p className="font-semibold mb-2">🧑‍💼 พนักงานขาย: {sale_name}</p>
+      <p>พนักงานขาย: <strong>{sale_name || 'ไม่พบชื่อพนักงาน'}</strong></p>
     </Frame>
   );
 }

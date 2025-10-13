@@ -18,6 +18,7 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 type LoginResponse = {
+    id?: string | number | null;
     redirect: string;
     role?: string | null;
     username?: string | null;
@@ -103,9 +104,6 @@ const LogginFormStyled = styled.div`
 
 export default function LoginForm() {
     const router = useRouter();
-    const setRole = useUserStore((state) => state.setRole);
-    const setUsername = useUserStore((state) => state.setUsername);
-
     const {
         register,
         handleSubmit,
@@ -137,16 +135,28 @@ export default function LoginForm() {
 
             return res.json() as Promise<LoginResponse>;
         },
-        onSuccess: (data: LoginResponse, variables: LoginFormData) => {
+        onSuccess: async (data: LoginResponse, variables: LoginFormData) => {
             console.log("✅ Login success:", data);
+
+            // ✅ ดึง setter จาก store
+            const { setID, setRole, setUsername, setName } = useUserStore.getState();
+
+            // ✅ เก็บค่าทั้งหมดใน localStorage
+            setID(data.id ? String(data.id) : null);
             setRole(data.role ?? null);
-            setUsername(deriveUsername(data, variables.email));
+            setUsername(data.username ?? deriveUsername(data, variables.email));
+            setName(data.name ?? deriveUsername(data, variables.email));
+
+            // ✅ รอ persist เขียนลง localStorage ก่อน redirect
+            await new Promise((resolve) => setTimeout(resolve, 300));
+
             router.push(data.redirect);
         },
         onError: (err: Error) => {
             alert(err.message || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
         },
     });
+
 
     // --- 🧩 Form Submit Handler ---
     const onSubmit = (data: LoginFormData) => {

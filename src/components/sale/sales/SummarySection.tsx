@@ -70,6 +70,8 @@ const Wrapper = styled(Paper)`
 `;
 
 export default function SummarySection({
+    saleId,
+    saleName,
     productsInBill,
     total,
     selectedCustomer,
@@ -87,6 +89,8 @@ export default function SummarySection({
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                saleId,
+                saleName,
                 customerId: selectedCustomer,
                 invoiceNo,
                 totalAmount: total,
@@ -99,10 +103,10 @@ export default function SummarySection({
             alert('✅ บันทึกสำเร็จ');
             if (autoExport) {
                 const invoice = {
+                    sale: saleName,
                     order_number: invoiceNo,
                     order_date: new Date(),
-                    customer_name: `ลูกค้า ID ${selectedCustomer}`,
-                    sale_name: "ยังไม่มี อย่าลืมเติมน้า",
+                    customer_name: `ลูกค้า ID ${selectedCustomer}`,                   
                     total_amount: total,
                     items: productsInBill.map((p: any) => ({
                         product_name: p.name,
