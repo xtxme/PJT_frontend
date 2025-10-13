@@ -11,9 +11,48 @@ const app = express();
 
 app.use(express.json()); // ต้องมีเพื่ออ่าน JSON body
 
+function normalizeOrigin(origin) {
+    if (typeof origin !== "string") {
+        return null;
+    }
+
+    return origin.trim().replace(/\/$/, "");
+}
+
+const frontendDomain = normalizeOrigin(process.env.FRONTEND_DOMAIN_URL);
+const frontendPort = process.env.FRONTEND_PORT;
+const defaultFrontendOrigin =
+    frontendDomain && frontendPort
+        ? `${frontendDomain}:${frontendPort}`
+        : frontendDomain;
+
+const extraFrontendOrigins = (process.env.FRONTEND_ALLOWED_ORIGINS ?? "")
+    .split(",")
+    .map((origin) => normalizeOrigin(origin))
+    .filter(Boolean);
+
+const allowedOrigins = new Set(
+    [defaultFrontendOrigin, ...extraFrontendOrigins].filter(Boolean)
+);
+
 app.use(
     cors({
-        origin: `${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}`,
+        origin: (origin, callback) => {
+            if (!origin) {
+                // Allow non-browser or same-origin requests (e.g., curl, server-to-server)
+                return callback(null, true);
+            }
+
+            const normalizedOrigin = normalizeOrigin(origin);
+
+            if (normalizedOrigin && allowedOrigins.has(normalizedOrigin)) {
+                return callback(null, true);
+            }
+
+            return callback(
+                new Error(`Origin ${origin} not allowed by CORS configuration`)
+            );
+        },
         credentials: true, // เผื่อใช้ session/cookie
     })
 );
@@ -92,24 +131,84 @@ app.get(
 app.post("/auth/login", (req, res) => {
     const { email, password } = req.body;
 
-    // mock users (จริงๆ ควรดึงจาก DB)
-    if (email === "owner@gmail.com" && password === "1234") {
-        return res.json({
+    const mockUsers = {
+        "owner@gmail.com": {
+            password: "1234",
             redirect: `${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/owner`,
-        });
-    }
-
-    if (email === "sales@gmail.com" && password === "1234") {
-        return res.json({
+            role: "owner",
+            username: "Owner User",
+        },
+        "sales@gmail.com": {
+            password: "1234",
             redirect: `${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/sale`,
+            role: "sale",
+            username: "Sales User",
+        },
+        "warehouse@gmail.com": {
+            password: "1234",
+            redirect: `${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/warehouse`,
+            role: "warehouse",
+            username: "Warehouse User",
+        },
+    };
+
+    const userConfig = mockUsers[email];
+    if (userConfig && password === userConfig.password) {
+        return res.json({
+            redirect: userConfig.redirect,
+            role: userConfig.role,
+            username: userConfig.username,
+            name: userConfig.username,
+            user: {
+                username: userConfig.username,
+                name: userConfig.username,
+            },
         });
     }
 
-    if (email === "warehouse@gmail.com" && password === "1234") {
-        return res.json({
-            redirect: `${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/warehouse`,
-        });
+    return res.status(401).json({
+        message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
+    });
+});
+
+/**
+ * Helper to calculate percentage change between current and previous values.
+ * Returns null when previous value is 0 to avoid dividing by zero.
+ */
+function getPercentChange(current, previous) {
+    if (typeof current !== "number" || typeof previous !== "number") {
+        return null;
     }
+
+    if (previous === 0) {
+        return null;
+    }
+
+    const diff = current - previous;
+    return (diff / Math.abs(previous)) * 100;
+}
+
+// --- Mock analytics endpoints for dashboard ---
+app.get("/analytics/sales/monthly-total", (_req, res) => {
+    const previousMonthTotal = 1123456.78;
+    const currentMonthTotal = 1234567.89;
+
+    res.json({
+        currentMonthTotal,
+        previousMonthTotal,
+        percentChange: getPercentChange(currentMonthTotal, previousMonthTotal),
+    });
+});
+
+app.get("/analytics/profit/monthly-total", (_req, res) => {
+    const previousMonthNetProfit = 245678.9;
+    const currentMonthNetProfit = 268910.25;
+
+    res.json({
+        currentMonthNetProfit,
+        previousMonthNetProfit,
+        percentChange: getPercentChange(currentMonthNetProfit, previousMonthNetProfit),
+    });
 });
 
 app.listen(process.env.BACKEND_PORT, () => {

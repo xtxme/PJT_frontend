@@ -1,5 +1,92 @@
-export default function DataLogPage() {
+'use client';
+
+import DataLogBoard from '@/componentsDataLog/board';
+import styled from 'styled-components';
+
+const DataLogPage = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    min-height: 100%;
+    color: #0f0f0f;
+    padding-bottom: 32px;
+
+    .data-text {
+    font-size: 20px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 20px;
+  }
+
+  .breadcrumb-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 20px;
+  }
+
+  .breadcrumb span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .head-text {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: -6px;
+  }
+
+  .head-text h1 {
+    font-size: 34px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .head-text p {
+    font-size: 18px;
+    font-weight: 500;
+    color: #555;
+    margin: 0;
+  }
+
+  .board-wrapper {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-start;
+  }
+`;
+
+export default function OwnerDataLogPage() {
     return (
-        <div>Data Log Page - Owner Only</div>
+        <DataLogPage>
+            <div className="breadcrumb-row">
+                <div className='breadcrumb'>
+                    <img src="/images/DataLog-black-icon.svg" 
+                      alt="DataLog-black-icon" 
+                      width="24"
+                      height="24" />
+                    <img src="/images/arrow-left.svg" alt="arrow-left" />
+                    <strong className='data-text'>Data Log</strong>
+                </div>
+            </div>
+            <div className="head-text">
+                <h1>กิจกรรมระบบและบันทึกการเข้าใช้</h1>
+                <p>ตรวจสอบประวัติการทำงานและความเคลื่อนไหวของผู้ใช้ทั้งหมด</p>
+            </div>
+            <div className="board-wrapper">
+                <DataLogBoard />
+            </div>
+        </DataLogPage>
     );
 }

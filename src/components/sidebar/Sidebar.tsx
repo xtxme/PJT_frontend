@@ -24,12 +24,12 @@ const navItems: NavItem[] = [
     icon: "/images/RoleAccess-gray-icon.svg",
     activeIcon: "/images/RoleAccess-wh-icon.svg",
   },
-  {
-    label: "Data Log",
-    href: "/owner/dataLog",
-    icon: "/images/DataLog-gray-icon.svg",
-    activeIcon: "/images/DataLog-wh-icon.svg",
-  },
+  // {
+  //   label: "Data Log",
+  //   href: "/owner/dataLog",
+  //   icon: "/images/DataLog-gray-icon.svg",
+  //   activeIcon: "/images/DataLog-wh-icon.svg",
+  // },
   {
     label: "Product Pending",
     href: "/owner/productPending",
