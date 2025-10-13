@@ -2,6 +2,9 @@
 
 import AppHeader from "@/components/header/header";
 import Sidebar_sale from "@/components/sidebar/Sidebar_sale";
+import useUserStore from "@/store/userStore";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import styled from "styled-components";
 
 const Shell = styled.div`
@@ -24,6 +27,20 @@ const Main = styled.main`
 `;
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const { role } = useUserStore();
+
+  useEffect(() => {
+    if (role === null) {
+      router.push("/login");
+    } else if (role !== "sale") {
+      router.back();
+    }
+  }, [role, router]);
+
+  if (role !== "sale") {
+    return null;
+  }
   return (
     <Shell>
       <Sidebar_sale />

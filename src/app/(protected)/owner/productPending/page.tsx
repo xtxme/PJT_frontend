@@ -60,65 +60,6 @@ const ProductPendingPage = styled.div`
 `;
 
 export default function OwnerProductPendingPage() {
-  const pendingSummaryItems = [
-    { productName: 'xxxx', productCode: 'xxxx', price: 'xxxx' },
-    { productName: 'xxxx', productCode: 'xxxx', price: 'xxxx' },
-    { productName: 'xxxx', productCode: 'xxxx', price: 'xxxx' },
-    { productName: 'xxxx', productCode: 'xxxx', price: 'xxxx' },
-  ];
-
-  const activityLogItems = [
-    {
-      productName: 'เสื้อยืดคอกลม',
-      productCode: 'PJT-0010',
-      salePrice: '199.00',
-      remaining: '120',
-      status: 'รอตรวจสอบ',
-      stockUpdate: '19/07/2024',
-    },
-    {
-      productName: 'กางเกงยีนส์ทรงกระบอก',
-      productCode: 'PJT-0009',
-      salePrice: '790.00',
-      remaining: '80',
-      status: 'รอดำเนินการ',
-      stockUpdate: '18/07/2024',
-      highlighted: true,
-    },
-    {
-      productName: 'เสื้อเชิ้ตแขนยาว',
-      productCode: 'PJT-0006',
-      salePrice: '490.00',
-      remaining: '58',
-      status: 'รอตรวจสอบ',
-      stockUpdate: '15/07/2024',
-    },
-    {
-      productName: 'กระโปรงพลีทยาว',
-      productCode: 'PJT-0007',
-      salePrice: '390.00',
-      remaining: '96',
-      status: 'รอดำเนินการ',
-      stockUpdate: '14/07/2024',
-    },
-    {
-      productName: 'เช็กเก็ตกันลม',
-      productCode: 'PJT-0008',
-      salePrice: '890.00',
-      remaining: '42',
-      status: 'รอตรวจสอบ',
-      stockUpdate: '12/07/2024',
-    },
-    {
-      productName: 'น้ำดื่ม 600 มล.',
-      productCode: 'PJT-0001',
-      salePrice: '12.00',
-      remaining: '200',
-      status: 'พร้อมขาย',
-      stockUpdate: '11/07/2024',
-    },
-  ];
-
   return (
     <ProductPendingPage>
       <div className="page-inner">
@@ -131,7 +72,7 @@ export default function OwnerProductPendingPage() {
             <strong>Product Pending</strong>
           </span>
         </div>
-        <ActivityLog sectionTitle="รายการทั้งหมด" title="Activity Log" filterLabel="All" items={activityLogItems} />
+        <ActivityLog sectionTitle="รายการทั้งหมด" title="Activity Log" filterLabel="All" />
       </div>
     </ProductPendingPage>
   );

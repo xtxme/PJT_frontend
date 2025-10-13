@@ -8,6 +8,8 @@ import { Button, TextField } from "@mui/material";
 import GoogleIcon from "@mui/icons-material/Google";
 import Image from "next/image";
 import styled from "styled-components";
+import useUserStore from "@/store/userStore";
+import { useRouter } from "next/navigation";
 
 const loginSchema = z.object({
     email: z.string().email("กรุณากรอกอีเมลให้ถูกต้อง"),
@@ -15,6 +17,10 @@ const loginSchema = z.object({
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
+type LoginResponse = {
+    redirect: string;
+    role?: string | null;
+};
 
 const ImageWrapperStyled = styled.div`
     flex: 11;
@@ -31,6 +37,9 @@ const LogginFormStyled = styled.div`
 `;
 
 export default function LoginForm() {
+    const router = useRouter();
+    const setRole = useUserStore((state) => state.setRole);
+
     const {
         register,
         handleSubmit,
@@ -44,7 +53,7 @@ export default function LoginForm() {
     const backendBaseUrl = `${backendDomain}:${backendPort}`;
 
     // --- 🧠 Tanstack Query Mutation ---
-    const loginMutation = useMutation({
+    const loginMutation = useMutation<LoginResponse, Error, LoginFormData>({
         mutationFn: async (data: LoginFormData) => {
             const url = `${backendBaseUrl}/auth/login`;
             console.log("📡 กำลัง fetch:", url);
@@ -60,13 +69,14 @@ export default function LoginForm() {
                 throw new Error(err.message || "เข้าสู่ระบบล้มเหลว");
             }
 
-            return res.json();
+            return res.json() as Promise<LoginResponse>;
         },
-        onSuccess: (data) => {
+        onSuccess: (data: LoginResponse) => {
             console.log("✅ Login success:", data);
-            window.location.href = data.redirect;
+            setRole(data.role ?? null);
+            router.push(data.redirect);
         },
-        onError: (err: any) => {
+        onError: (err: Error) => {
             alert(err.message || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
         },
     });

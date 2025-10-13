@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import styled from 'styled-components';
 import PaginationControls from '@/componentsRole/paginationControls';
 import EditPopup from '@/componentsProductPending/editPopup';
-import styled from 'styled-components';
 import FilterButton from '@/componentsRole/filter';
 import FilterDropdownPend from '../filter-dropDownPend';
+import SortDropdownPend, { SortOptionValue } from '../sort-dropdownPend';
 
 type ActivityLogItem = {
   productName: string;
@@ -20,13 +21,71 @@ type ActivityLogItem = {
   currentMargin?: string;
   minimumApproved?: string;
   forecastMargin?: string;
+  raw?: {
+    productId: string | null;
+    productStatus: string | null;
+    lastStockStatus: string | null;
+    lastStockUpdate: string | null;
+  };
 };
 
 type ActivityLogProps = {
   sectionTitle: string;
   title: string;
-  filterLabel: string;
-  items: ActivityLogItem[];
+  filterLabel?: string;
+};
+
+type ActivityLogApiResponse = {
+  data?: unknown;
+  pagination?: {
+    totalPages?: unknown;
+    total?: unknown;
+    page?: unknown;
+    pageSize?: unknown;
+  };
+};
+
+type SortConfig = {
+  key: 'salePrice' | 'remaining' | null;
+  order: 'asc' | 'desc';
+};
+
+const backendDomain = (process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL ?? 'http://localhost').replace(
+  /\/$/,
+  '',
+);
+const backendPort = process.env.NEXT_PUBLIC_BACKEND_PORT ?? '5002';
+const backendBaseUrl = `${backendDomain}:${backendPort}`;
+
+const rowsPerPage = 6;
+
+const priceFormatter = new Intl.NumberFormat('th-TH', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+const quantityFormatter = new Intl.NumberFormat('th-TH');
+const dateFormatter = new Intl.DateTimeFormat('th-TH', {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+});
+
+const STOCK_STATUS_LABELS = {
+  completed: 'รับครบแล้ว',
+  some_received: 'รับบางส่วน',
+  pending: 'รอดำเนินการ',
+  canceled: 'ยกเลิก',
+} as const;
+
+const PRODUCT_STATUS_LABELS = {
+  active: 'พร้อมขาย',
+  low_stock: 'สต็อกต่ำ',
+  restock_pending: 'รอรับสินค้า',
+  pricing_pending: 'รออนุมัติราคา',
+} as const;
+
+const FILTER_LABELS: Record<string, string> = {
+  ...PRODUCT_STATUS_LABELS,
 };
 
 const StyledActivityLog = styled.section`
@@ -56,6 +115,7 @@ const StyledActivityLog = styled.section`
     justify-content: space-between;
     align-items: center;
     gap: 16px;
+    flex-wrap: wrap;
   }
 
   .panel-title {
@@ -81,6 +141,16 @@ const StyledActivityLog = styled.section`
     position: relative;
     display: inline-flex;
     align-items: center;
+  }
+
+  .panel-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .panel-actions .filter-control {
+    display: inline-flex;
   }
 
   .table {
@@ -130,6 +200,16 @@ const StyledActivityLog = styled.section`
   .table-row:hover {
     transform: translateY(-2px);
     box-shadow: 0 20px 36px rgba(15, 15, 15, 0.08);
+  }
+
+  .table-row--message {
+    grid-template-columns: 1fr;
+    color: #6b6b76;
+    font-weight: 600;
+  }
+
+  .table-row--message span {
+    width: 100%;
   }
 
   .table-action {
@@ -192,27 +272,275 @@ const StyledActivityLog = styled.section`
       border-radius: 24px;
       padding: 20px;
     }
+
+    .panel-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+    }
+
+    .panel-actions {
+      width: 100%;
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .panel-actions .filter-control {
+      width: 100%;
+    }
   }
 `;
 
-export default function ActivityLog({ sectionTitle, title, filterLabel, items }: ActivityLogProps) {
+const SortIcon = (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M8 4v12" />
+    <path d="M5.5 7.5L8 4L10.5 7.5" />
+    <path d="M16 20V8" />
+    <path d="M13.5 16.5L16 20l2.5-3.5" />
+  </svg>
+);
+
+function parseNumber(value: unknown): number | null {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+}
+
+function formatPrice(value: unknown): string {
+  const parsed = parseNumber(value);
+  return priceFormatter.format(parsed ?? 0);
+}
+
+function formatQuantity(value: unknown): string {
+  const parsed = parseNumber(value);
+  return quantityFormatter.format(parsed ?? 0);
+}
+
+function formatDate(value: unknown): string {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      return '—';
+    }
+    return dateFormatter.format(value);
+  }
+
+  if (typeof value === 'string') {
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return '—';
+    }
+    return dateFormatter.format(parsed);
+  }
+
+  return '—';
+}
+
+function toStatusLabel(
+  stockStatusRaw: unknown,
+  productStatusRaw: unknown,
+): string {
+  if (typeof stockStatusRaw === 'string' && stockStatusRaw.trim().length > 0) {
+    const trimmed = stockStatusRaw.trim() as keyof typeof STOCK_STATUS_LABELS;
+    if (trimmed in STOCK_STATUS_LABELS) {
+      return STOCK_STATUS_LABELS[trimmed];
+    }
+  }
+
+  if (typeof productStatusRaw === 'string' && productStatusRaw.trim().length > 0) {
+    const trimmed = productStatusRaw.trim() as keyof typeof PRODUCT_STATUS_LABELS;
+    if (trimmed in PRODUCT_STATUS_LABELS) {
+      return PRODUCT_STATUS_LABELS[trimmed];
+    }
+  }
+
+  return '—';
+}
+
+function sanitizeActivityLogItems(raw: unknown): ActivityLogItem[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  return raw
+    .map<ActivityLogItem | null>((entry) => {
+      if (!entry || typeof entry !== 'object') {
+        return null;
+      }
+
+      const record = entry as Record<string, unknown>;
+
+      const productId =
+        typeof record.productId === 'string' && record.productId.trim().length > 0
+          ? record.productId.trim()
+          : null;
+      const productCode =
+        typeof record.productCode === 'string' && record.productCode.trim().length > 0
+          ? record.productCode.trim()
+          : productId;
+
+      const name =
+        typeof record.productName === 'string' && record.productName.trim().length > 0
+          ? record.productName.trim()
+          : productCode ?? 'ไม่ระบุสินค้า';
+
+      const sellPrice = formatPrice(record.sellPrice);
+      const quantity = formatQuantity(record.quantity);
+      const stockUpdate = formatDate(record.lastStockUpdate);
+      const statusLabel = toStatusLabel(record.lastStockStatus, record.productStatus);
+
+      let unitCostLabel: string | undefined;
+      const lastStock = record.lastStock;
+      if (lastStock && typeof lastStock === 'object' && lastStock !== null) {
+        const unitCost =
+          'unitCost' in lastStock ? parseNumber((lastStock as Record<string, unknown>).unitCost) : null;
+        if (unitCost !== null) {
+          unitCostLabel = priceFormatter.format(unitCost);
+        }
+      }
+
+      const costNumber = parseNumber(record.cost) ?? 0;
+      const sellPriceNumber = parseNumber(record.sellPrice) ?? 0;
+      const margin = sellPriceNumber - costNumber;
+      const marginLabel = priceFormatter.format(margin);
+
+      const productStatus =
+        typeof record.productStatus === 'string' ? record.productStatus.trim() : null;
+      const lastStockStatus =
+        typeof record.lastStockStatus === 'string' ? record.lastStockStatus.trim() : null;
+
+      const highlighted =
+        productStatus === 'low_stock' ||
+        productStatus === 'restock_pending' ||
+        lastStockStatus === 'pending' ||
+        lastStockStatus === 'some_received';
+
+      return {
+        productName: name,
+        productCode: productCode ?? '—',
+        salePrice: sellPrice,
+        currentPrice: sellPrice,
+        remaining: quantity,
+        status: statusLabel,
+        stockUpdate,
+        highlighted,
+        costPerUnit: unitCostLabel,
+        currentMargin: marginLabel,
+        raw: {
+          productId,
+          productStatus,
+          lastStockStatus,
+          lastStockUpdate: typeof record.lastStockUpdate === 'string' ? record.lastStockUpdate : null,
+        },
+      };
+    })
+    .filter((item): item is ActivityLogItem => item !== null);
+}
+
+export default function ActivityLog({
+  sectionTitle,
+  title,
+  filterLabel = 'Filter',
+}: ActivityLogProps) {
+  const [items, setItems] = useState<ActivityLogItem[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [selectedItem, setSelectedItem] = useState<ActivityLogItem | null>(null);
-  const rowsPerPage = 6;
-  const filterButtonRef = useRef<HTMLButtonElement>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const handleFilterSelect = (group: 'status' | 'role', value: string) => {
-    // TODO: integrate filter logic once backend/state requirements are defined.
-    // eslint-disable-next-line no-console
-    console.info('Selected filter', { group, value });
-  };
+  const [isSortOpen, setIsSortOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, order: 'desc' });
 
-  const totalPages = Math.max(1, Math.ceil(items.length / rowsPerPage));
+  const filterButtonRef = useRef<HTMLButtonElement>(null);
+  const sortButtonRef = useRef<HTMLButtonElement>(null);
 
-  const paginatedItems = useMemo(
-    () => items.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage),
-    [items, currentPage],
-  );
+  useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
+    async function fetchActivityLog() {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const params = new URLSearchParams({
+          page: String(currentPage),
+          pageSize: String(rowsPerPage),
+        });
+
+        if (statusFilter) {
+          params.set('productStatus', statusFilter);
+        }
+
+        if (sortConfig.key) {
+          const sortField = sortConfig.key === 'salePrice' ? 'sell_price' : 'remain_qty';
+          params.set('sort', `${sortField}:${sortConfig.order}`);
+        }
+
+        const response = await fetch(`${backendBaseUrl}/analytics/activity-log?${params.toString()}`, {
+          signal: controller.signal,
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const payload: ActivityLogApiResponse = await response.json();
+        if (!isMounted) {
+          return;
+        }
+
+        const sanitized = sanitizeActivityLogItems(payload.data ?? []);
+        const totalPagesRaw =
+          typeof payload.pagination?.totalPages === 'number'
+            ? payload.pagination?.totalPages
+            : typeof payload.pagination?.totalPages === 'string'
+              ? Number.parseInt(payload.pagination.totalPages, 10)
+              : 1;
+        const safeTotalPages =
+          Number.isInteger(totalPagesRaw) && totalPagesRaw > 0 ? totalPagesRaw : 1;
+
+        setItems(sanitized);
+        setTotalPages(safeTotalPages);
+      } catch (fetchError) {
+        if (fetchError instanceof DOMException && fetchError.name === 'AbortError') {
+          return;
+        }
+
+        if (isMounted) {
+          setError('ไม่สามารถโหลดข้อมูลได้');
+          setItems([]);
+          setTotalPages(1);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    fetchActivityLog();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, [currentPage, sortConfig, statusFilter]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -229,17 +557,113 @@ export default function ActivityLog({ sectionTitle, title, filterLabel, items }:
   };
 
   const handleSavePrice = (price: string) => {
-    if (selectedItem) {
-      // Placeholder callback; integrate with API or state update when available.
-      // eslint-disable-next-line no-console
-      console.info('New price requested', {
-        productCode: selectedItem.productCode,
-        productName: selectedItem.productName,
-        price,
-      });
+    if (!selectedItem) {
+      return;
     }
+    // Placeholder for future API integration.
+    console.info('Requested price update', {
+      productCode: selectedItem.productCode,
+      productName: selectedItem.productName,
+      price,
+    });
   };
-  
+
+  const handleFilterClick = () => {
+    setIsFilterOpen((prev) => !prev);
+    setIsSortOpen(false);
+  };
+
+  const handleSortClick = () => {
+    setIsSortOpen((prev) => !prev);
+    setIsFilterOpen(false);
+  };
+
+  const handleFilterSelect = (group: 'status' | 'role', value: string) => {
+    if (group !== 'status') {
+      return;
+    }
+
+    setStatusFilter((prev) => (prev === value ? null : value));
+    setCurrentPage(1);
+  };
+
+  const handleSortSelect = (value: SortOptionValue) => {
+    const [key, order] = value.split(':') as ['salePrice' | 'remaining', 'asc' | 'desc'];
+    setSortConfig({ key, order });
+    setIsSortOpen(false);
+    setCurrentPage(1);
+  };
+
+  const filterButtonLabel = useMemo(() => {
+    if (statusFilter) {
+      return FILTER_LABELS[statusFilter] ?? 'Filter';
+    }
+    return filterLabel ?? 'Filter';
+  }, [statusFilter, filterLabel]);
+
+  const sortButtonLabel = useMemo(() => {
+    if (!sortConfig.key) {
+      return 'Sort';
+    }
+    const directionLabel = sortConfig.order === 'asc' ? 'Low to High' : 'High to Low';
+    return `${sortConfig.key === 'salePrice' ? 'Price' : 'Remaining'} ${directionLabel}`;
+  }, [sortConfig]);
+
+  const renderRows = () => {
+    if (isLoading) {
+      return (
+        <div className="table-row table-row--message">
+          <span>กำลังโหลด...</span>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="table-row table-row--message">
+          <span>{error}</span>
+        </div>
+      );
+    }
+
+    if (items.length === 0) {
+      return (
+        <div className="table-row table-row--message">
+          <span>ยังไม่มีประวัติการอัปเดตสต็อก</span>
+        </div>
+      );
+    }
+
+    return items.map((item) => (
+      <div
+        key={`${item.productCode}-${item.stockUpdate}`}
+        className={`table-row${item.highlighted ? ' highlighted' : ''}`}
+      >
+        <span data-label="ชื่อสินค้า">{item.productName}</span>
+        <span data-label="รหัสสินค้า">{item.productCode}</span>
+        <span data-label="ราคาขาย">{item.salePrice}</span>
+        <span data-label="คงเหลือ">{item.remaining}</span>
+        <span data-label="สถานะ">{item.status}</span>
+        <span data-label="อัพเดทสต็อก">{item.stockUpdate}</span>
+        <span
+          data-label="แก้ไข"
+          className="table-action"
+          role="button"
+          tabIndex={0}
+          onClick={() => handleEditClick(item)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              handleEditClick(item);
+            }
+          }}
+        >
+          <img src="/images/edit.svg" alt="edit" />
+        </span>
+      </div>
+    ));
+  };
+
   return (
     <StyledActivityLog>
       <h2 className="section-title">{sectionTitle}</h2>
@@ -248,33 +672,39 @@ export default function ActivityLog({ sectionTitle, title, filterLabel, items }:
           <div className="panel-title">
             <h3>{title}</h3>
           </div>
-          <div className="filter-control">
-            <FilterButton
-              aria-label="กรองและจัดเรียงบัญชีผู้ใช้"
-              label={filterLabel === 'All' ? 'Filter' : filterLabel}
-              ref={filterButtonRef}
-              onClick={() => setIsFilterOpen((prev) => !prev)}
-            />
-            <FilterDropdownPend
-              open={isFilterOpen}
-              onClose={() => setIsFilterOpen(false)}
-              onSelect={handleFilterSelect}
-              anchorRef={filterButtonRef}
-            />
-          </div> 
-          <div className="filter-control">
-            <FilterButton
-              aria-label="กรองและจัดเรียงบัญชีผู้ใช้"
-              label={filterLabel === 'All' ? 'Filter' : filterLabel}
-              ref={filterButtonRef}
-              onClick={() => setIsFilterOpen((prev) => !prev)}
-            />
-            <FilterDropdownPend
-              open={isFilterOpen}
-              onClose={() => setIsFilterOpen(false)}
-              onSelect={handleFilterSelect}
-              anchorRef={filterButtonRef}
-            />
+          <div className="panel-actions">
+            <div className="filter-control">
+              <FilterButton
+                aria-label="กรองข้อมูลสินค้า"
+                label={filterButtonLabel}
+                ref={filterButtonRef}
+                onClick={handleFilterClick}
+              />
+              <FilterDropdownPend
+                open={isFilterOpen}
+                onClose={() => setIsFilterOpen(false)}
+                onSelect={handleFilterSelect}
+                anchorRef={filterButtonRef}
+              />
+            </div>
+            <div className="filter-control">
+              <FilterButton
+                aria-label="เรียงลำดับประวัติกิจกรรม"
+                label={sortButtonLabel}
+                icon={SortIcon}
+                ref={sortButtonRef}
+                onClick={handleSortClick}
+              />
+              <SortDropdownPend
+                open={isSortOpen}
+                onClose={() => setIsSortOpen(false)}
+                onSelect={handleSortSelect}
+                anchorRef={sortButtonRef}
+                activeValue={
+                  sortConfig.key ? (`${sortConfig.key}:${sortConfig.order}` as SortOptionValue) : null
+                }
+              />
+            </div>
           </div>
         </div>
         <div className="table">
@@ -287,38 +717,11 @@ export default function ActivityLog({ sectionTitle, title, filterLabel, items }:
             <span>อัพเดทสต็อก</span>
             <span>แก้ไข</span>
           </div>
-          {paginatedItems.map((item, index) => (
-            <div
-              key={`${item.productCode}-${index}`}
-              className={`table-row${item.highlighted ? ' highlighted' : ''}`}
-            >
-              <span data-label="ชื่อสินค้า">{item.productName}</span>
-              <span data-label="รหัสสินค้า">{item.productCode}</span>
-              <span data-label="ราคาขาย">{item.salePrice}</span>
-              <span data-label="คงเหลือ">{item.remaining}</span>
-              <span data-label="สถานะ">{item.status}</span>
-              <span data-label="อัพเดทสต็อก">{item.stockUpdate}</span>
-              <span
-                data-label="แก้ไข"
-                className="table-action"
-                role="button"
-                tabIndex={0}
-                onClick={() => handleEditClick(item)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    handleEditClick(item);
-                  }
-                }}
-              >
-                <img src="/images/edit.svg" alt="edit" />
-              </span>
-            </div>
-          ))}
+          {renderRows()}
         </div>
         <PaginationControls
           currentPage={currentPage}
-          totalPages={totalPages}
+          totalPages={Math.max(1, totalPages)}
           onPageChange={setCurrentPage}
         />
       </div>
@@ -328,3 +731,4 @@ export default function ActivityLog({ sectionTitle, title, filterLabel, items }:
     </StyledActivityLog>
   );
 }
+

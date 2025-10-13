@@ -5,14 +5,20 @@ import styled from 'styled-components';
 
 type AnchorElementRef = RefObject<HTMLElement> | MutableRefObject<HTMLElement | null>;
 
-type FilterDropdownProps = {
+type SortGroup = 'salePrice' | 'remaining';
+type SortDirection = 'asc' | 'desc';
+
+export type SortOptionValue = `${SortGroup}:${SortDirection}`;
+
+type SortDropdownProps = {
   open: boolean;
-  onClose?: () => void;
-  onSelect?: (filterGroup: 'status' | 'role', value: string) => void;
   anchorRef?: AnchorElementRef;
+  onClose?: () => void;
+  onSelect?: (value: SortOptionValue) => void;
+  activeValue?: SortOptionValue | null;
 };
 
-const StyledFilterDropdown = styled.div`
+const StyledSortDropdown = styled.div`
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
@@ -29,7 +35,7 @@ const StyledFilterDropdown = styled.div`
   }
 
   .dropdown-panel {
-    min-width: 220px;
+    min-width: 240px;
     border-radius: 18px;
     border: 1px solid rgba(15, 15, 15, 0.16);
     background: #ffffff;
@@ -72,11 +78,25 @@ const StyledFilterDropdown = styled.div`
     color: #0f0f0f;
     cursor: pointer;
     transition: background-color 0.15s ease, color 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
   .dropdown-item:hover {
     background: rgba(223, 117, 68, 0.12);
     color: #df7544;
+  }
+
+  .dropdown-item[aria-checked='true'] {
+    color: #df7544;
+  }
+
+  .item-direction {
+    font-size: 13px;
+    font-weight: 600;
+    color: inherit;
+    opacity: 0.85;
   }
 
   @media (max-width: 640px) {
@@ -85,14 +105,40 @@ const StyledFilterDropdown = styled.div`
   }
 `;
 
-const statusOptions = [
-  { value: 'active', label: 'Active' },
-  { value: 'low_stock', label: 'Low stock' },
-  { value: 'restock_pending', label: 'Restock pending' },
-  { value: 'pricing_pending', label: 'Pricing pending' },
+const sortGroups: Array<{
+  group: SortGroup;
+  label: string;
+  options: Array<{
+    direction: SortDirection;
+    value: SortOptionValue;
+    label: string;
+  }>;
+}> = [
+  {
+    group: 'salePrice',
+    label: 'Sale Price',
+    options: [
+      { direction: 'desc', value: 'salePrice:desc', label: 'High to Low' },
+      { direction: 'asc', value: 'salePrice:asc', label: 'Low to High' },
+    ],
+  },
+  {
+    group: 'remaining',
+    label: 'Remaining',
+    options: [
+      { direction: 'desc', value: 'remaining:desc', label: 'High to Low' },
+      { direction: 'asc', value: 'remaining:asc', label: 'Low to High' },
+    ],
+  },
 ];
 
-export default function FilterDropdownPend({ open, onClose, onSelect, anchorRef }: FilterDropdownProps) {
+export default function SortDropdownPend({
+  open,
+  anchorRef,
+  onClose,
+  onSelect,
+  activeValue = null,
+}: SortDropdownProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -127,37 +173,39 @@ export default function FilterDropdownPend({ open, onClose, onSelect, anchorRef 
     };
   }, [open, onClose, anchorRef]);
 
-  const handleSelect = (group: 'status' | 'role', value: string) => {
-    onSelect?.(group, value);
-    onClose?.();
+  const handleSelect = (value: SortOptionValue) => {
+    onSelect?.(value);
   };
 
   return (
-    <StyledFilterDropdown
+    <StyledSortDropdown
       ref={dropdownRef}
       className={open ? 'is-open' : ''}
       role="menu"
       aria-hidden={!open}
     >
       <div className="dropdown-panel">
-        <section className="dropdown-section" aria-label="Filter By Status">
-          <header className="dropdown-label">Filter By Status</header>
-          <ul className="dropdown-list">
-            {statusOptions.map((option) => (
-              <li
-                key={option.value}
-                className="dropdown-item"
-                role="menuitemradio"
-                aria-checked="false"
-                tabIndex={open ? 0 : -1}
-                onClick={() => handleSelect('status', option.value)}
-              >
-                {option.label}
-              </li>
-            ))}
-          </ul>
-        </section>
+        {sortGroups.map((group) => (
+          <section className="dropdown-section" key={group.group} aria-label={`Sort by ${group.label}`}>
+            <header className="dropdown-label">{group.label}</header>
+            <ul className="dropdown-list">
+              {group.options.map((option) => (
+                <li
+                  key={option.value}
+                  className="dropdown-item"
+                  role="menuitemradio"
+                  aria-checked={activeValue === option.value}
+                  tabIndex={open ? 0 : -1}
+                  onClick={() => handleSelect(option.value)}
+                >
+                  <span>{option.label}</span>
+                  <span className="item-direction">{option.direction === 'asc' ? 'ASC' : 'DESC'}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
       </div>
-    </StyledFilterDropdown>
+    </StyledSortDropdown>
   );
 }

@@ -1417,7 +1417,7 @@ export default function OwnerDashboardPage() {
           <img src="/images/arrow-left.svg" alt="arrow-left" />
           <strong className="dash-text">Dashboard</strong>
         </div>
-        <DashButton />
+        {/* //<DashButton />// */}
       </div>
 
       <div className="welcome">
