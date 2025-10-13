@@ -11,12 +11,13 @@ import styled from "styled-components";
 import useUserStore from "@/store/userStore";
 import { useRouter } from "next/navigation";
 
+// ---------- Schema & Types ----------
 const loginSchema = z.object({
     email: z.string().email("กรุณากรอกอีเมลให้ถูกต้อง"),
     password: z.string().min(1, "กรุณากรอกรหัสผ่าน"),
 });
-
 type LoginFormData = z.infer<typeof loginSchema>;
+
 type LoginResponse = {
     id?: string | number | null;
     redirect: string;
@@ -37,18 +38,13 @@ type LoginResponse = {
     } | null;
 };
 
+// ---------- Helpers ----------
 function pickNonEmpty(...values: Array<string | null | undefined>) {
     for (const value of values) {
-        if (typeof value !== "string") {
-            continue;
-        }
-
+        if (typeof value !== "string") continue;
         const trimmed = value.trim();
-        if (trimmed.length > 0) {
-            return trimmed;
-        }
+        if (trimmed.length > 0) return trimmed;
     }
-
     return null;
 }
 
@@ -65,50 +61,50 @@ function deriveUsername(payload: LoginResponse, fallbackEmail?: string) {
         user?.fullName,
         user?.full_name
     );
-    if (directMatch) {
-        return directMatch;
-    }
+    if (directMatch) return directMatch;
 
     const composedName = pickNonEmpty(
         [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim(),
         [user?.first_name, user?.last_name].filter(Boolean).join(" ").trim()
     );
-    if (composedName) {
-        return composedName;
-    }
+    if (composedName) return composedName;
 
     if (typeof fallbackEmail === "string" && fallbackEmail.length > 0) {
         const localPart = fallbackEmail.split("@")[0]?.trim();
-        if (localPart) {
-            return localPart;
-        }
+        if (localPart) return localPart;
         return fallbackEmail.trim().length > 0 ? fallbackEmail.trim() : null;
     }
-
     return null;
 }
 
+// ตั้งค่าผู้ใช้ลง Zustand/localStorage — ใช้ซ้ำได้ทั้ง email/password และ Google
+function applyLoginPayload(data: LoginResponse, fallbackEmail?: string) {
+    const { setID, setRole, setUsername, setName } = useUserStore.getState();
+    setID(data.id ? String(data.id) : null);
+    setRole(data.role ?? null);
+    const derived = deriveUsername(data, fallbackEmail);
+    setUsername(data.username ?? derived);
+    setName(data.name ?? derived);
+}
+
+// ---------- Styles ----------
 const ImageWrapperStyled = styled.div`
-    flex: 11;
-    position: relative;
-    height: 100%;
-    border-radius: 8px;
-    overflow: hidden;
+  flex: 11;
+  position: relative;
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
 `;
-
 const LogginFormStyled = styled.div`
-    flex: 9;
-    display: flex;
-    justify-content: center;
+  flex: 9;
+  display: flex;
+  justify-content: center;
 `;
 
+// ---------- Component ----------
 export default function LoginForm() {
     const router = useRouter();
-    const {
-        register,
-        handleSubmit,
-        formState: { errors },
-    } = useForm<LoginFormData>({
+    const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
         resolver: zodResolver(loginSchema),
     });
 
@@ -116,56 +112,36 @@ export default function LoginForm() {
     const backendPort = process.env.NEXT_PUBLIC_BACKEND_PORT ?? "5002";
     const backendBaseUrl = `${backendDomain}:${backendPort}`;
 
-    // --- 🧠 Tanstack Query Mutation ---
     const loginMutation = useMutation<LoginResponse, Error, LoginFormData>({
         mutationFn: async (data: LoginFormData) => {
             const url = `${backendBaseUrl}/auth/login`;
-            console.log("📡 กำลัง fetch:", url);
-
             const res = await fetch(url, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
             });
-
             if (!res.ok) {
-                const err = await res.json();
+                const err = await res.json().catch(() => ({}));
                 throw new Error(err.message || "เข้าสู่ระบบล้มเหลว");
             }
-
             return res.json() as Promise<LoginResponse>;
         },
-        onSuccess: async (data: LoginResponse, variables: LoginFormData) => {
-            console.log("✅ Login success:", data);
-
-            // ✅ ดึง setter จาก store
-            const { setID, setRole, setUsername, setName } = useUserStore.getState();
-
-            // ✅ เก็บค่าทั้งหมดใน localStorage
-            setID(data.id ? String(data.id) : null);
-            setRole(data.role ?? null);
-            setUsername(data.username ?? deriveUsername(data, variables.email));
-            setName(data.name ?? deriveUsername(data, variables.email));
-
-            // ✅ รอ persist เขียนลง localStorage ก่อน redirect
-            await new Promise((resolve) => setTimeout(resolve, 300));
-
+        onSuccess: async (data, variables) => {
+            applyLoginPayload(data, variables.email);
+            // รอ persist ลง localStorage ก่อนเด้งหน้า
+            await new Promise((r) => setTimeout(r, 300));
             router.push(data.redirect);
         },
-        onError: (err: Error) => {
+        onError: (err) => {
             alert(err.message || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
         },
     });
 
-
-    // --- 🧩 Form Submit Handler ---
-    const onSubmit = (data: LoginFormData) => {
-        loginMutation.mutate(data);
-    };
+    const onSubmit = (data: LoginFormData) => loginMutation.mutate(data);
 
     const handleGoogleLogin = () => {
-        const googleUrl = `${backendBaseUrl}/auth/google`;
-        window.location.href = googleUrl;
+        // เป็น redirect flow — backend จะพากลับ /auth/bridge พร้อม payload
+        window.location.href = `${backendBaseUrl}/auth/google`;
     };
 
     return (
@@ -180,10 +156,7 @@ export default function LoginForm() {
             </ImageWrapperStyled>
 
             <LogginFormStyled>
-                <form
-                    onSubmit={handleSubmit(onSubmit)}
-                    className="flex flex-col items-start justify-center gap-10 w-[60%]"
-                >
+                <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col items-start justify-center gap-10 w-[60%]">
                     <div>
                         <h1 className="text-3xl font-bold">เข้าสู่ระบบ PJT INVENTORY</h1>
                         <h2 className="text-xl font-extralight">เลือกวิธีการเข้าสู่ระบบ</h2>
@@ -192,33 +165,19 @@ export default function LoginForm() {
                     {/* Email + Password */}
                     <div className="flex flex-col gap-5 w-full">
                         <TextField
-                            fullWidth
-                            label="อีเมล"
-                            variant="outlined"
-                            {...register("email")}
-                            error={!!errors.email}
-                            helperText={errors.email?.message}
+                            fullWidth label="อีเมล" variant="outlined"
+                            {...register("email")} error={!!errors.email} helperText={errors.email?.message}
                         />
                         <TextField
-                            fullWidth
-                            label="รหัสผ่าน"
-                            type="password"
-                            variant="outlined"
-                            {...register("password")}
-                            error={!!errors.password}
-                            helperText={errors.password?.message}
+                            fullWidth label="รหัสผ่าน" type="password" variant="outlined"
+                            {...register("password")} error={!!errors.password} helperText={errors.password?.message}
                         />
                     </div>
 
                     {/* ปุ่มเข้าสู่ระบบ */}
                     <div className="flex flex-col gap-5 w-full self-center">
-                        <Button
-                            variant="contained"
-                            size="large"
-                            sx={{ textTransform: "none", fontWeight: "bold" }}
-                            type="submit"
-                            disabled={loginMutation.isPending}
-                        >
+                        <Button variant="contained" size="large" sx={{ textTransform: "none", fontWeight: "bold" }}
+                                type="submit" disabled={loginMutation.isPending}>
                             {loginMutation.isPending ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
                         </Button>
                     </div>
@@ -232,13 +191,8 @@ export default function LoginForm() {
 
                     {/* Google Login */}
                     <div className="flex flex-col gap-5 w-full">
-                        <Button
-                            variant="outlined"
-                            size="large"
-                            startIcon={<GoogleIcon />}
-                            onClick={handleGoogleLogin}
-                            sx={{ textTransform: "none", fontWeight: "bold" }}
-                        >
+                        <Button variant="outlined" size="large" startIcon={<GoogleIcon />}
+                                onClick={handleGoogleLogin} sx={{ textTransform: "none", fontWeight: "bold" }}>
                             เข้าสู่ระบบด้วย Google
                         </Button>
                     </div>

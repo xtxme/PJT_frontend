@@ -32,7 +32,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (role === null) {
-      router.push("/login");
+      // router.push("/login");
     } else if (role !== "owner") {
       router.back();
     }
