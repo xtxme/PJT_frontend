@@ -5,9 +5,9 @@ import { Button } from '@mui/material';
 // 🎨 สีตามสถานะ
 const statusColors: Record<string, string> = {
     active: '#2ecc71',           // เขียว
-    low_stock: '#f1c40f',        // เหลือง
-    restock_pending: '#e67e22',  // ส้ม
-    pricing_pending: '#3498db',  // น้ำเงิน
+    low_stock: '#2ecc71',        // เหลือง
+    restock_pending: '#2ecc71',  // ส้ม
+    pricing_pending: '#2ecc71',  // น้ำเงิน
     out_of_stock: '#e74c3c',     // แดง
 };
 
@@ -95,11 +95,11 @@ export default function ProductSection({
                                         {status === 'active'
                                             ? 'พร้อมขาย'
                                             : status === 'low_stock'
-                                                ? 'ใกล้หมด'
+                                                ? 'พร้อมขาย'
                                                 : status === 'restock_pending'
-                                                    ? 'รอสต็อกเข้า'
+                                                    ? 'พร้อมขาย'
                                                     : status === 'pricing_pending'
-                                                        ? 'ปรับราคา'
+                                                        ? 'พร้อมขาย'
                                                         : 'หมด'}
                                     </StatusBadge>
                                 </div>
