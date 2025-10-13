@@ -1,5 +1,4 @@
 'use client';
-
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { jsPDF } from 'jspdf';
@@ -8,10 +7,7 @@ import ProductSection from '@/components/sale/sales/ProductSection';
 import SummarySection from '@/components/sale/sales/SummarySection';
 import InvoiceDetailSection from '@/components/sale/sales/InvoiceDetailSection';
 
-const PageContainer = styled.div`
-  padding: 20px;
-`;
-
+const PageContainer = styled.div`padding: 20px;`;
 const GridLayout = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -20,118 +16,130 @@ const GridLayout = styled.div`
 `;
 
 export default function SalesPage() {
-  // ✅ states หลัก
   const [customers, setCustomers] = useState<any[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState('');
   const [products, setProducts] = useState<any[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState('');
+  const [invoiceNo, setInvoiceNo] = useState('');
+  const [date, setDate] = useState(new Date().toLocaleDateString('th-TH'));
   const [productsInBill, setProductsInBill] = useState<any[]>([]);
   const [productQtys, setProductQtys] = useState<Record<string, number | ''>>({});
-  const [invoiceNo, setInvoiceNo] = useState(`INV-${Date.now().toString().slice(-6)}`);
-  const [date, setDate] = useState(new Date().toLocaleDateString('th-TH'));
   const [search, setSearch] = useState('');
 
-  // ✅ โหลดข้อมูลลูกค้า & สินค้าจาก backend
+  // โหลดข้อมูลจาก backend
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [resCus, resProd] = await Promise.all([
-          fetch('http://localhost:5002/customers'),
-          fetch('http://localhost:5002/products'),
-        ]);
-        const jsonCus = await resCus.json();
-        const jsonProd = await resProd.json();
-        setCustomers(Array.isArray(jsonCus.data) ? jsonCus.data : jsonCus);
-        setProducts(Array.isArray(jsonProd.data) ? jsonProd.data : jsonProd);
-      } catch (err) {
-        console.error('❌ โหลดข้อมูลล้มเหลว:', err);
-      }
-    };
-    fetchData();
+    loadData();
   }, []);
 
-  // ✅ filter สินค้า
-  const filteredProducts = products.filter((p) =>
-    (p.name || '').toLowerCase().includes(search.toLowerCase())
-  );
+  async function loadData() {
+    const [custRes, prodRes, invRes] = await Promise.all([
+      fetch('http://localhost:5002/sale/sales/customers').then(r => r.json()),
+      fetch('http://localhost:5002/sale/sales/products').then(r => r.json()),
+      fetch('http://localhost:5002/sale/sales/new-invoice').then(r => r.json()),
+    ]);
+    setCustomers(custRes.data || []);
+    setProducts(prodRes.data || []);
+    if (invRes.success) setInvoiceNo(invRes.invoiceNo);
+  }
 
-  // ✅ เพิ่มสินค้าในบิล
+  const resetForm = async () => {
+    await loadData();
+    setSelectedCustomer('');
+    setProductsInBill([]);
+    setProductQtys({});
+    setSearch('');
+    setDate(new Date().toLocaleDateString('th-TH'));
+  };
+
+  // ✅ เพิ่มสินค้าเข้าตะกร้า
   const addProductToBill = (product: any) => {
     const qty = productQtys[product.id] || 1;
-    if (product.stock <= 0) {
-      alert(`❗ สินค้า "${product.name}" หมดแล้ว`);
-      return;
-    }
+    if (qty > product.quantity) return alert(`สินค้า "${product.name}" มีเพียง ${product.quantity} ชิ้น`);
 
-    const exists = productsInBill.find((p) => p.id === product.id);
-    if (exists) {
-      const updated = productsInBill.map((p) =>
+    // อัปเดตตะกร้า
+    const existing = productsInBill.find((p) => p.id === product.id);
+    if (existing) {
+      setProductsInBill(productsInBill.map((p) =>
         p.id === product.id ? { ...p, qty: p.qty + qty } : p
-      );
-      setProductsInBill(updated);
+      ));
     } else {
       setProductsInBill([...productsInBill, { ...product, qty }]);
     }
 
+    // ✅ อัปเดต stock และสถานะสินค้า
+    setProducts((prev) =>
+      prev.map((p) => {
+        if (p.id === product.id) {
+          const newQty = p.quantity - qty;
+          let newStatus = p.status;
+          if (newQty <= 0) newStatus = 'out_of_stock';
+          else if (newQty < 10) newStatus = 'low_stock';
+          else newStatus = 'active';
+          return { ...p, quantity: newQty, status: newStatus };
+        }
+        return p;
+      })
+    );
+
     setProductQtys((prev) => ({ ...prev, [product.id]: '' }));
   };
 
-  // ✅ ลบสินค้าในบิล
-  const removeProduct = (id: number) => {
-    setProductsInBill(productsInBill.filter((p) => p.id !== id));
-  };
+  // ✅ ลบสินค้าออกจากตะกร้า
+  const removeProductFromBill = (productId: number) => {
+    const productToRemove = productsInBill.find((p) => p.id === productId);
+    if (!productToRemove) return;
 
-  // ✅ อัปเดตจำนวนสินค้า
-  const updateQty = (id: number, newQty: number) => {
-    setProductsInBill(
-      productsInBill.map((p) => (p.id === id ? { ...p, qty: newQty } : p))
+    // คืนจำนวนกลับเข้า stock
+    setProducts((prev) =>
+      prev.map((p) => {
+        if (p.id === productToRemove.id) {
+          const newQty = p.quantity + productToRemove.qty;
+          let newStatus = p.status;
+          if (newQty === 0) newStatus = 'out_of_stock';
+          else if (newQty < 10) newStatus = 'low_stock';
+          else newStatus = 'active';
+          return { ...p, quantity: newQty, status: newStatus };
+        }
+        return p;
+      })
     );
+
+    // เอาออกจากตะกร้า
+    setProductsInBill(productsInBill.filter((p) => p.id !== productId));
   };
 
-  // ✅ คำนวณยอดรวม
-  const total = productsInBill.reduce((sum, p) => sum + p.price * p.qty, 0);
+  const filteredProducts = products.filter((p) =>
+    (p.name || '').toLowerCase().includes(search.toLowerCase())
+  );
+
+  const total = productsInBill.reduce((sum, p) => sum + p.sell * p.qty, 0);
   const vattotal = total * 1.07;
 
-  // ✅ export PDF
   const exportPDF = () => {
-    const customer = customers.find((c) => c.id === selectedCustomer);
-    if (!customer || productsInBill.length === 0) {
-      alert('⚠️ กรุณาเลือก “ลูกค้า” และ “เพิ่มสินค้า” ก่อนออกบิล');
-      return;
-    }
-
+    const customer = customers.find((c) => c.id === Number(selectedCustomer));
     const doc = new jsPDF();
     doc.text(`Invoice: ${invoiceNo}`, 20, 20);
     doc.text(`Date: ${date}`, 20, 28);
-    doc.text(`Customer: ${customer.name}`, 20, 36);
-    doc.text(`Address: ${customer.address}`, 20, 44);
-
-    let y = 60;
+    doc.text(`Customer: ${customer?.name || '-'}`, 20, 36);
+    doc.text(`Address: ${customer?.address || '-'}`, 20, 44);
+    let y = 58;
     productsInBill.forEach((p) => {
-      doc.text(`${p.name} x${p.qty} = ${p.price * p.qty}฿`, 20, y);
+      doc.text(`${p.name} x${p.qty} = ${(p.sell * p.qty).toFixed(2)}฿`, 20, y);
       y += 10;
     });
     doc.text(`Total: ${vattotal.toFixed(2)}฿`, 20, y + 10);
     doc.save(`${invoiceNo}.pdf`);
-
-    alert('✅ ออกบิลสำเร็จ');
   };
 
   return (
     <PageContainer>
       <h2 className="text-xl font-semibold mb-4">🧾 ออกบิลขาย</h2>
-
       <GridLayout>
-        {/* 🧍 ลูกค้า */}
         <CustomerSection
           customers={customers}
           selectedCustomer={selectedCustomer}
           setSelectedCustomer={setSelectedCustomer}
         />
-
-        {/* 📄 รายละเอียดบิล */}
         <InvoiceDetailSection invoiceNo={invoiceNo} date={date} />
-
-        {/* 💼 สินค้า */}
         <ProductSection
           filteredProducts={filteredProducts}
           productQtys={productQtys}
@@ -140,15 +148,18 @@ export default function SalesPage() {
           search={search}
           setSearch={setSearch}
         />
-
-        {/* 📊 สรุป */}
         <SummarySection
           productsInBill={productsInBill}
           total={total}
           vattotal={vattotal}
-          updateQty={updateQty}
-          removeProduct={removeProduct}
+          setProductsInBill={setProductsInBill}
           exportPDF={exportPDF}
+          selectedCustomer={selectedCustomer}
+          invoiceNo={invoiceNo}
+          resetForm={resetForm}
+          removeProductFromBill={(id: number) =>
+            setProductsInBill(productsInBill.filter((p) => p.id !== id))
+          }
         />
       </GridLayout>
     </PageContainer>
