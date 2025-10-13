@@ -2,7 +2,19 @@
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import InvoiceCard from '@/components/sale/invoices/InvoiceCard';
-import { CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
+import {
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from '@mui/material';
 
 const ListContainer = styled.div`
   padding: 20px;
@@ -38,67 +50,86 @@ export default function InvoiceList({ apiUrl }: InvoiceListProps) {
   const [loading, setLoading] = useState(true);
   const [grandTotal, setGrandTotal] = useState<number>(0);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<'all' | 'completed' | 'canceled'>('all');
 
-  useEffect(() => {
-    const fetchInvoices = async () => {
-      try {
-        const res = await fetch(apiUrl ?? 'http://localhost:5002/sale/invoices');
-        const json = await res.json();
-        const invoicesData = Array.isArray(json.data) ? json.data : [];
-        setInvoices(invoicesData);
+  const baseUrl = apiUrl ?? 'http://localhost:5002/sale/invoices';
 
-        const total = invoicesData
-          .filter((i: Invoice) => i.status === 'completed')
-          .reduce((sum: number, inv: Invoice) => sum + Number(inv.total_amount || 0), 0);
+  // โหลดข้อมูลบิลทั้งหมด
+  const fetchInvoices = async (keyword = '', statusFilter = filter, showLoading = false) => {
+    try {
+      if (showLoading) setLoading(true);
+      const endpoint = keyword
+        ? `${baseUrl}/search?keyword=${encodeURIComponent(keyword)}`
+        : baseUrl;
 
+      const res = await fetch(endpoint);
+      const json = await res.json();
+      let invoicesData: Invoice[] = Array.isArray(json.data) ? json.data : [];
 
-        setGrandTotal(total);
-      } catch (err) {
-        console.error('โหลดบิลไม่สำเร็จ', err);
-      } finally {
-        setLoading(false);
+      // ✅ filter ตามสถานะ
+      if (statusFilter === 'completed') {
+        invoicesData = invoicesData.filter((inv) => inv.status === 'completed');
+      } else if (statusFilter === 'canceled') {
+        invoicesData = invoicesData.filter((inv) => inv.status === 'canceled');
       }
-    };
+
+      setInvoices(invoicesData);
+
+      const total = invoicesData
+        .filter((i: Invoice) => i.status === 'completed')
+        .reduce((sum: number, inv: Invoice) => sum + Number(inv.total_amount || 0), 0);
+
+      setGrandTotal(total);
+    } catch (err) {
+      console.error('❌ โหลดบิลล้มเหลว:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // โหลดครั้งแรก
+  useEffect(() => {
     fetchInvoices();
   }, [apiUrl]);
+
+  // 🔍 พิมพ์แล้วค้นหาแบบเรียลไทม์ (ไม่มี debounce)
+  useEffect(() => {
+    // เรียก fetch แบบไม่ขึ้นโหลด (ไม่ setLoading)
+    fetchInvoices(search, filter, false);
+  }, [search, filter]);
 
   /** ✅ ยกเลิกบิล */
   const cancelInvoice = async (id: number, amount: number) => {
     if (!confirm('คุณแน่ใจหรือไม่ที่จะยกเลิกบิลนี้?')) return;
     try {
-      const res = await fetch(`${apiUrl ?? 'http://localhost:5002/sale/invoices'}/${id}/cancel`, {
-        method: 'PUT',
-      });
+      const res = await fetch(`${baseUrl}/${id}/cancel`, { method: 'PUT' });
       if (res.ok) {
         setInvoices((prev) =>
-          prev.map((inv) =>
-            inv.id === id ? { ...inv, status: 'canceled' } : inv
-          )
+          prev.map((inv) => (inv.id === id ? { ...inv, status: 'canceled' } : inv))
         );
         setGrandTotal((prev) => prev - amount);
       }
     } catch (err) {
-      console.error('ยกเลิกบิลไม่สำเร็จ', err);
+      console.error('❌ ยกเลิกบิลไม่สำเร็จ:', err);
     }
   };
 
   const handleViewInvoice = async (invoiceId: number) => {
     try {
-      const res = await fetch(`http://localhost:5002/sale/invoices/${invoiceId}`);
+      const res = await fetch(`${baseUrl}/${invoiceId}`);
       const json = await res.json();
-
       if (json.success) {
-        setSelectedInvoice(json.data); // ✅ ข้อมูลมีทั้งหัวบิล + items
+        setSelectedInvoice(json.data);
       } else {
         alert('❌ ไม่สามารถโหลดรายละเอียดบิลได้');
       }
     } catch (err) {
-      console.error('โหลดรายละเอียดบิลไม่สำเร็จ', err);
+      console.error('❌ โหลดรายละเอียดบิลไม่สำเร็จ:', err);
     }
   };
 
-
-  if (loading)
+  if (loading && invoices.length === 0)
     return (
       <ListContainer>
         <div className="flex justify-center items-center h-[50vh]">
@@ -107,18 +138,46 @@ export default function InvoiceList({ apiUrl }: InvoiceListProps) {
       </ListContainer>
     );
 
+
   return (
     <ListContainer>
       <h2 className="text-lg font-semibold flex items-center gap-2 mb-3">
         <span>🧾</span> รายการบิลทั้งหมด
       </h2>
       <p className="text-gray-500 mb-3 text-sm">
-        สามารถดูรายละเอียดบิล, พิมพ์, และยกเลิกบิลได้จากหน้านี้
+        สามารถค้นหา ดูรายละเอียด หรือยกเลิกบิลได้จากหน้านี้
       </p>
 
+      {/* 🔍 Search + Filter */}
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
+        <TextField
+          size="small"
+          placeholder="ค้นหาหมายเลขบิล / ลูกค้า / พนักงานขาย..."
+          variant="outlined"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          sx={{ flex: 1 }}
+        />
+
+        <FormControl size="small" sx={{ minWidth: 160 }}>
+          <InputLabel id="filter-label">สถานะบิล</InputLabel>
+          <Select
+            labelId="filter-label"
+            label="สถานะบิล"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value as any)}
+          >
+            <MenuItem value="all">ทั้งหมด</MenuItem>
+            <MenuItem value="completed">สำเร็จ</MenuItem>
+            <MenuItem value="canceled">ยกเลิก</MenuItem>
+          </Select>
+        </FormControl>
+      </div>
+
+      {/* 🔹 รายการบิล */}
       <div className="flex flex-col gap-3">
         {invoices.length === 0 ? (
-          <p className="text-gray-400 text-center mt-10">ไม่มีบิลในระบบ</p>
+          <p className="text-gray-400 text-center mt-10">❗ ไม่พบบิลในระบบ</p>
         ) : (
           invoices.map((invoice) => (
             <InvoiceCard
@@ -137,16 +196,16 @@ export default function InvoiceList({ apiUrl }: InvoiceListProps) {
               onCancel={cancelInvoice}
               onView={() => handleViewInvoice(invoice.id)}
             />
-
           ))
         )}
       </div>
 
+      {/* 💰 รวมยอด */}
       <div style={{ marginTop: 20, fontWeight: 'bold' }}>
         💰 ยอดรวมทั้งหมด (เฉพาะบิลสำเร็จ): {grandTotal.toLocaleString()} THB
       </div>
 
-      {/* Popup แสดงรายละเอียดบิล */}
+      {/* Popup รายละเอียดบิล */}
       <Dialog open={!!selectedInvoice} onClose={() => setSelectedInvoice(null)} fullWidth maxWidth="sm">
         <DialogTitle>รายละเอียดบิล</DialogTitle>
         {selectedInvoice && (
@@ -158,35 +217,8 @@ export default function InvoiceList({ apiUrl }: InvoiceListProps) {
             <p>💰 <b>ยอดรวม:</b> {Number(selectedInvoice.total_amount).toLocaleString()} บาท</p>
             <p>📦 <b>สถานะ:</b> {selectedInvoice.status === 'completed' ? 'สำเร็จ' : 'ยกเลิก'}</p>
             <p>📝 <b>หมายเหตุ:</b> {selectedInvoice.note || '-'}</p>
-
-            {selectedInvoice.items && selectedInvoice.items.length > 0 && (
-              <div style={{ marginTop: '10px' }}>
-                <b>📦 รายการสินค้า:</b>
-                <table style={{ width: '100%', marginTop: '6px', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid #ddd' }}>
-                      <th>สินค้า</th>
-                      <th>จำนวน</th>
-                      <th>ราคา/หน่วย</th>
-                      <th>รวม</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedInvoice.items.map((item: any) => (
-                      <tr key={item.id}>
-                        <td>{item.product_name}</td>
-                        <td>{item.quantity}</td>
-                        <td>{Number(item.unit_price).toLocaleString()}</td>
-                        <td>{Number(item.total_price).toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
           </DialogContent>
         )}
-
         <DialogActions>
           <Button onClick={() => setSelectedInvoice(null)} sx={{ textTransform: 'none' }}>
             ปิด

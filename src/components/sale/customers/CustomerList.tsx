@@ -152,33 +152,33 @@ export default function CustomerList() {
 
     return (
         <PageContainer>
-            <HeaderRow>
-                <div>
-                    <h2 className="text-lg font-semibold flex items-center gap-2 mb-3">👥 ลูกค้าทั้งหมด</h2>
-                    <p className="text-gray-500 text-sm">ค้นหา แก้ไข และเพิ่มลูกค้าใหม่</p>
-                </div>
-                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                    <TextField
-                        size="small"
-                        placeholder="🔍 พิมพ์ชื่อ/เบอร์/อีเมล..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
-                    <Button
-                        variant="contained"
-                        sx={{
-                            backgroundColor: '#16a34a',
-                            '&:hover': { backgroundColor: '#15803d' },
-                            borderRadius: '10px',
-                            textTransform: 'none',
-                            color: '#fff',
-                        }}
-                        onClick={handleOpenAdd}
-                    >
-                        + เพิ่มลูกค้าใหม่
-                    </Button>
-                </div>
-            </HeaderRow>
+            <div>
+                <h2 className="text-lg font-semibold flex items-center gap-2 mb-3">👥 ลูกค้าทั้งหมด</h2>
+                <p className="text-gray-500 mb-3 text-sm">ค้นหา แก้ไข และเพิ่มลูกค้าใหม่</p>
+            </div>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
+                <TextField
+                    size="small"
+                    placeholder="🔍 พิมพ์ชื่อ/เบอร์/อีเมล..."
+                    variant="outlined"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    sx={{ flex: 1 }}
+                />
+                <Button
+                    variant="contained"
+                    sx={{
+                        backgroundColor: '#16a34a',
+                        '&:hover': { backgroundColor: '#15803d' },
+                        borderRadius: '10px',
+                        textTransform: 'none',
+                        color: '#fff',
+                    }}
+                    onClick={handleOpenAdd}
+                >
+                    + เพิ่มลูกค้าใหม่
+                </Button>
+            </div>
 
             {/* การ์ดลูกค้า */}
             {customers.length > 0 ? (
