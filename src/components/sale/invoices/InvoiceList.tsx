@@ -1,6 +1,6 @@
 'use client';
 import { exportInvoicePDF } from "@/utils/pdfFontThai";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import styled from 'styled-components';
 import InvoiceCard from '@/components/sale/invoices/InvoiceCard';
 import {
@@ -54,9 +54,12 @@ export default function InvoiceList({ apiUrl }: InvoiceListProps) {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'completed' | 'canceled'>('all');
 
+  // ✅ sorting states
+  const [sortField, setSortField] = useState<'date' | 'total' | 'customer'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
   const baseUrl = apiUrl ?? 'http://localhost:5002/sale/invoices';
 
-  // โหลดข้อมูลบิลทั้งหมด
   const fetchInvoices = async (keyword = '', statusFilter = filter, showLoading = false) => {
     try {
       if (showLoading) setLoading(true);
@@ -68,7 +71,7 @@ export default function InvoiceList({ apiUrl }: InvoiceListProps) {
       const json = await res.json();
       let invoicesData: Invoice[] = Array.isArray(json.data) ? json.data : [];
 
-      // ✅ filter ตามสถานะ
+      // filter ตามสถานะ
       if (statusFilter === 'completed') {
         invoicesData = invoicesData.filter((inv) => inv.status === 'completed');
       } else if (statusFilter === 'canceled') {
@@ -89,18 +92,14 @@ export default function InvoiceList({ apiUrl }: InvoiceListProps) {
     }
   };
 
-  // โหลดครั้งแรก
   useEffect(() => {
     fetchInvoices();
   }, [apiUrl]);
 
-  // 🔍 พิมพ์แล้วค้นหาแบบเรียลไทม์ (ไม่มี debounce)
   useEffect(() => {
-    // เรียก fetch แบบไม่ขึ้นโหลด (ไม่ setLoading)
     fetchInvoices(search, filter, false);
   }, [search, filter]);
 
-  /** ✅ ยกเลิกบิล */
   const cancelInvoice = async (id: number, amount: number) => {
     if (!confirm('คุณแน่ใจหรือไม่ที่จะยกเลิกบิลนี้?')) return;
     try {
@@ -120,15 +119,36 @@ export default function InvoiceList({ apiUrl }: InvoiceListProps) {
     try {
       const res = await fetch(`${baseUrl}/${invoiceId}`);
       const json = await res.json();
-      if (json.success) {
-        setSelectedInvoice(json.data);
-      } else {
-        alert('❌ ไม่สามารถโหลดรายละเอียดบิลได้');
-      }
+      if (json.success) setSelectedInvoice(json.data);
+      else alert('❌ ไม่สามารถโหลดรายละเอียดบิลได้');
     } catch (err) {
       console.error('❌ โหลดรายละเอียดบิลไม่สำเร็จ:', err);
     }
   };
+
+  // ✅ เรียงข้อมูลบิล (ใช้ useMemo เพื่อไม่ render ซ้ำ)
+  const sortedInvoices = useMemo(() => {
+    const sorted = [...invoices];
+    sorted.sort((a, b) => {
+      let valA: any, valB: any;
+
+      if (sortField === 'date') {
+        valA = new Date(a.order_date).getTime();
+        valB = new Date(b.order_date).getTime();
+      } else if (sortField === 'total') {
+        valA = Number(a.total_amount);
+        valB = Number(b.total_amount);
+      } else if (sortField === 'customer') {
+        valA = a.customer_name?.toLowerCase() || '';
+        valB = b.customer_name?.toLowerCase() || '';
+      }
+
+      if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+      if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return sorted;
+  }, [invoices, sortField, sortOrder]);
 
   if (loading && invoices.length === 0)
     return (
@@ -139,17 +159,16 @@ export default function InvoiceList({ apiUrl }: InvoiceListProps) {
       </ListContainer>
     );
 
-
   return (
     <ListContainer>
       <h2 className="text-lg font-semibold flex items-center gap-2 mb-3">
         <span>🧾</span> รายการบิลทั้งหมด
       </h2>
       <p className="text-gray-500 mb-3 text-sm">
-        สามารถค้นหา ดูรายละเอียด หรือยกเลิกบิลได้จากหน้านี้
+        ค้นหา เรียงลำดับ ดูรายละเอียด หรือยกเลิกบิลได้จากหน้านี้
       </p>
 
-      {/* 🔍 Search + Filter */}
+      {/* 🔍 Search + Filter + Sort */}
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
         <TextField
           size="small"
@@ -159,6 +178,26 @@ export default function InvoiceList({ apiUrl }: InvoiceListProps) {
           onChange={(e) => setSearch(e.target.value)}
           sx={{ flex: 1 }}
         />
+
+        <FormControl size="small" sx={{ minWidth: 140 }}>
+          <InputLabel>เรียงตาม</InputLabel>
+          <Select
+            value={sortField}
+            label="เรียงตาม"
+            onChange={(e) => setSortField(e.target.value as any)}
+          >
+            <MenuItem value="date">วันที่</MenuItem>
+            <MenuItem value="total">ยอดรวม</MenuItem>
+            <MenuItem value="customer">ชื่อลูกค้า</MenuItem>
+          </Select>
+        </FormControl>
+
+        <Button
+          variant="outlined"
+          onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
+        >
+          {sortOrder === 'asc' ? '⬇️ น้อย → มาก' : '⬆️ มาก → น้อย'}
+        </Button>
 
         <FormControl size="small" sx={{ minWidth: 160 }}>
           <InputLabel id="filter-label">สถานะบิล</InputLabel>
@@ -177,10 +216,10 @@ export default function InvoiceList({ apiUrl }: InvoiceListProps) {
 
       {/* 🔹 รายการบิล */}
       <div className="flex flex-col gap-3">
-        {invoices.length === 0 ? (
+        {sortedInvoices.length === 0 ? (
           <p className="text-gray-400 text-center mt-10">❗ ไม่พบบิลในระบบ</p>
         ) : (
-          invoices.map((invoice) => (
+          sortedInvoices.map((invoice) => (
             <InvoiceCard
               key={invoice.id}
               invoice={{
@@ -220,7 +259,6 @@ export default function InvoiceList({ apiUrl }: InvoiceListProps) {
             <p><b>📦 สถานะ:</b> {selectedInvoice.status === 'completed' ? 'สำเร็จ' : 'ยกเลิก'}</p>
             <p><b>📝 หมายเหตุ:</b> {selectedInvoice.note || '-'}</p>
 
-            {/* ✅ ตารางสินค้าในบิล */}
             {selectedInvoice.items && selectedInvoice.items.length > 0 && (
               <div style={{ marginTop: 16 }}>
                 <h4 style={{ fontWeight: 'bold', marginBottom: 8 }}>🛒 รายการสินค้า</h4>
@@ -273,14 +311,10 @@ export default function InvoiceList({ apiUrl }: InvoiceListProps) {
         )}
 
         <DialogActions sx={{ justifyContent: 'space-between', px: 3 }}>
-          <Button
-            onClick={() => setSelectedInvoice(null)}
-            sx={{ textTransform: 'none', color: '#666' }}
-          >
+          <Button onClick={() => setSelectedInvoice(null)} sx={{ textTransform: 'none', color: '#666' }}>
             ปิด
           </Button>
 
-          {/* 🧾 ปุ่มดาวน์โหลด PDF */}
           {selectedInvoice && (
             <Button
               variant="contained"
@@ -290,14 +324,13 @@ export default function InvoiceList({ apiUrl }: InvoiceListProps) {
                 backgroundColor: '#2563eb',
                 '&:hover': { backgroundColor: '#1d4ed8' },
               }}
-              onClick={() => { exportInvoicePDF(selectedInvoice) }}
+              onClick={() => exportInvoicePDF(selectedInvoice)}
             >
               💾 ดาวน์โหลด PDF
             </Button>
           )}
         </DialogActions>
       </Dialog>
-
     </ListContainer>
   );
 }

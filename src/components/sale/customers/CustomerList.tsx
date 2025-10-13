@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import styled from 'styled-components';
 import {
     Button,
@@ -9,6 +9,10 @@ import {
     DialogActions,
     TextField,
     CircularProgress,
+    MenuItem,
+    Select,
+    FormControl,
+    InputLabel,
 } from '@mui/material';
 import CustomerCard, { Customer } from './CustomerCard';
 
@@ -22,6 +26,8 @@ const HeaderRow = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
 `;
 
 export default function CustomerList() {
@@ -32,16 +38,19 @@ export default function CustomerList() {
     const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
     const [search, setSearch] = useState('');
 
-    // ฟอร์ม
+    // form
     const [name, setName] = useState('');
     const [address, setAddress] = useState('');
     const [email, setEmail] = useState('');
     const [tel, setTel] = useState('');
     const [totalPaid, setTotalPaid] = useState('');
 
+    // sorting
+    const [sortField, setSortField] = useState<'name' | 'totalPaid' | 'id'>('id');
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
     const grandTotal = customers.reduce((sum, c) => sum + Number(c.totalPaid || 0), 0);
 
-    // โหลดลูกค้าเริ่มต้น
     const fetchCustomers = async (keyword = '') => {
         try {
             const res = await fetch(
@@ -60,7 +69,7 @@ export default function CustomerList() {
         fetchCustomers();
     }, []);
 
-    // ✅ realtime search (delay 300ms ป้องกันยิง API ถี่เกิน)
+    // realtime search
     useEffect(() => {
         const timeout = setTimeout(() => {
             fetchCustomers(search);
@@ -68,7 +77,26 @@ export default function CustomerList() {
         return () => clearTimeout(timeout);
     }, [search]);
 
-    // เปิด popup แก้ไข
+    // เรียงข้อมูล (computed)
+    const sortedCustomers = useMemo(() => {
+        const sorted = [...customers];
+        sorted.sort((a, b) => {
+            let valA: any = a[sortField];
+            let valB: any = b[sortField];
+            if (sortField === 'name') {
+                valA = valA?.toString().toLowerCase() || '';
+                valB = valB?.toString().toLowerCase() || '';
+            } else if (sortField === 'totalPaid') {
+                valA = Number(valA || 0);
+                valB = Number(valB || 0);
+            }
+            if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+            if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+            return 0;
+        });
+        return sorted;
+    }, [customers, sortField, sortOrder]);
+
     const handleOpenEdit = (c: Customer) => {
         setEditingCustomer(c);
         setName(c.name);
@@ -79,7 +107,6 @@ export default function CustomerList() {
         setOpen(true);
     };
 
-    // เปิด popup เพิ่ม
     const handleOpenAdd = () => {
         setEditingCustomer(null);
         setName('');
@@ -90,7 +117,6 @@ export default function CustomerList() {
         setOpen(true);
     };
 
-    // ✅ บันทึก (เพิ่มหรือแก้ไข) แล้วอัปเดต list ทันที
     const handleSave = async () => {
         if (!name.trim() || !address.trim()) {
             alert('⚠️ กรุณากรอกชื่อและที่อยู่');
@@ -120,12 +146,10 @@ export default function CustomerList() {
             const data = await res.json();
             if (data.success && data.data) {
                 if (editingCustomer) {
-                    // แก้ไข → อัปเดตใน state
                     setCustomers((prev) =>
                         prev.map((c) => (c.id === editingCustomer.id ? data.data : c))
                     );
                 } else {
-                    // เพิ่มใหม่ → ใส่ไว้บนสุด
                     setCustomers((prev) => [data.data, ...prev]);
                 }
                 setOpen(false);
@@ -140,7 +164,6 @@ export default function CustomerList() {
         }
     };
 
-    // ถ้ายังโหลดอยู่
     if (loading) {
         return (
             <PageContainer>
@@ -152,19 +175,38 @@ export default function CustomerList() {
 
     return (
         <PageContainer>
-            <div>
-                <h2 className="text-lg font-semibold flex items-center gap-2 mb-3">👥 ลูกค้าทั้งหมด</h2>
-                <p className="text-gray-500 mb-3 text-sm">ค้นหา แก้ไข และเพิ่มลูกค้าใหม่</p>
-            </div>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
+            <h2 className="text-lg font-semibold flex items-center gap-2 mb-3">👥 ลูกค้าทั้งหมด</h2>
+            <p className="text-gray-500 mb-3 text-sm">ค้นหา แก้ไข เพิ่ม และเรียงลำดับลูกค้า</p>
+
+            <HeaderRow>
                 <TextField
                     size="small"
                     placeholder="🔍 พิมพ์ชื่อ/เบอร์/อีเมล..."
                     variant="outlined"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    sx={{ flex: 1 }}
+                    sx={{ flex: 1, minWidth: 200 }}
                 />
+                <FormControl size="small" sx={{ minWidth: 140 }}>
+                    <InputLabel>เรียงตาม</InputLabel>
+                    <Select
+                        value={sortField}
+                        label="เรียงตาม"
+                        onChange={(e) => setSortField(e.target.value as any)}
+                    >
+                        <MenuItem value="id">วันที่ล่าสุด</MenuItem>
+                        <MenuItem value="name">ชื่อลูกค้า</MenuItem>
+                        <MenuItem value="totalPaid">ยอดรวม</MenuItem>
+                    </Select>
+                </FormControl>
+                <Button
+                    variant="outlined"
+                    onClick={() =>
+                        setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+                    }
+                >
+                    {sortOrder === 'asc' ? '⬇️ น้อย → มาก' : '⬆️ มาก → น้อย'}
+                </Button>
                 <Button
                     variant="contained"
                     sx={{
@@ -178,11 +220,10 @@ export default function CustomerList() {
                 >
                     + เพิ่มลูกค้าใหม่
                 </Button>
-            </div>
+            </HeaderRow>
 
-            {/* การ์ดลูกค้า */}
-            {customers.length > 0 ? (
-                customers.map((c) => (
+            {sortedCustomers.length > 0 ? (
+                sortedCustomers.map((c) => (
                     <CustomerCard key={c.id} customer={c} onEdit={handleOpenEdit} />
                 ))
             ) : (
@@ -191,12 +232,10 @@ export default function CustomerList() {
                 </div>
             )}
 
-            {/* รวมยอดทั้งหมด */}
             <div style={{ marginTop: 20, fontWeight: 'bold' }}>
                 💰 ยอดรวมทั้งหมด: {grandTotal.toLocaleString()} THB
             </div>
 
-            {/* Popup เพิ่ม/แก้ไข */}
             <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
                 <DialogTitle>
                     {editingCustomer ? '✏️ แก้ไขลูกค้า' : '+ เพิ่มลูกค้าใหม่'}
