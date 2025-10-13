@@ -165,7 +165,7 @@ export default function Leaderboard({
       );
     }
 
-    return rows.map((leader) => (
+    return topRows.map((leader) => (
       <TableRow key={leader.rank}>
         <TableCell>
           <RankCellContent>
