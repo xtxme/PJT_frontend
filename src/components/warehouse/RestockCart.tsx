@@ -1,21 +1,28 @@
+//RestockCart.tsx
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import color from "@/app/styles/color";
+import {Button} from "@mui/material";
+import SupplierDropdown from '@/components/warehouse/SupplierDropdown';
 
 type CartItem = {
-    product_id: string;        // from ProductRow.id (string/uuid) — ถ้าของคุณเป็น number ให้แปลงเป็น string ตอน add
+    product_id: string;
     name: string;
-    pending?: number;          // ใช้โชว์เฉย ๆ
-    qty: number;               // ปริมาณที่จะสั่ง
-    unit_cost: number;         // ราคาต่อหน่วย (สั่ง)
+    pending?: number;
+    qty: number;
+    unit_cost: number;
     note?: string | null;
+    update_cost?: boolean; // มี field นี้ไว้ แต่ไม่ต้องเพิ่ม UI อะไรเพิ่ม
 };
 
 type SupplierLite = { id: number; company_name: string; email?: string | null; tel?: string | null };
 
 type RestockCartProps = {
-    onRegisterAddAction?: (fn: (item: { product_id: string; name: string; pending?: number }) => void) => void;
+    /** ให้ parent ลงทะเบียนฟังก์ชัน add-to-cart (รับ qty/unit_cost ได้) */
+    onRegisterAddAction?: (fn: (item: { product_id: string; name: string; pending?: number; qty?: number; unit_cost?: number; note?: string | null }) => void) => void;
+    /** เรียกเมื่อสร้างบิลสำเร็จ */
     onCreatedAction?: (payload: { batch_id: number }) => void;
 };
 
@@ -28,28 +35,39 @@ export default function RestockCart({ onRegisterAddAction, onCreatedAction }: Re
     const [expectedDate, setExpectedDate] = useState<string>(''); // yyyy-mm-dd
     const [batchNote, setBatchNote] = useState<string>('');
 
-    // ---- add function ให้ parent ----
+    // register add-to-cart ให้ parent
     useEffect(() => {
         if (!onRegisterAddAction) return;
-        const add = (p: { product_id: string; name: string; pending?: number }) => {
+        const add = (p: { product_id: string; name: string; pending?: number; qty?: number; unit_cost?: number; note?: string | null }) => {
             setCart((prev) => {
-                // ถ้ามีของเดิมอยู่แล้ว ให้ focus ที่เดิม (เพิ่ม qty +1 เบา ๆ)
                 const idx = prev.findIndex((x) => x.product_id === p.product_id);
                 if (idx >= 0) {
                     const next = prev.slice();
-                    next[idx] = { ...next[idx], qty: Math.max(1, next[idx].qty + 1) };
+                    next[idx] = {
+                        ...next[idx],
+                        qty: p.qty ?? Math.max(1, next[idx].qty + 1),
+                        unit_cost: p.unit_cost ?? next[idx].unit_cost,
+                        note: p.note ?? next[idx].note,
+                    };
                     return next;
                 }
                 return [
                     ...prev,
-                    { product_id: p.product_id, name: p.name, pending: p.pending ?? 0, qty: 1, unit_cost: 0 },
+                    {
+                        product_id: p.product_id,
+                        name: p.name,
+                        pending: p.pending ?? 0,
+                        qty: p.qty ?? 1,
+                        unit_cost: p.unit_cost ?? 0,
+                        note: p.note ?? null,
+                        update_cost: true, // ค่าเริ่มต้น true (แต่ไม่ได้ใช้ UI)
+                    },
                 ];
             });
         };
         onRegisterAddAction(add);
     }, [onRegisterAddAction]);
 
-    // ---- supplier search ----
     async function searchSuppliers(keyword: string): Promise<SupplierLite[]> {
         const url = `/warehouse/suppliers?q=${encodeURIComponent(keyword)}&page=1&pageSize=10`;
         const res = await fetch(url, { cache: 'no-store' });
@@ -59,34 +77,13 @@ export default function RestockCart({ onRegisterAddAction, onCreatedAction }: Re
         return rows;
     }
 
-    const doSearchSupplier = async () => {
-        setSupError(null);
-        setSupLoading(true);
-        try {
-            const rows = await searchSuppliers(supplierKeyword.trim());
-            if (rows.length === 0) {
-                setSupError('ไม่พบซัพพลายเออร์ที่ค้นหา');
-            } else {
-                // เลือกตัวแรกให้ก่อน (หรือคุณจะทำเป็น dropdown ก็ได้)
-                setSupplier(rows[0]);
-            }
-        } catch (e: any) {
-            setSupError(e?.message ?? 'ค้นหาไม่สำเร็จ');
-        } finally {
-            setSupLoading(false);
-        }
-    };
-
-    // ---- remove / update ----
     const removeItem = (product_id: string) => {
         setCart((prev) => prev.filter((x) => x.product_id !== product_id));
     };
 
     const updateItem = (product_id: string, field: 'qty' | 'unit_cost' | 'note', value: any) => {
         setCart((prev) =>
-            prev.map((x) =>
-                x.product_id === product_id ? { ...x, [field]: field === 'note' ? value : Number(value) } : x
-            )
+            prev.map((x) => (x.product_id === product_id ? { ...x, [field]: field === 'note' ? value : Number(value) } : x))
         );
     };
 
@@ -98,13 +95,57 @@ export default function RestockCart({ onRegisterAddAction, onCreatedAction }: Re
         return everyQtyOk && everyCostOk;
     }, [cart, totalLines]);
 
-    // ---- submit: POST /warehouse/stock-in/batches ----
+    // === helper: อัปเดตราคาทุนของสินค้า ตาม unit_cost หลังสร้างบิลสำเร็จ ===
+    // แทนที่ทั้งฟังก์ชัน
+    async function updateProductCosts(items: CartItem[], supplierId?: number | null) {
+        const cleaned = items
+            .map((it) => ({
+                product_id: String(it.product_id ?? "").trim(),        // ✅ string
+                cost: Number(it.unit_cost),
+            }))
+            .filter((x) => x.product_id && Number.isFinite(x.cost) && x.cost >= 0);
+
+        if (cleaned.length === 0) return;
+
+        try {
+            const res = await fetch('/warehouse/products/cost-bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                cache: 'no-store',
+                body: JSON.stringify({
+                    supplier_id: supplier?.id ?? null,                    // ผูกซัพพลายเออร์ทั้งชุด (ถ้ามี)
+                    items: cleaned,                                       // ✅ product_id เป็น string แล้ว
+                }),
+            });
+            if (res.ok) return;
+            // ถ้าไม่ใช่ 404 ค่อย fallback
+        } catch (e) {
+            console.warn('cost-bulk error:', e);
+        }
+
+        // fallback: PATCH รายตัว (string id)
+        await Promise.all(cleaned.map(async (x) => {
+            try {
+                const r = await fetch(`/warehouse/products/${encodeURIComponent(x.product_id)}/cost`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    cache: 'no-store',
+                    body: JSON.stringify({ cost: x.cost, supplier_id: supplier?.id ?? null }),
+                });
+                if (!r.ok) console.warn('patch cost failed for', x.product_id, await r.text());
+            } catch (e) {
+                console.warn('patch cost error for', x.product_id, e);
+            }
+        }));
+    }
+
+
     const { mutate: createBatch, isPending } = useMutation({
         mutationFn: async () => {
             if (!validForSubmit) throw new Error('ข้อมูลไม่ครบ');
             const payload = {
                 supplier_id: supplier?.id ?? null,
-                expected_date: expectedDate || null, // yyyy-mm-dd
+                expected_date: expectedDate || null,
                 note: batchNote || null,
                 items: cart.map((it) => ({
                     product_id: it.product_id,
@@ -125,16 +166,22 @@ export default function RestockCart({ onRegisterAddAction, onCreatedAction }: Re
             }
             return res.json();
         },
-        onSuccess: (json: any) => {
-            // เคลียร์ตะกร้า + แจ้ง parent
+        onSuccess: async (json: any) => {
+            // ✅ อัปเดตราคาทุน ตาม unit_cost ของแถวในตะกร้า
+            try {
+                await updateProductCosts(cart);
+            } catch (e) {
+                console.warn('update cost after batch error:', e);
+            }
+
             setCart([]);
             setBatchNote('');
-            if (onCreatedAction && json?.batch_id) onCreatedAction({ batch_id: json.batch_id });
+            onCreatedAction?.({ batch_id: json?.batch_id });
         },
     });
 
     return (
-        <div className="rounded-2xl border border-zinc-800/40 p-4 bg-zinc-900/20 backdrop-blur">
+        <div className="rounded-2xl border-for-card">
             <div className="flex items-center justify-between mb-3">
                 <h3 className="text-lg font-semibold">ตะกร้าสั่งของเข้า</h3>
                 {totalLines > 0 ? (
@@ -144,17 +191,19 @@ export default function RestockCart({ onRegisterAddAction, onCreatedAction }: Re
                 )}
             </div>
 
-            {/* table */}
-            <div className="overflow-x-auto rounded-xl border border-zinc-800/50">
+            <div
+                className="overflow-x-auto rounded-xl border"
+                style={{ borderColor: color.colors.orange }}
+            >
                 <table className="min-w-full text-sm">
-                    <thead className="bg-zinc-800/40">
-                    <tr>
-                        <th className="px-3 py-2 text-left">สินค้า</th>
-                        <th className="px-3 py-2 text-right">ค้างรับ</th>
-                        <th className="px-3 py-2 text-right">จำนวน</th>
-                        <th className="px-3 py-2 text-right">ราคาต่อหน่วย</th>
-                        <th className="px-3 py-2">หมายเหตุ</th>
-                        <th className="px-3 py-2"></th>
+                    <thead>
+                    <tr style={{ backgroundColor: `${color.colors.orange}cc` }}>
+                        <th className="px-3 py-2 text-left text-white">สินค้า</th>
+                        <th className="px-3 py-2 text-right text-white">ค้างรับ</th>
+                        <th className="px-3 py-2 text-right text-white">จำนวน</th>
+                        <th className="px-3 py-2 text-right text-white">ราคาต่อหน่วย</th>
+                        <th className="px-3 py-2 text-right text-white">หมายเหตุ</th>
+                        <th className="px-3 py-2 text-white"></th>
                     </tr>
                     </thead>
                     <tbody>
@@ -162,7 +211,7 @@ export default function RestockCart({ onRegisterAddAction, onCreatedAction }: Re
                         <tr key={it.product_id} className="border-t border-zinc-800/50">
                             <td className="px-3 py-2">{it.name}</td>
                             <td className="px-3 py-2 text-right">{it.pending ?? 0}</td>
-                            <td className="px-3 py-2">
+                            <td className="px-3 py-2 text-right">
                                 <input
                                     type="number"
                                     min={1}
@@ -171,7 +220,7 @@ export default function RestockCart({ onRegisterAddAction, onCreatedAction }: Re
                                     onChange={(e) => updateItem(it.product_id, 'qty', e.target.value)}
                                 />
                             </td>
-                            <td className="px-3 py-2">
+                            <td className="px-3 py-2 text-right">
                                 <input
                                     type="number"
                                     step="0.01"
@@ -181,7 +230,7 @@ export default function RestockCart({ onRegisterAddAction, onCreatedAction }: Re
                                     onChange={(e) => updateItem(it.product_id, 'unit_cost', e.target.value)}
                                 />
                             </td>
-                            <td className="px-3 py-2">
+                            <td className="px-3 py-2 text-right">
                                 <input
                                     type="text"
                                     className="w-56 bg-transparent border border-zinc-700 rounded-md px-2 py-1"
@@ -191,10 +240,7 @@ export default function RestockCart({ onRegisterAddAction, onCreatedAction }: Re
                                 />
                             </td>
                             <td className="px-3 py-2 text-right">
-                                <button
-                                    onClick={() => removeItem(it.product_id)}
-                                    className="text-red-400 hover:text-red-300 underline"
-                                >
+                                <button onClick={() => removeItem(it.product_id)} className="text-red-400 hover:text-red-300 underline">
                                     ลบ
                                 </button>
                             </td>
@@ -214,51 +260,10 @@ export default function RestockCart({ onRegisterAddAction, onCreatedAction }: Re
             {/* supplier / expected / note */}
             <div className="grid sm:grid-cols-3 gap-3 mt-4">
                 <div className="sm:col-span-1">
-                    <label className="block text-sm mb-1">ซัพพลายเออร์</label>
-                    {supplier ? (
-                        <div className="flex items-center gap-2">
-                            <div className="text-sm">
-                                <div className="font-medium">{supplier.company_name}</div>
-                                <div className="opacity-70">{supplier.email ?? supplier.tel ?? '-'}</div>
-                            </div>
-                            <button
-                                onClick={() => setSupplier(null)}
-                                className="ml-auto text-xs underline opacity-80"
-                            >
-                                เปลี่ยน
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="flex gap-2">
-                            <input
-                                className="flex-1 bg-transparent border border-zinc-700 rounded-md px-2 py-1"
-                                placeholder="พิมพ์ชื่อบริษัทเพื่อค้นหา"
-                                value={supplierKeyword}
-                                onChange={(e) => setSupplierKeyword(e.target.value)}
-                            />
-                            <button
-                                onClick={doSearchSupplier}
-                                disabled={!supplierKeyword.trim() || supLoading}
-                                className="px-3 py-1 rounded-md border border-zinc-700 hover:bg-zinc-800"
-                            >
-                                ค้นหา
-                            </button>
-                        </div>
-                    )}
-                    {!!supError && <div className="text-xs text-red-400 mt-1">{supError}</div>}
+                    <SupplierDropdown value={supplier} onChange={setSupplier} label="ซัพพลายเออร์" />
                 </div>
 
-                <div>
-                    <label className="block text-sm mb-1">วันคาดว่าจะได้รับ</label>
-                    <input
-                        type="date"
-                        className="w-full bg-transparent border border-zinc-700 rounded-md px-2 py-1"
-                        value={expectedDate}
-                        onChange={(e) => setExpectedDate(e.target.value)}
-                    />
-                </div>
-
-                <div>
+                <div className="sm:col-span-2">
                     <label className="block text-sm mb-1">โน้ตของบิล</label>
                     <input
                         type="text"
@@ -272,21 +277,37 @@ export default function RestockCart({ onRegisterAddAction, onCreatedAction }: Re
 
             {/* actions */}
             <div className="flex items-center gap-3 mt-4">
-                <button
+                <Button
                     onClick={() => setCart([])}
                     disabled={cart.length === 0 || isPending}
-                    className="px-3 py-2 rounded-md border border-zinc-700 hover:bg-zinc-800 disabled:opacity-50"
+                    variant="outlined"
+                    sx={{
+                        px: 3,
+                        py: 1,
+                        borderColor: "grey.700",
+                        color: "grey.200",
+                        "&:hover": { backgroundColor: "grey.800" },
+                        "&.Mui-disabled": { opacity: 0.5 },
+                    }}
                 >
                     ล้างตะกร้า
-                </button>
+                </Button>
+
                 <div className="ml-auto flex items-center gap-2">
-                    <button
+                    <Button
                         onClick={() => createBatch()}
                         disabled={!validForSubmit || isPending || cart.length === 0}
-                        className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-50"
+                        variant="contained"
+                        color="primary"
+                        sx={{
+                            px: 4,
+                            py: 1.2,
+                            textTransform: "none",
+                            "&.Mui-disabled": { opacity: 0.5 },
+                        }}
                     >
-                        {isPending ? 'กำลังสร้างบิล…' : 'สร้างบิลสั่งเข้า'}
-                    </button>
+                        {isPending ? "กำลังสร้างบิล…" : "สร้างบิลสั่งเข้า"}
+                    </Button>
                 </div>
             </div>
         </div>

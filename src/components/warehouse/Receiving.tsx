@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@mui/material";
+import color from "@/app/styles/color";
 
 // ---- Types ----
 type OpenReceiveItem = {
@@ -75,7 +76,7 @@ export default function Receiving() {
     );
 
     return (
-        <div className="col-span-2 bg-white rounded-xl shadow p-4">
+        <div className="bg-white rounded-xl shadow p-4">
             <h3 className="font-semibold mb-3">รับสินค้า</h3>
 
             {isLoading && (
@@ -93,8 +94,8 @@ export default function Receiving() {
             )}
 
             {batches.map((batch) => (
-                <div key={batch.batch_id} className="border rounded-lg mb-5 overflow-hidden">
-                    <div className="bg-gray-100 px-4 py-2 font-medium">
+                <div key={batch.batch_id} className="border rounded-lg mb-5 overflow-hidden" style={{ borderColor: color.colors.orange }}>
+                    <div className="px-4 py-2 font-medium text-white" style={{ backgroundColor: color.colors.orange }}>
                         บิล #{batch.batch_id}
                     </div>
 
