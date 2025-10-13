@@ -772,7 +772,7 @@ export default function ActivityLog({
             <h3>{title}</h3>
           </div>
           <div className="panel-actions">
-            <div className="filter-control">
+            {/* <div className="filter-control">
               <FilterButton
                 aria-label="กรองข้อมูลสินค้า"
                 label={filterButtonLabel}
@@ -785,7 +785,7 @@ export default function ActivityLog({
                 onSelect={handleFilterSelect}
                 anchorRef={filterButtonRef}
               />
-            </div>
+            </div> */}
             <div className="filter-control">
               <FilterButton
                 aria-label="เรียงลำดับประวัติกิจกรรม"

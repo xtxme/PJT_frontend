@@ -1467,12 +1467,12 @@ export default function OwnerDashboardPage() {
             error={highestOrderCustomersError}
             range={highestOrderCustomersRange}
           />
-          <HighestOrderCompanyChart
+          {/* <HighestOrderCompanyChart
             companies={highestOrderCompanies}
             isLoading={isLoadingHighestOrderCompanies}
             error={highestOrderCompaniesError}
             range={highestOrderCompaniesRange}
-          />
+          /> */}
         </LeftColumn>
         <RightColumn>
           <Leaderboard
@@ -1488,12 +1488,12 @@ export default function OwnerDashboardPage() {
             error={topSellersError}
             range={topSellersRange}
           />
-          <DeadStockChart
+          {/* <DeadStockChart
             products={deadStockLatest?.products ?? []}
             latest={deadStockLatest}
             isLoading={isLoadingDeadStock}
             error={deadStockError}
-          />
+          /> */}
         </RightColumn>
       </ContentGrid>
     </DashboardPage>
