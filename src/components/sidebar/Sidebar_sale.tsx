@@ -100,8 +100,8 @@ export default function Sidebar() {
 
   const navItems = [
     { href: "/sale/sales", label: "ออกบิล", icon: "/images/dashboard-black-icon.svg" },
-    { href: "/sale/customers", label: "ลูกค้า", icon: "/images/RoleAccess-gray-icon.svg" },
-    { href: "/sale/invoices", label: "บิลทั้งหมด", icon: "/images/Pending-gray-icon.svg" },
+    { href: "/sale/customers", label: "ลูกค้า", icon: "/images/RoleAccess-black-icon.svg.svg" },
+    { href: "/sale/invoices", label: "บิลทั้งหมด", icon: "/images/invoice.svg" },
   ];
 
   return (

@@ -40,10 +40,11 @@ const StatusBadge = styled.span<{ status: string }>`
   min-width: 60px;
   text-align: center;
   background-color: ${({ status }) =>
-    status === 'สำเร็จ' ? '#2e7d32' :
-      status === 'ยกเลิก' ? '#EF4444' : '#FACC15'};
+    status === 'สำเร็จ' ? '#aaddada3' :
+      status === 'ยกเลิก' ? '#f19d9db1' : '#ebdeabff'};
   color: ${({ status }) =>
-    status === 'ยกเลิก' || status === 'สำเร็จ' ? '#fff' : '#000'};
+    status === 'สำเร็จ' ? '#008c09ff' :
+      status === 'ยกเลิก' ? '#c10000ff' : '#ebdeabff'};
 `;
 
 interface Props {
