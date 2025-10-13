@@ -131,25 +131,38 @@ app.get(
 app.post("/auth/login", (req, res) => {
     const { email, password } = req.body;
 
-    // mock users (จริงๆ ควรดึงจาก DB)
-    if (email === "owner@gmail.com" && password === "1234") {
-        return res.json({
+    const mockUsers = {
+        "owner@gmail.com": {
+            password: "1234",
             redirect: `${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/owner`,
             role: "owner",
-        });
-    }
-
-    if (email === "sales@gmail.com" && password === "1234") {
-        return res.json({
+            username: "Owner User",
+        },
+        "sales@gmail.com": {
+            password: "1234",
             redirect: `${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/sale`,
             role: "sale",
-        });
-    }
-
-    if (email === "warehouse@gmail.com" && password === "1234") {
-        return res.json({
+            username: "Sales User",
+        },
+        "warehouse@gmail.com": {
+            password: "1234",
             redirect: `${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/warehouse`,
             role: "warehouse",
+            username: "Warehouse User",
+        },
+    };
+
+    const userConfig = mockUsers[email];
+    if (userConfig && password === userConfig.password) {
+        return res.json({
+            redirect: userConfig.redirect,
+            role: userConfig.role,
+            username: userConfig.username,
+            name: userConfig.username,
+            user: {
+                username: userConfig.username,
+                name: userConfig.username,
+            },
         });
     }
 

@@ -1,6 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import styled from 'styled-components';
+import useUserStore from '@/store/userStore';
 
 const HeaderBar = styled.header`
   display: flex;
@@ -177,6 +178,15 @@ const HeaderBar = styled.header`
 
 export default function AppHeader() {
   const [isLogoutHovered, setIsLogoutHovered] = useState(false);
+  const role = useUserStore((state) => state.role);
+  const username = useUserStore((state) => state.username);
+
+  const displayRole = useMemo(() => {
+    if (!role) return '';
+    return role.charAt(0).toUpperCase() + role.slice(1);
+  }, [role]);
+
+  const displayUsername = useMemo(() => username ?? '', [username]);
 
   return (
     <HeaderBar>
@@ -189,8 +199,8 @@ export default function AppHeader() {
         <div className="user-profile">
           <img className="admin-icon" src="/images/admin-icon.svg" alt="admin-icon" />
           <div className="user-details">
-            <strong className="user-name">xxxxx</strong>
-            <strong className="user-role">Admin</strong>
+            <strong className="user-name">{displayUsername}</strong>
+            <strong className="user-role">{displayRole}</strong>
           </div>
         </div>
         <span className="user-divider" aria-hidden="true" />

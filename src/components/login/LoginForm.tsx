@@ -20,7 +20,72 @@ type LoginFormData = z.infer<typeof loginSchema>;
 type LoginResponse = {
     redirect: string;
     role?: string | null;
+    username?: string | null;
+    name?: string | null;
+    fullName?: string | null;
+    full_name?: string | null;
+    user?: {
+        username?: string | null;
+        name?: string | null;
+        fullName?: string | null;
+        full_name?: string | null;
+        firstName?: string | null;
+        lastName?: string | null;
+        first_name?: string | null;
+        last_name?: string | null;
+    } | null;
 };
+
+function pickNonEmpty(...values: Array<string | null | undefined>) {
+    for (const value of values) {
+        if (typeof value !== "string") {
+            continue;
+        }
+
+        const trimmed = value.trim();
+        if (trimmed.length > 0) {
+            return trimmed;
+        }
+    }
+
+    return null;
+}
+
+function deriveUsername(payload: LoginResponse, fallbackEmail?: string) {
+    const user = payload.user ?? null;
+
+    const directMatch = pickNonEmpty(
+        payload.username,
+        payload.name,
+        payload.fullName,
+        payload.full_name,
+        user?.username,
+        user?.name,
+        user?.fullName,
+        user?.full_name
+    );
+    if (directMatch) {
+        return directMatch;
+    }
+
+    const composedName = pickNonEmpty(
+        [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim(),
+        [user?.first_name, user?.last_name].filter(Boolean).join(" ").trim()
+    );
+    if (composedName) {
+        return composedName;
+    }
+
+    if (typeof fallbackEmail === "string" && fallbackEmail.length > 0) {
+        const localPart = fallbackEmail.split("@")[0]?.trim();
+        if (localPart) {
+            return localPart;
+        }
+        return fallbackEmail.trim().length > 0 ? fallbackEmail.trim() : null;
+    }
+
+    return null;
+}
 
 const ImageWrapperStyled = styled.div`
     flex: 11;
@@ -39,6 +104,7 @@ const LogginFormStyled = styled.div`
 export default function LoginForm() {
     const router = useRouter();
     const setRole = useUserStore((state) => state.setRole);
+    const setUsername = useUserStore((state) => state.setUsername);
 
     const {
         register,
@@ -71,9 +137,10 @@ export default function LoginForm() {
 
             return res.json() as Promise<LoginResponse>;
         },
-        onSuccess: (data: LoginResponse) => {
+        onSuccess: (data: LoginResponse, variables: LoginFormData) => {
             console.log("✅ Login success:", data);
             setRole(data.role ?? null);
+            setUsername(deriveUsername(data, variables.email));
             router.push(data.redirect);
         },
         onError: (err: Error) => {

@@ -12,6 +12,7 @@ import TopSellersChart from "@/components/top-sellers-chart/TopSellersChart";
 import DeadStockChart from "@/components/dead-stock-chart/DeadStockChart";
 import HighestOrderCustomerChart from "@/components/highestOrderCustomer-chart/HighestOrderCustomerChart";
 import HighestOrderCompanyChart from "@/components/highestOrderCompany-chart/HighestOrderCompanyChart";
+import useUserStore from "@/store/userStore";
 
 const backendDomain = (process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL ?? "http://localhost").replace(/\/$/, "");
 const backendPort = process.env.NEXT_PUBLIC_BACKEND_PORT ?? "5002";
@@ -213,6 +214,9 @@ const RightColumn = styled.div`
 `;
 
 export default function OwnerDashboardPage() {
+  const username = useUserStore((state) => state.username);
+  const sanitizedUsername = username?.trim() ?? "";
+  const welcomeMessage = sanitizedUsername.length > 0 ? `ยินดีต้อนรับ, คุณ ${sanitizedUsername}` : "ยินดีต้อนรับ";
   const [monthlySalesTotal, setMonthlySalesTotal] = useState<number | null>(null);
   const [isLoadingMonthlySales, setIsLoadingMonthlySales] = useState(true);
   const [monthlySalesError, setMonthlySalesError] = useState<string | null>(null);
@@ -1421,7 +1425,7 @@ export default function OwnerDashboardPage() {
       </div>
 
       <div className="welcome">
-        <h1>ยินดีต้อนรับ, คุณ xxxxxx</h1>
+        <h1>{welcomeMessage}</h1>
       </div>
 
       <ContentGrid>

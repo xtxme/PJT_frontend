@@ -26,6 +26,10 @@ type ActivityLogItem = {
     productStatus: string | null;
     lastStockStatus: string | null;
     lastStockUpdate: string | null;
+    supplierName: string | null;
+    categoryName: string | null;
+    sellPriceValue: number;
+    quantityValue: number;
   };
 };
 
@@ -35,14 +39,21 @@ type ActivityLogProps = {
   filterLabel?: string;
 };
 
+type OwnerProductApiItem = {
+  productId?: unknown;
+  productCode?: unknown;
+  productName?: unknown;
+  sellPrice?: unknown;
+  quantity?: unknown;
+  productStatus?: unknown;
+  categoryName?: unknown;
+  lastStockStatus?: unknown;
+  lastStockUpdate?: unknown;
+  supplierName?: unknown;
+};
+
 type ActivityLogApiResponse = {
-  data?: unknown;
-  pagination?: {
-    totalPages?: unknown;
-    total?: unknown;
-    page?: unknown;
-    pageSize?: unknown;
-  };
+  data?: OwnerProductApiItem[];
 };
 
 type SortConfig = {
@@ -396,23 +407,14 @@ function sanitizeActivityLogItems(raw: unknown): ActivityLogItem[] {
           ? record.productName.trim()
           : productCode ?? 'ไม่ระบุสินค้า';
 
-      const sellPrice = formatPrice(record.sellPrice);
-      const quantity = formatQuantity(record.quantity);
+      const sellPriceNumber = parseNumber(record.sellPrice) ?? 0;
+      const sellPrice = priceFormatter.format(sellPriceNumber);
+      const quantityNumber = parseNumber(record.quantity) ?? 0;
+      const quantity = quantityFormatter.format(quantityNumber);
       const stockUpdate = formatDate(record.lastStockUpdate);
       const statusLabel = toStatusLabel(record.lastStockStatus, record.productStatus);
 
-      let unitCostLabel: string | undefined;
-      const lastStock = record.lastStock;
-      if (lastStock && typeof lastStock === 'object' && lastStock !== null) {
-        const unitCost =
-          'unitCost' in lastStock ? parseNumber((lastStock as Record<string, unknown>).unitCost) : null;
-        if (unitCost !== null) {
-          unitCostLabel = priceFormatter.format(unitCost);
-        }
-      }
-
       const costNumber = parseNumber(record.cost) ?? 0;
-      const sellPriceNumber = parseNumber(record.sellPrice) ?? 0;
       const margin = sellPriceNumber - costNumber;
       const marginLabel = priceFormatter.format(margin);
 
@@ -420,6 +422,14 @@ function sanitizeActivityLogItems(raw: unknown): ActivityLogItem[] {
         typeof record.productStatus === 'string' ? record.productStatus.trim() : null;
       const lastStockStatus =
         typeof record.lastStockStatus === 'string' ? record.lastStockStatus.trim() : null;
+      const supplierName =
+        typeof record.supplierName === 'string' && record.supplierName.trim().length > 0
+          ? record.supplierName.trim()
+          : null;
+      const categoryName =
+        typeof record.categoryName === 'string' && record.categoryName.trim().length > 0
+          ? record.categoryName.trim()
+          : null;
 
       const highlighted =
         productStatus === 'low_stock' ||
@@ -436,13 +446,16 @@ function sanitizeActivityLogItems(raw: unknown): ActivityLogItem[] {
         status: statusLabel,
         stockUpdate,
         highlighted,
-        costPerUnit: unitCostLabel,
         currentMargin: marginLabel,
         raw: {
           productId,
           productStatus,
           lastStockStatus,
           lastStockUpdate: typeof record.lastStockUpdate === 'string' ? record.lastStockUpdate : null,
+          supplierName,
+          categoryName,
+          sellPriceValue: sellPriceNumber,
+          quantityValue: quantityNumber,
         },
       };
     })
@@ -456,7 +469,6 @@ export default function ActivityLog({
 }: ActivityLogProps) {
   const [items, setItems] = useState<ActivityLogItem[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [selectedItem, setSelectedItem] = useState<ActivityLogItem | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSortOpen, setIsSortOpen] = useState(false);
@@ -472,26 +484,12 @@ export default function ActivityLog({
     let isMounted = true;
     const controller = new AbortController();
 
-    async function fetchActivityLog() {
+    async function fetchOwnerProducts() {
       setIsLoading(true);
       setError(null);
 
       try {
-        const params = new URLSearchParams({
-          page: String(currentPage),
-          pageSize: String(rowsPerPage),
-        });
-
-        if (statusFilter) {
-          params.set('productStatus', statusFilter);
-        }
-
-        if (sortConfig.key) {
-          const sortField = sortConfig.key === 'salePrice' ? 'sell_price' : 'remain_qty';
-          params.set('sort', `${sortField}:${sortConfig.order}`);
-        }
-
-        const response = await fetch(`${backendBaseUrl}/analytics/activity-log?${params.toString()}`, {
+        const response = await fetch(`${backendBaseUrl}/inventory/owner-products`, {
           signal: controller.signal,
           credentials: 'include',
         });
@@ -506,17 +504,8 @@ export default function ActivityLog({
         }
 
         const sanitized = sanitizeActivityLogItems(payload.data ?? []);
-        const totalPagesRaw =
-          typeof payload.pagination?.totalPages === 'number'
-            ? payload.pagination?.totalPages
-            : typeof payload.pagination?.totalPages === 'string'
-              ? Number.parseInt(payload.pagination.totalPages, 10)
-              : 1;
-        const safeTotalPages =
-          Number.isInteger(totalPagesRaw) && totalPagesRaw > 0 ? totalPagesRaw : 1;
-
         setItems(sanitized);
-        setTotalPages(safeTotalPages);
+        setCurrentPage(1);
       } catch (fetchError) {
         if (fetchError instanceof DOMException && fetchError.name === 'AbortError') {
           return;
@@ -525,7 +514,6 @@ export default function ActivityLog({
         if (isMounted) {
           setError('ไม่สามารถโหลดข้อมูลได้');
           setItems([]);
-          setTotalPages(1);
         }
       } finally {
         if (isMounted) {
@@ -534,19 +522,59 @@ export default function ActivityLog({
       }
     }
 
-    fetchActivityLog();
+    fetchOwnerProducts();
 
     return () => {
       isMounted = false;
       controller.abort();
     };
-  }, [currentPage, sortConfig, statusFilter]);
+  }, []);
+
+  const processedItems = useMemo(() => {
+    const filteredByStatus = statusFilter
+      ? items.filter((item) => item.raw?.productStatus === statusFilter)
+      : items;
+
+    if (!sortConfig.key) {
+      return filteredByStatus;
+    }
+
+    const sorted = [...filteredByStatus];
+    sorted.sort((a, b) => {
+      const direction = sortConfig.order === 'asc' ? 1 : -1;
+
+      if (sortConfig.key === 'salePrice') {
+        const aValue = a.raw?.sellPriceValue ?? 0;
+        const bValue = b.raw?.sellPriceValue ?? 0;
+        return (aValue - bValue) * direction;
+      }
+
+      const aQty = a.raw?.quantityValue ?? 0;
+      const bQty = b.raw?.quantityValue ?? 0;
+      return (aQty - bQty) * direction;
+    });
+
+    return sorted;
+  }, [items, sortConfig, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(processedItems.length / rowsPerPage));
 
   useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
+    setCurrentPage((prev) => {
+      if (prev > totalPages) {
+        return totalPages;
+      }
+      if (prev < 1) {
+        return 1;
+      }
+      return prev;
+    });
+  }, [totalPages]);
+
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * rowsPerPage;
+    return processedItems.slice(start, start + rowsPerPage);
+  }, [processedItems, currentPage]);
 
   const handleEditClick = (item: ActivityLogItem) => {
     setSelectedItem(item);
@@ -629,12 +657,28 @@ export default function ActivityLog({
     if (items.length === 0) {
       return (
         <div className="table-row table-row--message">
-          <span>ยังไม่มีประวัติการอัปเดตสต็อก</span>
+          <span>ยังไม่มีรายการสินค้า</span>
         </div>
       );
     }
 
-    return items.map((item) => (
+    if (processedItems.length === 0) {
+      return (
+        <div className="table-row table-row--message">
+          <span>ไม่พบสินค้าที่ตรงกับตัวกรอง</span>
+        </div>
+      );
+    }
+
+    if (paginatedItems.length === 0) {
+      return (
+        <div className="table-row table-row--message">
+          <span>ไม่พบข้อมูลในหน้าปัจจุบัน</span>
+        </div>
+      );
+    }
+
+    return paginatedItems.map((item) => (
       <div
         key={`${item.productCode}-${item.stockUpdate}`}
         className={`table-row${item.highlighted ? ' highlighted' : ''}`}
@@ -731,4 +775,3 @@ export default function ActivityLog({
     </StyledActivityLog>
   );
 }
-
