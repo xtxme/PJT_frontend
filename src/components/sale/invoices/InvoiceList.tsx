@@ -1,4 +1,5 @@
 'use client';
+import { exportInvoicePDF } from "@/utils/pdfFontThai";
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import InvoiceCard from '@/components/sale/invoices/InvoiceCard';
@@ -206,25 +207,97 @@ export default function InvoiceList({ apiUrl }: InvoiceListProps) {
       </div>
 
       {/* Popup รายละเอียดบิล */}
-      <Dialog open={!!selectedInvoice} onClose={() => setSelectedInvoice(null)} fullWidth maxWidth="sm">
+      <Dialog open={!!selectedInvoice} onClose={() => setSelectedInvoice(null)} fullWidth maxWidth="md">
         <DialogTitle>รายละเอียดบิล</DialogTitle>
+
         {selectedInvoice && (
-          <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <p>🧾 <b>เลขที่บิล:</b> {selectedInvoice.order_number}</p>
-            <p>📅 <b>วันที่:</b> {new Date(selectedInvoice.order_date).toLocaleString('th-TH')}</p>
-            <p>👤 <b>ลูกค้า:</b> {selectedInvoice.customer_name}</p>
-            <p>🧑‍💼 <b>พนักงานขาย:</b> {selectedInvoice.sale_name ?? '-'}</p>
-            <p>💰 <b>ยอดรวม:</b> {Number(selectedInvoice.total_amount).toLocaleString()} บาท</p>
-            <p>📦 <b>สถานะ:</b> {selectedInvoice.status === 'completed' ? 'สำเร็จ' : 'ยกเลิก'}</p>
-            <p>📝 <b>หมายเหตุ:</b> {selectedInvoice.note || '-'}</p>
+          <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <p><b>🧾 เลขที่บิล:</b> {selectedInvoice.order_number}</p>
+            <p><b>📅 วันที่:</b> {new Date(selectedInvoice.order_date).toLocaleString('th-TH')}</p>
+            <p><b>👤 ลูกค้า:</b> {selectedInvoice.customer_name}</p>
+            <p><b>🧑‍💼 พนักงานขาย:</b> {selectedInvoice.sale_name ?? '-'}</p>
+            <p><b>💰 ยอดรวม:</b> {Number(selectedInvoice.total_amount).toLocaleString()} บาท</p>
+            <p><b>📦 สถานะ:</b> {selectedInvoice.status === 'completed' ? 'สำเร็จ' : 'ยกเลิก'}</p>
+            <p><b>📝 หมายเหตุ:</b> {selectedInvoice.note || '-'}</p>
+
+            {/* ✅ ตารางสินค้าในบิล */}
+            {selectedInvoice.items && selectedInvoice.items.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                <h4 style={{ fontWeight: 'bold', marginBottom: 8 }}>🛒 รายการสินค้า</h4>
+
+                <table
+                  style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    border: '1px solid #ddd',
+                    fontSize: '14px',
+                  }}
+                >
+                  <thead style={{ background: '#f5f5f5' }}>
+                    <tr>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>สินค้า</th>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>จำนวน</th>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'right' }}>ราคาต่อหน่วย (฿)</th>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'right' }}>รวม (฿)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedInvoice.items.map((item) => (
+                      <tr key={item.id}>
+                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.product_name}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>{item.quantity}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'right' }}>
+                          {Number(item.unit_price).toLocaleString()}
+                        </td>
+                        <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'right' }}>
+                          {Number(item.total_price).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                <div
+                  style={{
+                    marginTop: 8,
+                    textAlign: 'right',
+                    fontWeight: 'bold',
+                    fontSize: '15px',
+                  }}
+                >
+                  รวมทั้งหมด: {Number(selectedInvoice.total_amount).toLocaleString()} บาท
+                </div>
+              </div>
+            )}
           </DialogContent>
         )}
-        <DialogActions>
-          <Button onClick={() => setSelectedInvoice(null)} sx={{ textTransform: 'none' }}>
+
+        <DialogActions sx={{ justifyContent: 'space-between', px: 3 }}>
+          <Button
+            onClick={() => setSelectedInvoice(null)}
+            sx={{ textTransform: 'none', color: '#666' }}
+          >
             ปิด
           </Button>
+
+          {/* 🧾 ปุ่มดาวน์โหลด PDF */}
+          {selectedInvoice && (
+            <Button
+              variant="contained"
+              sx={{
+                textTransform: 'none',
+                borderRadius: '10px',
+                backgroundColor: '#2563eb',
+                '&:hover': { backgroundColor: '#1d4ed8' },
+              }}
+              onClick={() => { exportInvoicePDF(selectedInvoice) }}
+            >
+              💾 ดาวน์โหลด PDF
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
+
     </ListContainer>
   );
 }

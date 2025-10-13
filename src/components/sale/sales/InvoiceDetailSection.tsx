@@ -18,11 +18,12 @@ const Frame = styled.div`
 
 `;
 
-export default function InvoiceDetailSection({ invoiceNo, date }: any) {
+export default function InvoiceDetailSection({ invoiceNo, date, sale_name }: any) {
   return (
     <Frame>
       <p className="font-semibold mb-2">🧾 เลขที่บิล: {invoiceNo}</p>
       <p className="font-semibold mb-2">📅 วันที่: {date}</p>
+      <p className="font-semibold mb-2">🧑‍💼 พนักงานขาย: {sale_name}</p>
     </Frame>
   );
 }
