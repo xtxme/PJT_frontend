@@ -4,7 +4,7 @@ import { Button } from '@mui/material';
 
 const InvoiceCardStyled = styled.div`
   display: grid;
-  grid-template-columns: 120px 120px 1.2fr 1fr 100px auto;
+  grid-template-columns: 120px 1fr 1.2fr 1fr 1fr 100px auto;
   align-items: center;
   background: white;
   border: 1px solid #e5e7eb;
@@ -24,8 +24,9 @@ const InvoiceCardStyled = styled.div`
   }
 
   .date { color: #6b7280; font-size: 14px; }
-  .id { font-weight: 600; color: #1c4bb9; font-size: 15px; }
+  .id { font-weight: 600; color: #1c4bb9; font-size: 14px; }
   .customer { font-weight: 500; color: #374151; }
+  .sale { color: #374151; font-size: 14px; font-weight: 500; }
   .total { color: #15803d; font-weight: 600; }
   .buttons { display: flex; gap: 10px; justify-content: flex-end; }
 `;
@@ -69,6 +70,7 @@ export default function InvoiceCard({ invoice, onCancel, onView }: Props) {
       <div className="date">📅 {invoice.date}</div>
       <div className="id">{invoice.orderNumber}</div>
       <div className="customer">👤 {invoice.customer}</div>
+      <div className="sale">🧾 {invoice.sale ?? '-'}</div>
       <div className="total">💰 {invoice.total.toLocaleString()} ฿</div>
       <div style={{ justifyContent: 'center' }}>
         <StatusBadge status={invoice.status}>{invoice.status}</StatusBadge>

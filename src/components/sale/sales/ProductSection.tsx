@@ -16,6 +16,11 @@ const Container = styled.div`
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+
+  h3 {
+    margin-bottom: 2;
+    font-weight: 600;
+  }
 `;
 
 const ProductRow = styled.div`
@@ -51,7 +56,7 @@ export default function ProductSection({
 }: any) {
     return (
         <Container>
-            <h3 className="font-semibold mb-2">สินค้า</h3>
+            <h3 >สินค้า</h3>
 
             <input
                 value={search}
