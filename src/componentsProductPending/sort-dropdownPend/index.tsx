@@ -118,16 +118,16 @@ const sortGroups: Array<{
     group: 'salePrice',
     label: 'Sale Price',
     options: [
-      { direction: 'desc', value: 'salePrice:desc', label: 'High to Low' },
-      { direction: 'asc', value: 'salePrice:asc', label: 'Low to High' },
+      { direction: 'desc', value: 'salePrice:desc', label: 'มากไปน้อย' },
+      { direction: 'asc', value: 'salePrice:asc', label: 'น้อยไปมาก' },
     ],
   },
   {
     group: 'remaining',
     label: 'Remaining',
     options: [
-      { direction: 'desc', value: 'remaining:desc', label: 'High to Low' },
-      { direction: 'asc', value: 'remaining:asc', label: 'Low to High' },
+      { direction: 'desc', value: 'remaining:desc', label: 'มากไปน้อย' },
+      { direction: 'asc', value: 'remaining:asc', label: 'น้อยไปมาก' },
     ],
   },
 ];

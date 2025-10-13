@@ -633,8 +633,8 @@ export default function ActivityLog({
     if (!sortConfig.key) {
       return 'Sort';
     }
-    const directionLabel = sortConfig.order === 'asc' ? 'Low to High' : 'High to Low';
-    return `${sortConfig.key === 'salePrice' ? 'Price' : 'Remaining'} ${directionLabel}`;
+    const directionLabel = sortConfig.order === 'asc' ? 'น้อยไปมาก' : 'มากไปน้อย';
+    return `${sortConfig.key === 'salePrice' ? 'ราคา' : 'คงเหลือ'} ${directionLabel}`;
   }, [sortConfig]);
 
   const renderRows = () => {
