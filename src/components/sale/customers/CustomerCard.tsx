@@ -21,6 +21,7 @@ const StyledCard = styled(Card)`
   border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: all 0.2s ease-in-out;
+  margin-bottom: 10px;
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
@@ -79,7 +80,13 @@ export default function CustomerCard({ customer, onEdit }: Props) {
             <Button
               variant="outlined"
               size="small"
-              sx={{ textTransform: 'none', borderRadius: '8px', fontSize: '13px' }}
+              sx={{
+                textTransform: 'none',
+                borderRadius: '8px',
+                fontSize: '13px',
+                borderColor: '#ffffffff',
+                color: '#2563eb',
+              }}
               onClick={() => onEdit(customer)}
             >
               ✏️ แก้ไข
