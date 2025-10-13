@@ -99,7 +99,7 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   const navItems = [
-    { href: "/warehouse/stockIn", label: "บันทึกการรับเข้า", icon: "/images/dashboard-black-icon.svg" },
+    { href: "/warehouse/stockIn", label: "ดำเนินการสั่งซื้อสินค้า", icon: "/images/dashboard-black-icon.svg" },
     { href: "/warehouse/updateStock", label: "ปรับปรุงข้อมูลสต็อก", icon: "/images/RoleAccess-gray-icon.svg" },
   ];
 
