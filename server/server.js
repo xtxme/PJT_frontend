@@ -135,20 +135,27 @@ app.post("/auth/login", (req, res) => {
     if (email === "owner@gmail.com" && password === "1234") {
         return res.json({
             redirect: `${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/owner`,
+            role: "owner",
         });
     }
 
     if (email === "sales@gmail.com" && password === "1234") {
         return res.json({
             redirect: `${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/sale`,
+            role: "sale",
         });
     }
 
     if (email === "warehouse@gmail.com" && password === "1234") {
         return res.json({
             redirect: `${process.env.FRONTEND_DOMAIN_URL}:${process.env.FRONTEND_PORT}/warehouse`,
+            role: "warehouse",
         });
     }
+
+    return res.status(401).json({
+        message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
+    });
 });
 
 /**
