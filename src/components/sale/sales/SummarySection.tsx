@@ -155,7 +155,9 @@ export default function SummarySection({
                                             textTransform: 'none',
                                             fontWeight: 500,
                                         }}
-                                        onClick={() => removeProductFromBill(p.id)}
+                                        onClick={() => {
+                                            removeProductFromBill(p.id);
+                                        }}
                                     >
                                         ลบ
                                     </Button>
