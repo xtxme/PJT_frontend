@@ -44,6 +44,7 @@ type OwnerProductApiItem = {
   productCode?: unknown;
   productName?: unknown;
   sellPrice?: unknown;
+  cost?: unknown;
   quantity?: unknown;
   productStatus?: unknown;
   categoryName?: unknown;
@@ -416,6 +417,7 @@ function sanitizeActivityLogItems(raw: unknown): ActivityLogItem[] {
 
       const costNumber = parseNumber(record.cost) ?? 0;
       const margin = sellPriceNumber - costNumber;
+      const costLabel = priceFormatter.format(costNumber);
       const marginLabel = priceFormatter.format(margin);
 
       const productStatus =
@@ -446,6 +448,7 @@ function sanitizeActivityLogItems(raw: unknown): ActivityLogItem[] {
         status: statusLabel,
         stockUpdate,
         highlighted,
+        costPerUnit: costLabel,
         currentMargin: marginLabel,
         raw: {
           productId,
@@ -588,12 +591,64 @@ export default function ActivityLog({
     if (!selectedItem) {
       return;
     }
-    // Placeholder for future API integration.
-    console.info('Requested price update', {
-      productCode: selectedItem.productCode,
-      productName: selectedItem.productName,
+
+    const productId = selectedItem.raw?.productId ?? selectedItem.productCode;
+    if (!productId) {
+      console.warn('Missing product identifier for price update', selectedItem);
+      return;
+    }
+
+    const payload = {
       price,
-    });
+    };
+
+    void (async () => {
+      try {
+        const response = await fetch(
+          `${backendBaseUrl}/inventory/owner-products/${productId}/price`,
+          {
+            method: 'PATCH',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const body: { data?: OwnerProductApiItem } = await response.json();
+        const [updatedItem] = sanitizeActivityLogItems(body.data ? [body.data] : []);
+
+        if (!updatedItem) {
+          throw new Error('Invalid response payload');
+        }
+
+        setItems((prevItems) => {
+          let matched = false;
+          const nextItems = prevItems.map((item) => {
+            const currentId = item.raw?.productId ?? item.productCode;
+            const updatedId = updatedItem.raw?.productId ?? updatedItem.productCode;
+            if (currentId && updatedId && currentId === updatedId) {
+              matched = true;
+              return updatedItem;
+            }
+            return item;
+          });
+
+          if (matched) {
+            return nextItems;
+          }
+
+          return [...nextItems, updatedItem];
+        });
+      } catch (updateError) {
+        console.error('Failed to update price', updateError);
+      }
+    })();
   };
 
   const handleFilterClick = () => {

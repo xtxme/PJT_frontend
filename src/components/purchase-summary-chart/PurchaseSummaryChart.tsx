@@ -180,7 +180,7 @@ export default function PurchaseSummaryChart({ points, isLoading, error }: Purch
 
   return (
     <PurchaseChartCard>
-      <ChartTitle>Stock In Purchase Summary</ChartTitle>
+      <ChartTitle>กราฟสรุปยอดการรับสินค้าจากซัพพลายเออร์</ChartTitle>
       <Text>ยอดสั่งซื้อสินค้าเข้า</Text>
       <ChartWrapper>{renderContent()}</ChartWrapper>
     </PurchaseChartCard>

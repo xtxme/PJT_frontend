@@ -5,7 +5,7 @@ import styled from "styled-components";
 
 type SaleboardProduct = {
   rank: number;
-  productId: number;
+  productId: string;
   productName: string;
   totalSold: number;
   image: string | null;
@@ -164,8 +164,19 @@ const TableMessageCell = styled.td`
   font-weight: 500;
 `;
 
-const formatProductCode = (productId: number) =>
-  `รหัสสินค้า ${String(Math.trunc(productId)).padStart(5, "0")}`;
+const formatProductCode = (productId: string) => {
+  const trimmed = productId.trim();
+  if (trimmed.length === 0) {
+    return "รหัสสินค้า -";
+  }
+
+  const numeric = Number.parseInt(trimmed, 10);
+  if (Number.isFinite(numeric)) {
+    return `รหัสสินค้า ${String(Math.trunc(numeric)).padStart(5, "0")}`;
+  }
+
+  return `รหัสสินค้า ${trimmed}`;
+};
 
 const getProductInitial = (productName: string) => {
   const trimmed = productName.trim();
@@ -192,13 +203,13 @@ const sanitizeProducts = (rawProducts: unknown): SaleboardProduct[] => {
       const imageRaw = record.image ?? record.productImage ?? null;
 
       const parsedId =
-        typeof idRaw === "number"
-          ? idRaw
-          : typeof idRaw === "string"
-            ? Number.parseInt(idRaw, 10)
-            : Number.NaN;
+        typeof idRaw === "string" && idRaw.trim().length > 0
+          ? idRaw.trim()
+          : typeof idRaw === "number" && Number.isFinite(idRaw)
+            ? String(idRaw)
+            : null;
 
-      if (!Number.isFinite(parsedId)) {
+      if (!parsedId) {
         return null;
       }
 

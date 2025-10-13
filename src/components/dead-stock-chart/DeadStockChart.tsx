@@ -24,7 +24,7 @@ type DeadStockTotals = {
 };
 
 type DeadStockProduct = {
-  product_id: number | null;
+  product_id: string | null;
   product_name: string;
   dead_qty: number;
   dead_value: number;
@@ -197,9 +197,7 @@ export default function DeadStockChart({ products, isLoading, error, latest }: D
           deadValue: sanitizedValue,
         };
       })
-      .filter((item): item is { key: string | number; name: string; deadQty: number; deadValue: number } =>
-        Boolean(item),
-      );
+      .filter((item): item is { key: string; name: string; deadQty: number; deadValue: number } => Boolean(item));
   }, [products]);
 
   const maxQty = useMemo(() => {
@@ -358,7 +356,7 @@ export default function DeadStockChart({ products, isLoading, error, latest }: D
 
   return (
     <ChartCard>
-      <ChartTitle>Dead Stock</ChartTitle>
+      <ChartTitle>สินค้าค้างสต็อก</ChartTitle>
       <Subtitle>
         {latestMonthLabel ? `ยอดสต็อกค้าง · เดือน ${latestMonthLabel}` : 'ยอดสต็อกค้าง'}
       </Subtitle>

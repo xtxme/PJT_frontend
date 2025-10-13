@@ -587,7 +587,7 @@ export default function AddUserPopup({
                   <option value="" disabled>
                     เลือกบทบาท
                   </option>
-                  <option value="sales">พนักงานขาย</option>
+                  <option value="sale">พนักงานขาย</option>
                   <option value="owner">เจ้าของร้าน</option>
                   <option value="warehouse">พนักงานคลัง</option>
                 </select>

@@ -250,7 +250,7 @@ export default function HighestOrderCompanyChart({
 
   return (
     <ChartCard>
-      <ChartTitle>Highest Order Value by Company</ChartTitle>
+      <ChartTitle>สรุปยอดการสั่งซื้อจากซัพพลายเออร์</ChartTitle>
       {formattedRange ? <RangeText>ข้อมูลเดือน {formattedRange}</RangeText> : null}
       <ChartWrapper>
         <ChartShadow>

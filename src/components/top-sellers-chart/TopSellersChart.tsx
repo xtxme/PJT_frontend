@@ -269,7 +269,7 @@ export default function TopSellersChart({
 
   return (
     <ChartCard>
-      <ChartTitle>Top Sellers</ChartTitle>
+      <ChartTitle>สินค้าขายดีประจำเดือน</ChartTitle>
       {formattedRange ? <RangeText>{formattedRange}</RangeText> : null}
       <Text>จำนวนชิ้นที่ขาย</Text>
       <ChartWrapper>{renderChart()}</ChartWrapper>

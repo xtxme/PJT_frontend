@@ -92,7 +92,7 @@ const statusOptions = [
 
 const roleOptions = [
   { value: 'owner', label: 'Owner' },
-  { value: 'sales', label: 'Sales' },
+  { value: 'sale', label: 'Sales' },
   { value: 'warehouse', label: 'Warehouse' },
 ];
 

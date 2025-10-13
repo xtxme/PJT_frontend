@@ -183,7 +183,7 @@ export default function SaleSummaryChart({ points, isLoading, error }: SaleSumma
 
   return (
     <ChartCard>
-      <ChartTitle>Sale Summary</ChartTitle>
+      <ChartTitle>กราฟแสดงภาพรวมยอดขาย</ChartTitle>
       <Text>ยอดขายสินค้า</Text>
       <ChartWrapper>{renderContent()}</ChartWrapper>
     </ChartCard>

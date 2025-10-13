@@ -170,15 +170,20 @@ function mapApiUserToAccount(user: RoleAccessApiUser): RoleAccessAccount {
   const fullName = `${firstName} ${lastName}`.trim();
   const statusText = (user.status ?? 'Active').toLowerCase() === 'inactive' ? 'Inactive' : 'Active';
   const lastLoginSource = user.updatedAt ?? user.createdAt;
-  const normalizedRole = (user.role ?? '').toLowerCase();
-  const roleValue = normalizedRole === 'sale' ? 'sales' : normalizedRole;
-  const roleLabel = roleValue ? `${roleValue.charAt(0).toUpperCase()}${roleValue.slice(1)}` : 'Unknown';
+  const normalizedRole = (user.role ?? '').trim().toLowerCase();
+  const canonicalRole = normalizedRole === 'sales' ? 'sale' : normalizedRole;
+  const roleLabelMap: Record<string, string> = {
+    owner: 'Owner',
+    sale: 'Sales',
+    warehouse: 'Warehouse',
+  };
+  const roleLabel = roleLabelMap[canonicalRole] ?? 'Unknown';
 
   return {
     id: String(user.id),
     name: fullName || user.username || 'ไม่ทราบชื่อ',
     role: roleLabel,
-    roleValue: roleValue || undefined,
+    roleValue: canonicalRole || undefined,
     username: user.username ?? '',
     email: user.email ?? '',
     lastLogin: formatDateTime(lastLoginSource),
@@ -289,7 +294,8 @@ export default function RoleAccessAccountBoard() {
 
       if (selectedRole) {
         const roleToCompare = (account.roleValue ?? account.role).toLowerCase();
-        if (roleToCompare !== selectedRole) {
+        const canonicalRole = roleToCompare === 'sales' ? 'sale' : roleToCompare;
+        if (canonicalRole !== selectedRole) {
           return false;
         }
       }
@@ -324,7 +330,7 @@ export default function RoleAccessAccountBoard() {
     if (group === 'status') {
       setSelectedStatus((prev) => (prev === value ? null : value));
     } else {
-      const normalizedRole = value === 'sale' ? 'sales' : value;
+      const normalizedRole = value === 'sales' ? 'sale' : value;
       setSelectedRole((prev) => (prev === normalizedRole ? null : normalizedRole));
     }
 
@@ -427,6 +433,7 @@ export default function RoleAccessAccountBoard() {
 
     try {
       const normalizedRole = role.toLowerCase();
+      const roleToSend = normalizedRole === 'sales' ? 'sale' : normalizedRole;
       const response = await fetch(`${API_BASE_URL}/role-access/users`, {
         method: 'POST',
         headers: {
@@ -439,7 +446,7 @@ export default function RoleAccessAccountBoard() {
           username,
           email,
           tel: phone,
-          role: normalizedRole === 'sale' ? 'sales' : normalizedRole,
+          role: roleToSend,
           status: 'Active',
           password,
         }),
@@ -493,7 +500,7 @@ export default function RoleAccessAccountBoard() {
       };
 
       const normalizedRole = values.role.toLowerCase();
-      payload.role = normalizedRole === 'sale' ? 'sales' : normalizedRole;
+      payload.role = normalizedRole === 'sales' ? 'sale' : normalizedRole;
 
       if (values.password && values.password.trim().length > 0) {
         payload.password = values.password.trim();

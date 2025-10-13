@@ -329,10 +329,11 @@ export default function UpdateUserPopup({
     const nameParts = fallbackName ? fallbackName.split(/\s+/) : [];
     const fallbackRole = (() => {
       if (user.roleValue) {
-        return user.roleValue;
+        return user.roleValue === 'sales' ? 'sale' : user.roleValue;
       }
       const candidate = (user.role ?? '').toLowerCase();
-      return ['owner', 'sales', 'warehouse'].includes(candidate) ? candidate : '';
+      const normalized = candidate === 'sales' ? 'sale' : candidate;
+      return ['owner', 'sale', 'warehouse'].includes(normalized) ? normalized : '';
     })();
 
     setFormState({
@@ -610,7 +611,7 @@ export default function UpdateUserPopup({
                   <option value="" disabled>
                     เลือกบทบาท
                   </option>
-                  <option value="sales">พนักงานขาย</option>
+                  <option value="sale">พนักงานขาย</option>
                   <option value="owner">เจ้าของร้าน</option>
                   <option value="warehouse">พนักงานคลัง</option>
                 </select>

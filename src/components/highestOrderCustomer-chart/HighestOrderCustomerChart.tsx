@@ -248,7 +248,7 @@ export default function HighestOrderCustomerChart({
 
   return (
     <ChartCard>
-      <ChartTitle>Highest Order Value by Customer</ChartTitle>
+      <ChartTitle>ลูกค้าที่มียอดสั่งซื้อสูงสุด</ChartTitle>
       {formattedRange ? <RangeText>ข้อมูลเดือน {formattedRange}</RangeText> : null}
       <ChartWrapper>
         <ChartShadow>
