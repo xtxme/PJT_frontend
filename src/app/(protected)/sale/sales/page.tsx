@@ -53,25 +53,38 @@ export default function SalesPage() {
     setDate(new Date().toLocaleDateString('th-TH'));
   };
 
-  // ✅ เพิ่มสินค้าเข้าบิล
+  // ✅ เพิ่มสินค้าเข้าบิล (แก้ให้กันติดลบ / กัน 0 / กันเกินสต็อก)
   const addProductToBill = (product: any) => {
-    const qty = productQtys[product.id] || 1;
-    if (qty > product.quantity)
-      return alert(`สินค้า "${product.name}" มีเพียง ${product.quantity} ชิ้น`);
+    const qtyInput = productQtys[product.id];
+    const qty = Number(qtyInput) || 0;
 
-    // อัปเดตสินค้าในบิล
-    const exist = productsInBill.find((p) => p.id === product.id);
-    if (exist) {
-      setProductsInBill((prev) =>
-        prev.map((p) =>
-          p.id === product.id ? { ...p, qty: p.qty + qty } : p
-        )
-      );
-    } else {
-      setProductsInBill((prev) => [...prev, { ...product, qty }]);
+    // 🔍 1. ตรวจว่ากรอกจำนวนหรือไม่
+    if (!qty || qty <= 0) {
+      return alert(`⚠️ กรุณากรอกจำนวนสินค้ามากกว่า 0`);
     }
 
-    // ลดจำนวนสินค้าในสต็อก
+    // 🔍 2. ตรวจว่ามีในสต็อกพอไหม
+    if (qty > product.quantity) {
+      return alert(`❌ สินค้า "${product.name}" มีเพียง ${product.quantity} ชิ้นในสต็อก`);
+    }
+
+    // 🔍 3. ตรวจว่าสินค้าหมดแล้วหรือยัง
+    if (product.quantity <= 0) {
+      return alert(`❌ สินค้า "${product.name}" หมดสต็อกแล้ว`);
+    }
+
+    // ✅ เพิ่มเข้าใบสั่งซื้อ (บวกของเดิมถ้ามี)
+    setProductsInBill((prev) => {
+      const exist = prev.find((p) => p.id === product.id);
+      if (exist) {
+        return prev.map((p) =>
+          p.id === product.id ? { ...p, qty: p.qty + qty } : p
+        );
+      }
+      return [...prev, { ...product, qty }];
+    });
+
+    // ✅ ลดจำนวนในสต็อก (พร้อมอัปเดตสถานะ)
     setProducts((prev) =>
       prev.map((p) => {
         if (p.id === product.id) {
@@ -85,8 +98,10 @@ export default function SalesPage() {
       })
     );
 
+    // ✅ ล้าง input จำนวน
     setProductQtys((prev) => ({ ...prev, [product.id]: '' }));
   };
+
 
   // ✅ ลบสินค้าออกจากบิล + คืนสต็อก
   const removeProductFromBill = (id: number) => {
@@ -154,7 +169,7 @@ export default function SalesPage() {
           invoiceNo={invoiceNo}
           resetForm={resetForm}
           removeProductFromBill={removeProductFromBill}
-          
+
         />
       </GridLayout>
     </PageContainer>
