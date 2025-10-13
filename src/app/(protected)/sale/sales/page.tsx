@@ -19,53 +19,97 @@ export default function SalesPage() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState('');
-  const [invoiceNo, setInvoiceNo] = useState(``);
+  const [invoiceNo, setInvoiceNo] = useState('');
   const [date, setDate] = useState(new Date().toLocaleDateString('th-TH'));
   const [productsInBill, setProductsInBill] = useState<any[]>([]);
   const [productQtys, setProductQtys] = useState<Record<string, number | ''>>({});
   const [search, setSearch] = useState('');
 
-  // ✅ โหลดข้อมูลจริงจาก backend
+  // โหลดข้อมูลจาก backend
   useEffect(() => {
-    fetch('http://localhost:5002/sale/sales/customers')
-      .then((res) => res.json())
-      .then((data) => setCustomers(data.data || []));
-    fetch('http://localhost:5002/sale/sales/products')
-      .then((res) => res.json())
-      .then((data) => setProducts(data.data || []));
+    loadData();
   }, []);
 
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
-  );
+  async function loadData() {
+    const [custRes, prodRes, invRes] = await Promise.all([
+      fetch('http://localhost:5002/sale/sales/customers').then(r => r.json()),
+      fetch('http://localhost:5002/sale/sales/products').then(r => r.json()),
+      fetch('http://localhost:5002/sale/sales/new-invoice').then(r => r.json()),
+    ]);
+    setCustomers(custRes.data || []);
+    setProducts(prodRes.data || []);
+    if (invRes.success) setInvoiceNo(invRes.invoiceNo);
+  }
 
-  useEffect(() => {
-    async function fetchInvoice() {
-      try {
-        const res = await fetch('http://localhost:5002/sale/sales/new-invoice');
-        const data = await res.json();
-        if (data.success) setInvoiceNo(data.invoiceNo);
-      } catch (err) {
-        console.error('❌ สร้างเลขบิลไม่สำเร็จ', err);
-      }
-    }
-
-    fetchInvoice();
+  const resetForm = async () => {
+    await loadData();
+    setSelectedCustomer('');
+    setProductsInBill([]);
+    setProductQtys({});
+    setSearch('');
     setDate(new Date().toLocaleDateString('th-TH'));
-  }, []);
+  };
 
+  // ✅ เพิ่มสินค้าเข้าตะกร้า
   const addProductToBill = (product: any) => {
     const qty = productQtys[product.id] || 1;
     if (qty > product.quantity) return alert(`สินค้า "${product.name}" มีเพียง ${product.quantity} ชิ้น`);
 
+    // อัปเดตตะกร้า
     const existing = productsInBill.find((p) => p.id === product.id);
-    if (existing)
-      setProductsInBill(productsInBill.map((p) => p.id === product.id ? { ...p, qty: p.qty + qty } : p));
-    else setProductsInBill([...productsInBill, { ...product, qty }]);
+    if (existing) {
+      setProductsInBill(productsInBill.map((p) =>
+        p.id === product.id ? { ...p, qty: p.qty + qty } : p
+      ));
+    } else {
+      setProductsInBill([...productsInBill, { ...product, qty }]);
+    }
 
-    setProducts(products.map((p) => (p.id === product.id ? { ...p, quantity: p.quantity - qty } : p)));
+    // ✅ อัปเดต stock และสถานะสินค้า
+    setProducts((prev) =>
+      prev.map((p) => {
+        if (p.id === product.id) {
+          const newQty = p.quantity - qty;
+          let newStatus = p.status;
+          if (newQty <= 0) newStatus = 'out_of_stock';
+          else if (newQty < 10) newStatus = 'low_stock';
+          else newStatus = 'active';
+          return { ...p, quantity: newQty, status: newStatus };
+        }
+        return p;
+      })
+    );
+
     setProductQtys((prev) => ({ ...prev, [product.id]: '' }));
   };
+
+  // ✅ ลบสินค้าออกจากตะกร้า
+  const removeProductFromBill = (productId: number) => {
+    const productToRemove = productsInBill.find((p) => p.id === productId);
+    if (!productToRemove) return;
+
+    // คืนจำนวนกลับเข้า stock
+    setProducts((prev) =>
+      prev.map((p) => {
+        if (p.id === productToRemove.id) {
+          const newQty = p.quantity + productToRemove.qty;
+          let newStatus = p.status;
+          if (newQty === 0) newStatus = 'out_of_stock';
+          else if (newQty < 10) newStatus = 'low_stock';
+          else newStatus = 'active';
+          return { ...p, quantity: newQty, status: newStatus };
+        }
+        return p;
+      })
+    );
+
+    // เอาออกจากตะกร้า
+    setProductsInBill(productsInBill.filter((p) => p.id !== productId));
+  };
+
+  const filteredProducts = products.filter((p) =>
+    p.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   const total = productsInBill.reduce((sum, p) => sum + p.sell * p.qty, 0);
   const vattotal = total * 1.07;
@@ -112,6 +156,10 @@ export default function SalesPage() {
           exportPDF={exportPDF}
           selectedCustomer={selectedCustomer}
           invoiceNo={invoiceNo}
+          resetForm={resetForm}
+          removeProductFromBill={(id: number) =>
+            setProductsInBill(productsInBill.filter((p) => p.id !== id))
+          }
         />
       </GridLayout>
     </PageContainer>
