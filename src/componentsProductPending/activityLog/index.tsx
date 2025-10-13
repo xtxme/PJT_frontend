@@ -5,7 +5,7 @@ import PaginationControls from '@/componentsRole/paginationControls';
 import EditPopup from '@/componentsProductPending/editPopup';
 import styled from 'styled-components';
 import FilterButton from '@/componentsRole/filter';
-import FilterDropdown from '@/componentsRole/filter-dropDown';
+import FilterDropdownPend from '../filter-dropDownPend';
 
 type ActivityLogItem = {
   productName: string;
@@ -255,7 +255,21 @@ export default function ActivityLog({ sectionTitle, title, filterLabel, items }:
               ref={filterButtonRef}
               onClick={() => setIsFilterOpen((prev) => !prev)}
             />
-            <FilterDropdown
+            <FilterDropdownPend
+              open={isFilterOpen}
+              onClose={() => setIsFilterOpen(false)}
+              onSelect={handleFilterSelect}
+              anchorRef={filterButtonRef}
+            />
+          </div> 
+          <div className="filter-control">
+            <FilterButton
+              aria-label="กรองและจัดเรียงบัญชีผู้ใช้"
+              label={filterLabel === 'All' ? 'Filter' : filterLabel}
+              ref={filterButtonRef}
+              onClick={() => setIsFilterOpen((prev) => !prev)}
+            />
+            <FilterDropdownPend
               open={isFilterOpen}
               onClose={() => setIsFilterOpen(false)}
               onSelect={handleFilterSelect}
