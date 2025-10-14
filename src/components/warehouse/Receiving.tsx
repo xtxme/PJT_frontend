@@ -1,52 +1,26 @@
 'use client';
 
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { Button, IconButton, Tooltip } from "@mui/material";
+import CachedIcon from "@mui/icons-material/Cached";
 import color from "@/app/styles/color";
+import type { OpenReceiveItem } from "@/app/types/warehouse";
 
-/* ----------------------------- Types ----------------------------- */
-type OpenReceiveItem = {
-    batch_id: number;
-    item_id: number;
-    product_id: string;
-    name: string;
-    ordered_qty: number;
-    received_qty: number;
-    remain: number;
-    unit_cost: string;
-    supplier_id: number | null;
-    expected_date: string | null;
-    status: string;
+type Props = {
+    openItems: OpenReceiveItem[];
+    isLoading: boolean;
+    isError: boolean;
+    refetch: () => void;
 };
 
-/* ---------------------------- Fetchers --------------------------- */
-async function fetchOpenReceives(): Promise<OpenReceiveItem[]> {
-    const res = await fetch("/warehouse/stock-in/open", { cache: "no-store" });
-    if (!res.ok) throw new Error("โหลดรายการค้างรับไม่สำเร็จ");
-    const json = await res.json();
-    return Array.isArray(json) ? json : json.data ?? [];
-}
-
-/* --------------------------- Component --------------------------- */
-export default function Receiving() {
-    const queryClient = useQueryClient();
-
-    const {
-        data: openItems = [],
-        isLoading,
-        isError,
-        refetch,
-    } = useQuery({
-        queryKey: ["warehouse", "stock-in-open"],
-        queryFn: fetchOpenReceives,
-        staleTime: 20_000,
-        refetchOnWindowFocus: true,
-        refetchInterval: 10_000,              // ← auto-refresh ทุก 10s
-        refetchIntervalInBackground: true,    // ← แม้ไม่โฟกัสหน้า
-    });
-
+export default function Receiving({ openItems, isLoading, isError, refetch }: Props) {
     const [receiveQtys, setReceiveQtys] = useState<Record<number, number>>({});
+    const [itemsView, setItemsView] = useState<OpenReceiveItem[]>(openItems);
+
+    useEffect(() => {
+        setItemsView(openItems);
+    }, [openItems]);
 
     const updateQty = (item_id: number, value: string) => {
         const num = Number(value);
@@ -56,7 +30,6 @@ export default function Receiving() {
         }));
     };
 
-    /* ------------------------ Optimistic update ------------------------ */
     const { mutate: receiveItem, isPending } = useMutation({
         mutationFn: async (payload: { itemId: number; qty: number }) => {
             const res = await fetch(`/warehouse/stock-in/items/${payload.itemId}/receive`, {
@@ -70,68 +43,76 @@ export default function Receiving() {
             }
             return res.json();
         },
-
-        // 1) ทำ optimistic update
-        onMutate: async ({ itemId, qty }) => {
-            await queryClient.cancelQueries({ queryKey: ["warehouse", "stock-in-open"] });
-            const previous = queryClient.getQueryData<OpenReceiveItem[]>(["warehouse", "stock-in-open"]) ?? [];
-
-            // อัปเดต remain/received_qty ของไอเท็มที่รับ
-            const next = previous
+        onMutate: ({ itemId, qty }) => {
+            const prev = itemsView;
+            const next = prev
                 .map((it) => {
                     if (it.item_id !== itemId) return it;
-                    const dec = Math.min(qty, it.remain);      // กันติดลบ
+                    const dec = Math.min(qty, it.remain);
                     return {
                         ...it,
                         received_qty: it.received_qty + dec,
                         remain: Math.max(0, it.remain - dec),
                     };
                 })
-                // กรองตัวที่ remain = 0 ออกไปให้หายทันที (ถ้าดีไซน์คือเสร็จแล้วหายจากคิว)
                 .filter((it) => it.remain > 0);
-
-            queryClient.setQueryData(["warehouse", "stock-in-open"], next);
-
-            // ส่งตัวคืนไว้ rollback ถ้า fail
-            return { previous };
+            setItemsView(next);
+            return { prev };
         },
-
-        // 2) ถ้า fail rollback กลับค่าเดิม
         onError: (_err, _vars, ctx) => {
-            if (ctx?.previous) {
-                queryClient.setQueryData(["warehouse", "stock-in-open"], ctx.previous);
-            }
+            if (ctx?.prev) setItemsView(ctx.prev);
         },
-
-        // 3) สำเร็จหรือไม่ สำทับด้วย refetch ให้ตรง backend แน่น
         onSettled: () => {
             refetch();
         },
     });
 
-    /* ------------------------- Group by batch ------------------------- */
-    const batches = Object.values(
-        openItems.reduce((acc, item) => {
-            if (!acc[item.batch_id]) acc[item.batch_id] = { batch_id: item.batch_id, items: [] as OpenReceiveItem[] };
-            acc[item.batch_id].items.push(item);
-            return acc;
-        }, {} as Record<number, { batch_id: number; items: OpenReceiveItem[] }>)
-    );
+    const batches = useMemo(() => {
+        return Object.values(
+            itemsView.reduce((acc, item) => {
+                if (!acc[item.batch_id]) acc[item.batch_id] = { batch_id: item.batch_id, items: [] as OpenReceiveItem[] };
+                acc[item.batch_id].items.push(item);
+                return acc;
+            }, {} as Record<number, { batch_id: number; items: OpenReceiveItem[] }>)
+        );
+    }, [itemsView]);
 
     return (
         <div className="bg-white rounded-xl shadow p-4">
-            <h3 className="font-semibold mb-3">รับสินค้า</h3>
+            {/* ── Header + Refresh ───────────────────────────────────────── */}
+            <div className="flex items-center mb-3">
+                <h3 className="font-semibold">รับสินค้า</h3>
+                <Tooltip title="รีเฟรชรายการค้างรับ">
+          <span>
+            <IconButton
+                color="primary"
+                onClick={refetch}
+                disabled={isLoading}
+                aria-label="refresh open receives"
+                sx={{
+                    // หมุนเบา ๆ ตอนกำลังโหลด
+                    animation: isLoading ? "spin 1s linear infinite" : "none",
+                    "@keyframes spin": {
+                        "0%": { transform: "rotate(0deg)" },
+                        "100%": { transform: "rotate(360deg)" },
+                    },
+                }}
+            >
+              <CachedIcon />
+            </IconButton>
+          </span>
+                </Tooltip>
+            </div>
 
             {isLoading && <p className="text-gray-500 text-sm text-center py-8">กำลังโหลดข้อมูล…</p>}
             {isError && (
-                <p className="text-red-500 text-sm text-center py-8">
+                <p className="text-red-500 text-sm text-center py-8 cursor-pointer">
                     โหลดข้อมูลไม่สำเร็จ
-                    <button onClick={() => refetch()} className="underline ml-1">
+                    <button onClick={refetch} className="underline ml-1">
                         ลองอีกครั้ง
                     </button>
                 </p>
             )}
-
             {!isLoading && !isError && batches.length === 0 && (
                 <p className="text-gray-500 text-sm text-center py-8">ไม่มีรายการค้างรับ</p>
             )}
@@ -148,7 +129,7 @@ export default function Receiving() {
 
                     {batch.items.map((item) => {
                         const remain = item.remain;
-                        const current = Math.min(receiveQtys[item.item_id] ?? remain, remain); // กันเกิน
+                        const current = Math.min(receiveQtys[item.item_id] ?? remain, remain);
 
                         return (
                             <div key={item.item_id} className="flex justify-between items-center px-4 py-3 border-t text-sm">

@@ -1,10 +1,64 @@
 'use client';
 
-import { useEffect, useState } from "react";
-import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, CircularProgress } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
+import {
+    Dialog, DialogTitle, DialogContent, DialogActions,
+    TextField, Button, CircularProgress, IconButton, Tooltip,
+    FormControl, InputLabel, Select, MenuItem, Box
+} from "@mui/material";
+import InputAdornment from "@mui/material/InputAdornment"; // ★ NEW
+import CachedIcon from "@mui/icons-material/Cached";
+import SearchIcon from "@mui/icons-material/Search";
 import color from "@/app/styles/color";
 import CategorySelect from "@/components/warehouse/CategorySelect";
 import Image from "next/image";
+import { z } from "zod"; // ★ zod
+
+// ---------------- zod schema ----------------
+const NewProductSchema = z.object({
+    name: z.string().trim().min(1, "กรุณาระบุชื่อสินค้า").max(120, "ชื่อยาวเกินไป"),
+    image: z.preprocess(
+        (v) => {
+            const s = (v ?? "").toString().trim();
+            return s === "" ? null : s;
+        },
+        z
+            .string()
+            .url("URL รูปภาพไม่ถูกต้อง")
+            // ถ้าต้องการบังคับ Cloudinary คอมเมนต์บรรทัดนี้ออกได้
+            .regex(/^https?:\/\/res\.cloudinary\.com\//i, "กรุณาใช้ Cloudinary URL")
+            .nullable()
+            .optional()
+    ),
+    description: z.preprocess(
+        (v) => {
+            const s = (v ?? "").toString().trim();
+            return s === "" ? null : s;
+        },
+        z.string().max(500, "คำอธิบายยาวเกินไป").nullable().optional()
+    ),
+    category_id: z.number().int().positive("หมวดหมู่ไม่ถูกต้อง").nullable().optional(),
+    unit: z.preprocess(
+        (v) => {
+            const s = (v ?? "").toString().trim();
+            return s === "" ? null : s;
+        },
+        z.string().max(32, "หน่วยยาวเกินไป").nullable().optional()
+    ),
+});
+
+// helper รวม error เป็น map
+type FormErrors = Partial<Record<keyof NewProductForm, string>>;
+function validateForm(f: NewProductForm): { ok: true; data: NewProductForm } | { ok: false; errors: FormErrors } {
+    const parsed = NewProductSchema.safeParse(f);
+    if (parsed.success) return { ok: true, data: parsed.data };
+    const errors: FormErrors = {};
+    for (const issue of parsed.error.issues) {
+        const key = issue.path[0] as keyof NewProductForm;
+        if (!errors[key]) errors[key] = issue.message;
+    }
+    return { ok: false, errors };
+}
 
 // ---- Types ----
 type Category = { id: number; name: string };
@@ -17,14 +71,47 @@ type NewProductForm = {
     unit?: string | null;
 };
 
+type StatusKey = "active" | "low_stock" | "restock_pending" | "pricing_pending";
+
 type ProductRow = {
-    company?: string | null; // <-- เดิมเป็น string แข็งไป ทำให้ undefined ไม่ขึ้น
+    company?: string | null;
     name: string;
     image?: string | null;
     quantity?: number | null;
     quantity_pending?: number | null;
-    product_status?: "active" | "low_stock" | "restock_pending" | "pricing_pending" | string | null;
+    product_status?: StatusKey | string | null;
+    // ★ NEW: เพิ่ม field สำหรับกรอง/เรียงฝั่งหน้า
+    category_id?: number | null;
+    description?: string | null;
+    updated_at?: string | null; // ใช้ sort updated_at ฝั่งหน้าได้
 };
+
+const STATUS_OPTIONS: { key: StatusKey; label: string }[] = [
+    { key: "active", label: "พร้อมขาย" },
+    { key: "low_stock", label: "ใกล้หมด" },
+    { key: "restock_pending", label: "รอสั่งเข้า" },
+    { key: "pricing_pending", label: "รอตั้งราคา" },
+];
+
+const SORT_OPTIONS = [
+    { value: "updated_at.desc", label: "อัปเดตล่าสุด ⬇︎" },
+    { value: "updated_at.asc", label: "อัปเดตเก่าสุด ⬆︎" },
+    { value: "name.asc", label: "ชื่อ A→Z" },
+    { value: "name.desc", label: "ชื่อ Z→A" },
+    { value: "quantity.desc", label: "จำนวนมาก→น้อย" },
+    { value: "quantity.asc", label: "จำนวนน้อย→มาก" },
+];
+
+
+// ---- debounce helper ----
+function useDebounced<T>(value: T, delay = 350) {
+    const [debounced, setDebounced] = useState(value);
+    useEffect(() => {
+        const t = setTimeout(() => setDebounced(value), delay);
+        return () => clearTimeout(t);
+    }, [value, delay]);
+    return debounced;
+}
 
 export default function ProductAdjust({
                                           categories,
@@ -36,7 +123,7 @@ export default function ProductAdjust({
     categories: Category[];
     loadingCategories?: boolean;
     onReloadCategories?: () => void;
-    onCreated?: (p: { company: string; name: string }) => void; // ← เปลี่ยนตรงนี้ด้วย
+    onCreated?: (p: { company: string; name: string }) => void;
     setCategories: React.Dispatch<React.SetStateAction<Category[]>>;
 }) {
     const [openAdd, setOpenAdd] = useState(false);
@@ -53,24 +140,54 @@ export default function ProductAdjust({
     const [loadingList, setLoadingList] = useState(false);
     const [listError, setListError] = useState<string | null>(null);
 
+    // ---------- Filters ----------
+    const [q, setQ] = useState("");
+    const debouncedQ = useDebounced(q, 400);
+
+    const [categoryId, setCategoryId] = useState<number | "">("");
+    const [status, setStatus] = useState<StatusKey | "">("");
+    const [sort, setSort] = useState<string>("updated_at.desc");
+
+    // ถ้ายังอยากดึงจาก backend ด้วยพารามิเตอร์เดิม ก็ใช้ queryString นี้ต่อได้
+    const queryString = useMemo(() => {
+        const sp = new URLSearchParams();
+        if (debouncedQ.trim()) sp.set("q", debouncedQ.trim());
+        if (categoryId !== "") sp.set("category_id", String(categoryId));
+        if (status !== "") sp.set("status", String(status));
+        if (sort) sp.set("sort", sort);
+        sp.set("page", "1");
+        sp.set("pageSize", "50");
+        return sp.toString();
+    }, [debouncedQ, categoryId, status, sort]);
+
+    // ใกล้ ๆ state ของ form
+    const [errors, setErrors] = useState<FormErrors>({}); // ★ errors
+
+    // แก้ฟังก์ชัน onChange เดิมให้ล้าง error ของ field นั้น ๆ
     const onChange =
         (k: keyof NewProductForm) =>
             (e: React.ChangeEvent<HTMLInputElement>) => {
                 const v = e.target.value;
+                setErrors((es) => ({ ...es, [k]: undefined })); // ★ clear error ระหว่างพิมพ์
                 if (k === "category_id") {
                     return setForm((s) => ({ ...s, [k]: v === "" ? null : Number(v) }));
                 }
                 setForm((s) => ({ ...s, [k]: v === "" ? null : v }));
             };
 
+
     async function fetchProducts() {
         setLoadingList(true);
         setListError(null);
         try {
-            const res = await fetch("/warehouse/products", { cache: "no-store" });
+            const url = queryString
+                ? `/warehouse/products?${queryString}`
+                : `/warehouse/products`;
+            const res = await fetch(url, { cache: "no-store" });
             if (!res.ok) throw new Error(`โหลดรายการสินค้าไม่สำเร็จ (${res.status})`);
 
             const json = await res.json();
+            // NOTE: ให้ backend ส่ง field category_id/description/updated_at มาด้วยยิ่งดี
             const rows: ProductRow[] = Array.isArray(json) ? json : (json?.data ?? []);
             setRows(rows ?? []);
         } catch (err: any) {
@@ -79,22 +196,22 @@ export default function ProductAdjust({
             setLoadingList(false);
         }
     }
+
     useEffect(() => {
         fetchProducts();
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [queryString]);
 
     async function handleSave() {
         setSaving(true);
         try {
-            const payload = {
-                name: (form.name ?? "").trim(),
-                image: form.image?.trim() || null,
-                description: form.description?.trim() || null,
-                category_id: form.category_id ?? null,
-                unit: form.unit?.trim() || null,
-            };
-
-            if (!payload.name) throw new Error("กรุณาระบุชื่อสินค้า");
+            // ตรวจด้วย zod ก่อน
+            const r = validateForm(form);
+            if (!r.ok) {
+                setErrors(r.errors);
+                throw new Error("กรุณาตรวจสอบข้อมูลที่กรอก");
+            }
+            const payload = r.data;
 
             const res = await fetch("/warehouse/products", {
                 method: "POST",
@@ -107,16 +224,10 @@ export default function ProductAdjust({
             const json = await res.json().catch(() => null);
 
             setOpenAdd(false);
-            setForm({
-                name: "",
-                image: null,
-                description: null,
-                category_id: null,
-                unit: null,
-            });
+            setForm({ name: "", image: null, description: null, category_id: null, unit: null });
+            setErrors({}); // เคลียร์ error หลังบันทึกสำเร็จ
 
-            onCreated?.({ company: json?.company ?? "", name: json?.name ?? payload.name }); // ← เปลี่ยนเป็น company
-
+            onCreated?.({ company: json?.company ?? "", name: json?.name ?? payload.name });
             fetchProducts();
         } catch (err) {
             console.error(err);
@@ -124,6 +235,7 @@ export default function ProductAdjust({
             setSaving(false);
         }
     }
+
 
     const statusChip = (st?: ProductRow["product_status"]) => {
         const label =
@@ -151,32 +263,117 @@ export default function ProductAdjust({
 
     const empty = !loadingList && rows.length === 0;
 
+    // ★ NEW: กรอง + เรียงฝั่งหน้า
+    const filteredRows = useMemo(() => {
+        let r = [...rows];
+
+        // ค้นหาใน name/company/description
+        const qq = debouncedQ.trim().toLowerCase();
+        if (qq) {
+            r = r.filter(x =>
+                (x.name ?? "").toLowerCase().includes(qq) ||
+                (x.company ?? "").toLowerCase().includes(qq) ||
+                (x.description ?? "").toLowerCase().includes(qq)
+            );
+        }
+
+        // กรองหมวดหมู่
+        if (categoryId !== "") {
+            r = r.filter(x => (x.category_id ?? null) === Number(categoryId));
+        }
+
+        // กรองสถานะ
+        if (status !== "") {
+            r = r.filter(x => (x.product_status ?? "") === status);
+        }
+
+        // เรียง
+        const getTime = (s?: string | null) => (s ? new Date(s).getTime() : 0);
+        const sorter: Record<string, (a: ProductRow, b: ProductRow) => number> = {
+            "updated_at.desc": (a, b) => getTime(b.updated_at) - getTime(a.updated_at),
+            "updated_at.asc":  (a, b) => getTime(a.updated_at) - getTime(b.updated_at),
+            "name.asc":  (a, b) => (a.name ?? "").localeCompare(b.name ?? ""),
+            "name.desc": (a, b) => (b.name ?? "").localeCompare(a.name ?? ""),
+            "quantity.desc": (a, b) => (b.quantity ?? 0) - (a.quantity ?? 0),
+            "quantity.asc":  (a, b) => (a.quantity ?? 0) - (b.quantity ?? 0),
+        };
+        const cmp = sorter[sort];
+        if (cmp) r.sort(cmp);
+
+        return r;
+    }, [rows, debouncedQ, categoryId, status, sort]);
+
     return (
         <div className="col-span-1 bg-white rounded-xl shadow p-4">
+            {/* Header */}
             <div className="flex justify-between items-center mb-3">
-                <h3 className="font-semibold">รายการสินค้า</h3>
-
-                <div className="flex items-center gap-2">
-                    <Button
-                        onClick={fetchProducts}
-                        size="small"
-                        sx={{ textTransform: "none", borderColor: "#d4d4d8" }}
-                        variant="outlined"
-                    >
-                        รีเฟรช
-                    </Button>
-                    <button
-                        className="text-sm font-medium transition-all duration-150 hover:underline cursor-pointer"
-                        style={{ color: color.colors.orange }}
-                        onClick={() => {
-                            onReloadCategories?.();
-                            setOpenAdd(true);
-                        }}
-                    >
-                        + เพิ่มสินค้า
-                    </button>
+                <div className="flex items-center mb-3">
+                    <h3 className="font-semibold">รายการสินค้า</h3>
+                    {/* Refresh */}
+                    <Tooltip title="รีเฟรชรายการสินค้า">
+            <span>
+              <IconButton
+                  color="primary"
+                  onClick={fetchProducts}
+                  disabled={loadingList}
+                  aria-label="refresh products"
+                  sx={{
+                      animation: loadingList ? "spin 1s linear infinite" : "none",
+                      "@keyframes spin": {
+                          "0%": { transform: "rotate(0deg)" },
+                          "100%": { transform: "rotate(360deg)" },
+                      },
+                  }}
+              >
+                <CachedIcon />
+              </IconButton>
+            </span>
+                    </Tooltip>
                 </div>
+                <button
+                    className="text-sm font-medium transition-all duration-150 hover:underline cursor-pointer"
+                    style={{ color: color.colors.orange }}
+                    onClick={() => {
+                        onReloadCategories?.();
+                        setOpenAdd(true);
+                    }}
+                >
+                    + เพิ่มสินค้า
+                </button>
             </div>
+
+            {/* Filters */}
+            <Box className="mb-4 grid gap-3" sx={{ gridTemplateColumns: { xs: "1fr", sm: "3fr 1fr" } }}>
+                {/* Search */}
+                <TextField
+                    size="small"
+                    placeholder="ค้นหาชื่อ/คำอธิบาย…"
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon fontSize="small" sx={{ opacity: 0.7 }} />
+                            </InputAdornment>
+                        ),
+                    }}
+                />
+
+                {/* Sort */}
+                <FormControl size="small">
+                    <InputLabel id="sort-label">เรียงตาม</InputLabel>
+                    <Select
+                        labelId="sort-label"
+                        label="เรียงตาม"
+                        value={sort}
+                        onChange={(e) => setSort(String(e.target.value))}
+                    >
+                        {SORT_OPTIONS.map((o) => (
+                            <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            </Box>
 
             {loadingList ? (
                 <div className="p-6 flex items-center gap-3 text-zinc-600">
@@ -189,10 +386,13 @@ export default function ProductAdjust({
                 <div className="p-6 text-zinc-600">ยังไม่มีสินค้าในระบบ</div>
             ) : (
                 <div className="flex flex-col gap-3">
-                    {rows.map((r) => {
-                        const key = `${r.company ?? '—'}::${r.name}`; // key เสถียรกว่า index
+                    {filteredRows.map((r) => { // ★ ใช้ filteredRows
+                        const key = `${r.company ?? '—'}::${r.name}`;
                         return (
-                            <div key={key} className="flex items-center justify-between border border-zinc-200 rounded-lg p-3 hover:bg-zinc-50 transition-colors">
+                            <div
+                                key={key}
+                                className="flex items-center justify-between border border-zinc-200 rounded-lg p-3 hover:bg-zinc-50 transition-colors"
+                            >
                                 <div className="flex items-center gap-3">
                                     {r.image ? (
                                         <div className="relative h-20 w-20 rounded-md border border-zinc-200 overflow-hidden">
@@ -204,7 +404,7 @@ export default function ProductAdjust({
 
                                     <div>
                                         <div className="font-semibold">{r.name}</div>
-                                        <div className="text-xs text-zinc-500"># {r.company ? ` บริษัท ${r.company}` : ' —'}</div>
+                                        <div className="text-xs text-zinc-500"># {r.company ? ` บริษัท ${r.company}` : " —"}</div>
                                         <div className="text-xs text-zinc-500 mt-1">
                                             คลัง: {r.quantity ?? 0} | ค้างเข้า: {r.quantity_pending ?? 0}
                                         </div>
@@ -218,6 +418,7 @@ export default function ProductAdjust({
                 </div>
             )}
 
+            {/* Dialog: Add new */}
             <Dialog open={openAdd} onClose={() => setOpenAdd(false)} fullWidth maxWidth="sm">
                 <DialogTitle>เพิ่มสินค้าใหม่</DialogTitle>
                 <DialogContent className="!pt-4">
@@ -228,9 +429,9 @@ export default function ProductAdjust({
                             onChange={onChange("name")}
                             fullWidth
                             autoFocus
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") handleSave();
-                            }}
+                            error={!!errors.name}                 // ★
+                            helperText={errors.name ?? ""}        // ★
+                            onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
                         />
 
                         <TextField
@@ -239,6 +440,8 @@ export default function ProductAdjust({
                             onChange={onChange("image")}
                             fullWidth
                             placeholder="https://res.cloudinary.com/.../image.jpg"
+                            error={!!errors.image}                // ★
+                            helperText={errors.image ?? ""}       // ★
                         />
 
                         <TextField
@@ -246,8 +449,12 @@ export default function ProductAdjust({
                             value={form.unit ?? ""}
                             onChange={onChange("unit")}
                             fullWidth
+                            error={!!errors.unit}                 // ★
+                            helperText={errors.unit ?? ""}        // ★
                         />
 
+                        {/* ถ้า CategorySelect รองรับ prop error/helperText ก็ส่งลงไปได้
+   ไม่งั้นอย่างน้อยส่งค่าและโชว์ข้อความใต้คอมโพเนนต์ */}
                         <CategorySelect
                             form={form}
                             setForm={setForm}
@@ -255,6 +462,9 @@ export default function ProductAdjust({
                             setCategories={setCategories}
                             loadingCategories={!!loadingCategories}
                         />
+                        {errors.category_id && (
+                            <div className="text-red-600 text-sm mt-1">{errors.category_id}</div> // ★ แสดง error หมวดหมู่
+                        )}
 
                         <TextField
                             label="คำอธิบาย"
@@ -263,7 +473,10 @@ export default function ProductAdjust({
                             fullWidth
                             multiline
                             minRows={3}
+                            error={!!errors.description}          // ★
+                            helperText={errors.description ?? ""} // ★
                         />
+
                     </div>
                 </DialogContent>
                 <DialogActions>

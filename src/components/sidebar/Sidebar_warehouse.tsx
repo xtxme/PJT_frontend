@@ -3,6 +3,8 @@
 import styled from "styled-components";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import ShoppingCartCheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
+import Inventory2Icon from '@mui/icons-material/Inventory2';
 
 const Aside = styled.aside`
   width: 264px;
@@ -98,10 +100,10 @@ const Aside = styled.aside`
 export default function Sidebar() {
   const pathname = usePathname();
 
-  const navItems = [
-    { href: "/warehouse/stockIn", label: "ดำเนินการสั่งซื้อสินค้า", icon: "/images/dashboard-black-icon.svg" },
-    { href: "/warehouse/updateStock", label: "ปรับปรุงข้อมูลสต็อก", icon: "/images/RoleAccess-gray-icon.svg" },
-  ];
+    const navItems = [
+        { href: "/warehouse/stockIn", label: "ดำเนินการสั่งซื้อสินค้า", icon: <ShoppingCartCheckoutIcon /> },
+        { href: "/warehouse/updateStock", label: "ปรับปรุงข้อมูลสต็อก", icon: <Inventory2Icon /> },
+    ];
 
   return (
     <Aside>
@@ -115,10 +117,8 @@ export default function Sidebar() {
                 href={item.href}
                 className={`nav-link ${pathname === item.href ? "active" : ""}`}
               >
-                <span className="icon">
-                  <img src={item.icon} alt={`${item.label}-icon`} />
-                </span>
-                <span className="label">{item.label}</span>
+                  <span className="icon">{item.icon}</span>
+                  <span className="label">{item.label}</span>
               </Link>
             </li>
           ))}

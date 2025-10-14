@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Autocomplete, CircularProgress, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
+import { z } from 'zod';
 
 export type SupplierLite = { id: number; company_name: string; email?: string | null; tel?: string | null };
 
@@ -17,6 +18,28 @@ type SupplierOption =
 
 const toDisplay = (s: SupplierLite) => s.company_name;
 
+/* ---------- Zod schemas ---------- */
+const SupplierCreateSchema = z.object({
+    company_name: z.string().trim().min(1, 'กรุณาระบุชื่อบริษัท'),
+    email: z
+        .string()
+        .trim()
+        .optional()
+        .transform((v) => (v === '' ? undefined : v))
+        .pipe(z.string().email('อีเมลไม่ถูกต้อง').optional()),
+    tel: z
+        .string()
+        .trim()
+        .optional()
+        .transform((v) => (v === '' ? undefined : v))
+        .refine(
+            (v) => v == null || /^[0-9+\-\s]{6,30}$/.test(v),
+            { message: 'เบอร์โทรไม่ถูกต้อง' }
+        ),
+});
+
+type SupplierCreate = z.infer<typeof SupplierCreateSchema>;
+
 export default function SupplierDropdown({ value, onChange, label = 'ซัพพลายเออร์' }: Props) {
     const [open, setOpen] = useState(false);
     const [input, setInput] = useState('');
@@ -31,6 +54,9 @@ export default function SupplierDropdown({ value, onChange, label = 'ซัพ�
     const [newTel, setNewTel] = useState('');
     const [adding, setAdding] = useState(false);
     const canAdd = newName.trim().length > 0;
+
+    // error state จาก zod
+    const [addErr, setAddErr] = useState<{ name?: string; email?: string; tel?: string }>({});
 
     // debounce 300ms
     const debouncedInput = useDebounce(input, 300);
@@ -77,18 +103,40 @@ export default function SupplierDropdown({ value, onChange, label = 'ซัพ�
         !('createNew' in a) && a.id === b?.id;
 
     async function handleAddSupplier() {
-        if (!canAdd) return;
+        // validate ด้วย Zod
+        const parsed = SupplierCreateSchema.safeParse({
+            company_name: newName,
+            email: newEmail,
+            tel: newTel,
+        } satisfies SupplierCreate);
+
+        if (!parsed.success) {
+            // map error ไป state
+            const fieldErrs: { name?: string; email?: string; tel?: string } = {};
+            for (const issue of parsed.error.issues) {
+                const p = issue.path[0];
+                if (p === 'company_name') fieldErrs.name = issue.message;
+                if (p === 'email') fieldErrs.email = issue.message;
+                if (p === 'tel') fieldErrs.tel = issue.message;
+            }
+            setAddErr(fieldErrs);
+            return;
+        }
+
         setAdding(true);
+        setAddErr({});
         try {
+            const payload = {
+                company_name: parsed.data.company_name.trim(),
+                email: parsed.data.email ?? null,
+                tel: parsed.data.tel ?? null,
+            };
+
             const res = await fetch('/warehouse/suppliers', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 cache: 'no-store',
-                body: JSON.stringify({
-                    company_name: newName.trim(),
-                    email: newEmail.trim() || null,
-                    tel: newTel.trim() || null,
-                }),
+                body: JSON.stringify(payload),
             });
             if (!res.ok) {
                 const t = await res.text().catch(() => '');
@@ -96,7 +144,7 @@ export default function SupplierDropdown({ value, onChange, label = 'ซัพ�
                 throw new Error(msg);
             }
             const created: SupplierLite = await res.json();
-            // อัปเดต options ให้มีตัวใหม่ และเลือกให้ทันที
+
             setOptions((prev) => [created, ...prev]);
             onChange(created);
             setAddOpen(false);
@@ -143,7 +191,6 @@ export default function SupplierDropdown({ value, onChange, label = 'ซัพ�
                 onChange={(_, v) => {
                     if (!v) return onChange(null);
                     if ('createNew' in v) {
-                        // เปิด dialog เพิ่มใหม่ โดยเติมชื่อจาก input
                         setNewName(v.inputText);
                         setAddOpen(true);
                         return;
@@ -176,18 +223,33 @@ export default function SupplierDropdown({ value, onChange, label = 'ซัพ�
                         <TextField
                             label="ชื่อบริษัท *"
                             value={newName}
-                            onChange={(e) => setNewName(e.target.value)}
+                            onChange={(e) => {
+                                setNewName(e.target.value);
+                                setAddErr((s) => ({ ...s, name: undefined }));
+                            }}
+                            error={!!addErr.name}
+                            helperText={addErr.name}
                             autoFocus
                         />
                         <TextField
                             label="อีเมล"
                             value={newEmail}
-                            onChange={(e) => setNewEmail(e.target.value)}
+                            onChange={(e) => {
+                                setNewEmail(e.target.value);
+                                setAddErr((s) => ({ ...s, email: undefined }));
+                            }}
+                            error={!!addErr.email}
+                            helperText={addErr.email}
                         />
                         <TextField
                             label="เบอร์โทร"
                             value={newTel}
-                            onChange={(e) => setNewTel(e.target.value)}
+                            onChange={(e) => {
+                                setNewTel(e.target.value);
+                                setAddErr((s) => ({ ...s, tel: undefined }));
+                            }}
+                            error={!!addErr.tel}
+                            helperText={addErr.tel}
                         />
                     </div>
                 </DialogContent>
