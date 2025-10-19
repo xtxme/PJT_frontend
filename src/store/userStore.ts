@@ -13,6 +13,7 @@ type UserState = {
     setUsername: (username: string | null) => void;
     setName: (name: string | null) => void;
     reset: () => void;
+    
 };
 
 const useUserStore = create<UserState>()(

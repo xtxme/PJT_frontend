@@ -2,6 +2,7 @@
 import { useState, useMemo } from 'react';
 import styled from 'styled-components';
 import useUserStore from '@/store/userStore';
+import { useRouter } from 'next/navigation';
 
 const HeaderBar = styled.header`
   display: flex;
@@ -180,6 +181,8 @@ export default function AppHeader() {
   const [isLogoutHovered, setIsLogoutHovered] = useState(false);
   const role = useUserStore((state) => state.role);
   const username = useUserStore((state) => state.username);
+  const clearUser = useUserStore((state) => state.reset); // ✅ ต้องมีใน store (ล้าง state user)
+  const router = useRouter(); // ✅ ใช้ router
 
   const displayRole = useMemo(() => {
     if (!role) return '';
@@ -187,6 +190,17 @@ export default function AppHeader() {
   }, [role]);
 
   const displayUsername = useMemo(() => username ?? '', [username]);
+
+  const handleLogout = () => {
+    // ✅ เคลียร์ข้อมูล user
+    clearUser?.(); // ถ้ามี function ใน store
+    localStorage.removeItem('token'); // ถ้ามี token เก็บไว้
+    localStorage.removeItem('username');
+    localStorage.removeItem('role');
+
+    // ✅ ไปหน้า login
+    router.push('/login');
+  };
 
   return (
     <HeaderBar>
@@ -209,6 +223,7 @@ export default function AppHeader() {
           className="logout-button"
           onMouseEnter={() => setIsLogoutHovered(true)}
           onMouseLeave={() => setIsLogoutHovered(false)}
+          onClick={handleLogout} // ✅ เพิ่มตรงนี้
         >
           <img
             className="logout-button-icon"
