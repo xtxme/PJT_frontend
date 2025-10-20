@@ -1,28 +1,47 @@
-# Build Next.js app and run with standalone output
-FROM node:20-alpine AS deps
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
+# 1️⃣ Build Stage
+FROM node:22-alpine AS builder
 
-FROM node:20-alpine AS builder
+RUN apk add --no-cache libc6-compat && corepack enable
+
 WORKDIR /app
-ENV NODE_ENV=production
-COPY --from=deps /app/node_modules ./node_modules
+
+# Copy only dependency files for better cache
+COPY package.json pnpm-lock.yaml* ./
+
+# Accept build-time variable from Docker Compose
+ARG NEXT_PUBLIC_ENDPOINT
+ENV NEXT_PUBLIC_ENDPOINT=$NEXT_PUBLIC_ENDPOINT
+
+# Install deps
+RUN pnpm install
+
+# ✅ Copy the rest of the project including important files
 COPY . .
-RUN npm run build
 
-FROM node:20-alpine AS runner
+# Build Next.js app with the env baked in
+RUN pnpm build
+
+
+# 2️⃣ Production Stage
+FROM node:22-alpine AS runner
+
+RUN apk add --no-cache libc6-compat && corepack enable
+
 WORKDIR /app
+
 ENV NODE_ENV=production
-ENV PORT=3000
-# Use non-root user for security
-RUN addgroup -g 1001 -S nodejs \
-  && adduser -S nextjs -G nodejs
+ENV PORT=4000
 
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+# ✅ Copy package files
+COPY package.json pnpm-lock.yaml* ./
 
-USER nextjs
-EXPOSE 3000
-CMD ["node", "server.js"]
+# ✅ Install only prod dependencies
+RUN pnpm install --prod
+
+# ✅ Copy required build outputs and configs
+COPY --from=builder /app/.next .next
+COPY --from=builder /app/public public
+COPY --from=builder /app/next.config.ts next.config.ts
+
+EXPOSE 4000
+CMD ["pnpm", "start", "-p", "4000"]
