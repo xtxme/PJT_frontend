@@ -15,6 +15,7 @@ import {
     InputLabel,
 } from '@mui/material';
 import CustomerCard, { Customer } from './CustomerCard';
+import process from "node:process";
 
 const PageContainer = styled.div`
   padding: 20px;
@@ -54,7 +55,7 @@ export default function CustomerList() {
     const fetchCustomers = async (keyword = '') => {
         try {
             const res = await fetch(
-                `http://localhost:5002/sale/customers/search?keyword=${encodeURIComponent(keyword)}`
+                `${process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/sale/customers/search?keyword=${encodeURIComponent(keyword)}`
             );
             const data = await res.json();
             if (data.success) setCustomers(data.data);
@@ -128,7 +129,7 @@ export default function CustomerList() {
             let res;
             if (editingCustomer) {
                 res = await fetch(
-                    `http://localhost:5002/sale/customers/${editingCustomer.id}`,
+                    `${process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/sale/customers/${editingCustomer.id}`,
                     {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
@@ -136,7 +137,7 @@ export default function CustomerList() {
                     }
                 );
             } else {
-                res = await fetch('http://localhost:5002/sale/customers', {
+                res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/sale/customers`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, address, email, tel, totalPaid }),

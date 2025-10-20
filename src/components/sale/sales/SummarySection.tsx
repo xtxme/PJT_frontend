@@ -85,7 +85,7 @@ export default function SummarySection({
         if (!selectedCustomer || productsInBill.length === 0)
             return alert('⚠️ กรุณาเลือกลูกค้าและเพิ่มสินค้าอย่างน้อย 1 รายการ');
 
-        const res = await fetch('http://localhost:5002/sale/sales', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/sale/sales`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

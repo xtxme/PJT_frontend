@@ -58,7 +58,7 @@ export default function InvoiceList({ apiUrl }: InvoiceListProps) {
   const [sortField, setSortField] = useState<'date' | 'total' | 'customer'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  const baseUrl = apiUrl ?? 'http://localhost:5002/sale/invoices';
+  const baseUrl = apiUrl ?? `${process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/sale/invoices`;
 
   const fetchInvoices = async (keyword = '', statusFilter = filter, showLoading = false) => {
     try {

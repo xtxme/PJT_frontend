@@ -6,6 +6,7 @@ import ProductSection from '@/components/sale/sales/ProductSection';
 import SummarySection from '@/components/sale/sales/SummarySection';
 import InvoiceDetailSection from '@/components/sale/sales/InvoiceDetailSection';
 import useUserStore from '@/store/userStore';
+import * as process from "node:process";
 
 const PageContainer = styled.div`
   padding: 20px;
@@ -37,9 +38,9 @@ export default function SalesPage() {
 
   async function loadData() {
     const [custRes, prodRes, invRes] = await Promise.all([
-      fetch('http://localhost:5002/sale/sales/customers').then((r) => r.json()),
-      fetch('http://localhost:5002/sale/sales/products').then((r) => r.json()),
-      fetch('http://localhost:5002/sale/sales/new-invoice').then((r) => r.json()),
+      fetch(`${process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/sale/sales/customers`).then((r) => r.json()),
+      fetch(`${process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/sale/sales/products`).then((r) => r.json()),
+      fetch(`${process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/sale/sales/new-invoice`).then((r) => r.json()),
     ]);
     setCustomers(custRes.data || []);
     setProducts(prodRes.data || []);
