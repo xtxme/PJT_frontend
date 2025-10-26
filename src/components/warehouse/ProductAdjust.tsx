@@ -13,6 +13,7 @@ import color from "@/app/styles/color";
 import CategorySelect from "@/components/warehouse/CategorySelect";
 import Image from "next/image";
 import { z } from "zod"; // ★ zod
+import { api } from "@/app/lib/api";
 
 // ---------------- zod schema ----------------
 const NewProductSchema = z.object({
@@ -58,6 +59,12 @@ function validateForm(f: NewProductForm): { ok: true; data: NewProductForm } | {
         if (!errors[key]) errors[key] = issue.message;
     }
     return { ok: false, errors };
+}
+
+function unwrapList<T = any>(json: any): T[] {
+    if (Array.isArray(json)) return json as T[];
+    if (Array.isArray(json?.data)) return json.data as T[];
+    return [];
 }
 
 // ---- Types ----
@@ -180,16 +187,10 @@ export default function ProductAdjust({
         setLoadingList(true);
         setListError(null);
         try {
-            const url = queryString
-                ? `/warehouse/products?${queryString}`
-                : `/warehouse/products`;
-            const res = await fetch(url, { cache: "no-store" });
-            if (!res.ok) throw new Error(`โหลดรายการสินค้าไม่สำเร็จ (${res.status})`);
-
-            const json = await res.json();
-            // NOTE: ให้ backend ส่ง field category_id/description/updated_at มาด้วยยิ่งดี
-            const rows: ProductRow[] = Array.isArray(json) ? json : (json?.data ?? []);
-            setRows(rows ?? []);
+            const url = queryString ? `/warehouse/products?${queryString}` : `/warehouse/products`;
+            const json = await api.get<any>(url);
+            const rows = unwrapList<ProductRow>(json);
+            setRows(rows);
         } catch (err: any) {
             setListError(err?.message ?? "โหลดรายการสินค้าไม่สำเร็จ");
         } finally {
@@ -205,7 +206,6 @@ export default function ProductAdjust({
     async function handleSave() {
         setSaving(true);
         try {
-            // ตรวจด้วย zod ก่อน
             const r = validateForm(form);
             if (!r.ok) {
                 setErrors(r.errors);
@@ -213,29 +213,22 @@ export default function ProductAdjust({
             }
             const payload = r.data;
 
-            const res = await fetch("/warehouse/products", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                cache: "no-store",
-                body: JSON.stringify(payload),
-            });
-
-            if (!res.ok) throw new Error(`บันทึกไม่สำเร็จ (${res.status})`);
-            const json = await res.json().catch(() => null);
+            const created = await api.post<any>("/warehouse/products", payload);
 
             setOpenAdd(false);
             setForm({ name: "", image: null, description: null, category_id: null, unit: null });
-            setErrors({}); // เคลียร์ error หลังบันทึกสำเร็จ
+            setErrors({});
 
-            onCreated?.({ company: json?.company ?? "", name: json?.name ?? payload.name });
+            onCreated?.({ company: created?.company ?? "", name: created?.name ?? payload.name });
             fetchProducts();
         } catch (err) {
+            // ถ้าจะโชว์ toast ตรงนี้ก็ได้
             console.error(err);
+            setListError((err as Error)?.message ?? "บันทึกไม่สำเร็จ");
         } finally {
             setSaving(false);
         }
     }
-
 
     const statusChip = (st?: ProductRow["product_status"]) => {
         const label =

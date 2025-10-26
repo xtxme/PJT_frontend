@@ -1,5 +1,14 @@
 .git
-.env
-.env.test
-dist
 node_modules
+.next/cache
+coverage
+*.log
+
+.env
+Dockerfile*
+docker-compose*.yml
+
+# ตัวอื่นๆ ที่มักไม่ต้องการ
+.idea
+.vscode
+dist

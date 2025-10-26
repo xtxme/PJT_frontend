@@ -52,10 +52,14 @@ export default function CustomerList() {
 
     const grandTotal = customers.reduce((sum, c) => sum + Number(c.totalPaid || 0), 0);
 
+    const backendDomain = (process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL ?? "http://localhost").replace(/\/$/, "");
+    const backendPort = process.env.NEXT_PUBLIC_BACKEND_PORT ?? "5002";
+    const backendBaseUrl = `${backendDomain}:${backendPort}`;
+
     const fetchCustomers = async (keyword = '') => {
         try {
             const res = await fetch(
-                `${process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/sale/customers/search?keyword=${encodeURIComponent(keyword)}`
+                `${backendBaseUrl}/sale/customers/search?keyword=${encodeURIComponent(keyword)}`
             );
             const data = await res.json();
             if (data.success) setCustomers(data.data);

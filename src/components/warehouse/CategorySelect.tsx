@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import type { Category, ProductForm } from "@/app/types/warehouse";
 import { z } from "zod";
+import {api} from "@/app/lib/api";
 
 type CategoryOption =
     | Category
@@ -72,10 +73,8 @@ export default function CategorySelect({
         setLoading(true);
         try {
             const url = `/warehouse/categories?q=${encodeURIComponent(keyword)}&page=1&pageSize=10`;
-            const res = await fetch(url, { cache: "no-store", signal: ac.signal });
-            if (!res.ok) throw new Error("โหลดหมวดหมู่ไม่สำเร็จ");
-            const j = await res.json();
-            const rows: Category[] = j?.data ?? (Array.isArray(j) ? j : []);
+            const json = await api.get<any>(url, { signal: ac.signal });
+            const rows: Category[] = Array.isArray(json) ? json : json?.data ?? [];
             setOptions(rows);
         } finally {
             setLoading(false);
@@ -106,44 +105,25 @@ export default function CategorySelect({
         null;
 
     async function handleAddCategory() {
-        // validate
         const parsed = CategoryCreateSchema.safeParse({ name: newName });
-        if (!parsed.success) {
-            setAddErr(parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง");
-            return;
-        }
+        if (!parsed.success) { setAddErr(parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง"); return; }
 
         setAdding(true);
         setAddErr(null);
         try {
-            const res = await fetch("/warehouse/categories", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                cache: "no-store",
-                body: JSON.stringify({ name: parsed.data.name }),
-            });
-            const t = await res.text().catch(() => "");
-            if (!res.ok) {
-                const msg = safeParseMsg(t) ?? "สร้างหมวดหมู่ไม่สำเร็จ";
-                throw new Error(msg);
-            }
-            const j = safeParseJson(t) ?? {};
-            const created: Category = { id: j.id, name: parsed.data.name };
+            const created = await api.post<Category>("/warehouse/categories", { name: parsed.data.name });
 
-            setOptions((prev) => [created, ...prev]);
-            setCategories((prev) => {
-                const exists = prev.some(
-                    (c) => c.name.trim().toLowerCase() === created.name.toLowerCase()
-                );
+            setOptions(prev => [created, ...prev]);
+            setCategories(prev => {
+                const exists = prev.some(c => c.id === created.id);
                 const next = exists ? prev : [created, ...prev];
-                next.sort((a, b) => a.name.localeCompare(b.name, "th"));
+                next.sort((a,b)=>a.name.localeCompare(b.name,"th"));
                 return [...next];
             });
-            setForm((s) => ({ ...s, category_id: created.id }));
-
+            setForm(s => ({ ...s, category_id: created.id }));
             setAddOpen(false);
             setNewName("");
-        } catch (e: any) {
+        } catch (e:any) {
             setAddErr(e?.message ?? "เกิดข้อผิดพลาด");
         } finally {
             setAdding(false);

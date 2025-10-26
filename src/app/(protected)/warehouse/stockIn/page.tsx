@@ -7,8 +7,25 @@ import ProductAdjust from "@/components/warehouse/ProductAdjust";
 import Receiving from "@/components/warehouse/Receiving";
 import RestockCart from "@/components/warehouse/RestockCart";
 import {Category, LowStockNoti, OpenReceiveItem} from "@/app/types/warehouse";
+import { api } from "@/app/lib/api";
 
-/* ----------------------------- Types ----------------------------- */
+/* ----------------------------- Utils ----------------------------- */
+function qs(params: Record<string, string | number | boolean | undefined | null>) {
+    const sp = new URLSearchParams();
+    for (const [k, v] of Object.entries(params)) {
+        if (v === undefined || v === null) continue;
+        sp.set(k, String(v));
+    }
+    return sp.toString();
+}
+
+function unwrapList<T = any>(json: any): T[] {
+    if (Array.isArray(json)) return json as T[];
+    if (Array.isArray(json?.data)) return json.data as T[];
+    return [];
+}
+
+/* ----------------------------- Fetchers ----------------------------- */
 type LowStockFilters = {
     lte?: number | null;
     status?: Array<'low_stock' | 'restock_pending' | 'pricing_pending' | 'active'>;
@@ -20,21 +37,22 @@ type LowStockFilters = {
     pageSize?: number;
 };
 
-/* ----------------------------- Fetchers ----------------------------- */
-async function fetchLowStockNotis(filters: LowStockFilters) {
-    const sp = new URLSearchParams({
-        lte: String(filters.lte ?? 9),
+export async function fetchLowStockNotis(filters: LowStockFilters) {
+    const query = qs({
+        lte: filters.lte ?? 9,
         status: (filters.status ?? ['low_stock']).join(','),
         match: filters.match ?? 'any',
         sort: filters.sort ?? 'updated_at.desc',
-        page: String(filters.page ?? 1),
-        pageSize: String(filters.pageSize ?? 20),
+        page: filters.page ?? 1,
+        pageSize: filters.pageSize ?? 20,
+        q: filters.q,
+        category_id: filters.category_id ?? undefined,
     });
 
-    const res = await fetch(`/warehouse/products/low-stock?${sp.toString()}`, { cache: 'no-store' });
-    const json = await res.json();
-    const rows = Array.isArray(json) ? json : json.data ?? [];
-    const mapped = rows
+    const json = await api.get<any>(`/warehouse/products/low-stock?${query}`);
+    const rows = unwrapList(json);
+
+    const mapped: LowStockNoti[] = rows
         .filter((p: any) => (p.quantity_pending ?? 0) === 0)
         .map((p: any) => ({
             id: String(p.id),
@@ -49,21 +67,19 @@ async function fetchLowStockNotis(filters: LowStockFilters) {
                         ? 'รอรับ'
                         : 'ปกติ',
         }));
-    return { data: mapped, total: json.total ?? mapped.length };
+
+    return { data: mapped, total: json?.total ?? mapped.length };
 }
 
-async function fetchCategories(): Promise<Category[]> {
-    const res = await fetch('/warehouse/categories?page=1&pageSize=500', { cache: 'no-store' });
-    const json = await res.json();
-    return Array.isArray(json) ? json : json.data ?? [];
+export async function fetchCategories(): Promise<Category[]> {
+    const json = await api.get<any>(`/warehouse/categories?page=1&pageSize=500`);
+    return unwrapList<Category>(json);
 }
 
-/* ← ย้ายมาอยู่ที่หน้านี้ */
-async function fetchOpenReceives(): Promise<OpenReceiveItem[]> {
-    const res = await fetch("/warehouse/stock-in/open", { cache: "no-store" });
-    if (!res.ok) throw new Error("โหลดรายการค้างรับไม่สำเร็จ");
-    const json = await res.json();
-    return Array.isArray(json) ? json : json.data ?? [];
+/** ← ย้ายมาอยู่ที่หน้านี้ */
+export async function fetchOpenReceives(): Promise<OpenReceiveItem[]> {
+    const json = await api.get<any>(`/warehouse/stock-in/open`);
+    return unwrapList<OpenReceiveItem>(json);
 }
 
 /* ----------------------------- Inner Page ----------------------------- */

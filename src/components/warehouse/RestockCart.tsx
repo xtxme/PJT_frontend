@@ -6,6 +6,7 @@ import { z } from 'zod';
 import color from "@/app/styles/color";
 import { Button } from "@mui/material";
 import SupplierDropdown from '@/components/warehouse/SupplierDropdown';
+import {api} from "@/app/lib/api";
 
 /* ----------------------------- Zod Schemas ----------------------------- */
 const CartItemSchema = z.object({
@@ -124,21 +125,11 @@ export default function RestockCart({ onRegisterAddAction, onRegisterRemoveActio
                 items: cart,
             };
             const parsed = BatchPayloadSchema.safeParse(payload);
-            if (!parsed.success) throw new Error(parsed.error.issues[0]?.message || 'ข้อมูลไม่ครบ');
-
-            const res = await fetch('/warehouse/stock-in/batches', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                cache: 'no-store',
-                body: JSON.stringify(parsed.data),
-            });
-            if (!res.ok) throw new Error(await res.text());
-            return res.json();
+            if (!parsed.success) throw new Error(parsed.error.issues[0]?.message || "ข้อมูลไม่ครบ");
+            return api.post("/warehouse/stock-in/batches", parsed.data);
         },
         onSuccess: (json: any) => {
-            setCart([]);
-            setBatchNote('');
-            setErrors({});
+            setCart([]); setBatchNote(""); setErrors({});
             onCreatedAction?.({ batch_id: json?.batch_id });
         },
     });

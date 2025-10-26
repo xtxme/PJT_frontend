@@ -3,6 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Autocomplete, CircularProgress, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
 import { z } from 'zod';
+import { api } from "@/app/lib/api";
+
+function unwrapList<T = any>(json: any): T[] {
+    if (Array.isArray(json)) return json as T[];
+    if (Array.isArray(json?.data)) return json.data as T[];
+    return [];
+}
 
 export type SupplierLite = { id: number; company_name: string; email?: string | null; tel?: string | null };
 
@@ -73,10 +80,8 @@ export default function SupplierDropdown({ value, onChange, label = 'ซัพ�
         setLoading(true);
         try {
             const url = `/warehouse/suppliers?q=${encodeURIComponent(keyword)}&page=1&pageSize=10`;
-            const res = await fetch(url, { cache: 'no-store', signal: ac.signal });
-            if (!res.ok) throw new Error('โหลดไม่สำเร็จ');
-            const j = await res.json();
-            const rows: SupplierLite[] = j?.data ?? (Array.isArray(j) ? j : []);
+            const json = await api.get<any>(url, { signal: ac.signal });
+            const rows = unwrapList<SupplierLite>(json);
             setOptions(rows);
         } finally {
             setLoading(false);
@@ -103,21 +108,19 @@ export default function SupplierDropdown({ value, onChange, label = 'ซัพ�
         !('createNew' in a) && a.id === b?.id;
 
     async function handleAddSupplier() {
-        // validate ด้วย Zod
         const parsed = SupplierCreateSchema.safeParse({
             company_name: newName,
             email: newEmail,
             tel: newTel,
-        } satisfies SupplierCreate);
+        });
 
         if (!parsed.success) {
-            // map error ไป state
             const fieldErrs: { name?: string; email?: string; tel?: string } = {};
             for (const issue of parsed.error.issues) {
                 const p = issue.path[0];
-                if (p === 'company_name') fieldErrs.name = issue.message;
-                if (p === 'email') fieldErrs.email = issue.message;
-                if (p === 'tel') fieldErrs.tel = issue.message;
+                if (p === "company_name") fieldErrs.name = issue.message;
+                if (p === "email") fieldErrs.email = issue.message;
+                if (p === "tel") fieldErrs.tel = issue.message;
             }
             setAddErr(fieldErrs);
             return;
@@ -132,27 +135,15 @@ export default function SupplierDropdown({ value, onChange, label = 'ซัพ�
                 tel: parsed.data.tel ?? null,
             };
 
-            const res = await fetch('/warehouse/suppliers', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                cache: 'no-store',
-                body: JSON.stringify(payload),
-            });
-            if (!res.ok) {
-                const t = await res.text().catch(() => '');
-                const msg = safeParseMsg(t) ?? 'เพิ่มซัพพลายเออร์ไม่สำเร็จ';
-                throw new Error(msg);
-            }
-            const created: SupplierLite = await res.json();
+            const created = await api.post<SupplierLite>("/warehouse/suppliers", payload);
 
-            setOptions((prev) => [created, ...prev]);
+            setOptions(prev => [created, ...prev]);
             onChange(created);
             setAddOpen(false);
-            setNewName('');
-            setNewEmail('');
-            setNewTel('');
+            setNewName(""); setNewEmail(""); setNewTel("");
         } catch (e: any) {
-            alert(e?.message ?? 'เกิดข้อผิดพลาด');
+            // api helper จะพยายามดึง j.message ให้แล้ว
+            alert(e?.message ?? "เกิดข้อผิดพลาด");
         } finally {
             setAdding(false);
         }

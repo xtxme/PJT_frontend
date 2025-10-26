@@ -1,23 +1,34 @@
-name: PJT
+name: PJT_Frontend
 
 services:
   frontend:
     container_name: PJT-frontend
     build:
       context: .
+      dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_ENDPOINT: ${NEXT_PUBLIC_ENDPOINT}
+        NEXT_PUBLIC_BACKEND_DOMAIN_URL: ${NEXT_PUBLIC_BACKEND_DOMAIN_URL}
+        NEXT_PUBLIC_BACKEND_PORT: ${NEXT_PUBLIC_BACKEND_PORT}
+        # ถ้าโค้ดคุณมีตัวแปรนี้ จะส่งให้ด้วย (ปลอดภัยไว้ก่อน)
+        NEXT_PUBLIC_ENDPOINT: ${NEXT_PUBLIC_BACKEND_DOMAIN_URL}:${NEXT_PUBLIC_BACKEND_PORT}
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
     ports:
-      - "${FRONTEND_PORT}:3001"
+      # host:container — container ใช้ 4000 ให้ตรงกับ Dockerfile
+      - "${FRONTEND_PORT:-3000}:4000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4000').then(()=>process.exit(0)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 4s
+      retries: 6
+    restart: unless-stopped
     networks:
       - PJT-net
-    environment:
-      NEXT_PUBLIC_ENDPOINT: ${NEXT_PUBLIC_ENDPOINT}
 
-volumes:
-  mysql-data:
-
-
+# ใช้ network เดียวกับ backend
 networks:
   PJT-net:
-    driver: bridge
+    external: true
+    name: pjt_PJT-net

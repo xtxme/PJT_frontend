@@ -1,3 +1,4 @@
+// components/warehouse/UpdateStock.tsx
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -6,9 +7,11 @@ import {
     MenuItem, Paper, Select, TextField, Typography
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { api } from "@/app/lib/api";
 
-type Product = {
+// ---- types ----
+export type Product = {
     id: string;
     name: string;
     company?: string;
@@ -16,76 +19,50 @@ type Product = {
     latestQty: number;
     newQty: number;
     match: boolean;
-    count_note?: string;         // โน้ตที่ “อยู่ในระบบ” (เดิม)
+    count_note?: string;
     last_counted_at?: string | null;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? '';
-// ตัวอย่าง .env.local:
-
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-    const res = await fetch(`${API_BASE}${path}`, init);
-    if (!res.ok) {
-        const j = await res.json().catch(() => null);
-        throw new Error(j?.message ?? `HTTP ${res.status}`);
-    }
-    return res.json();
-}
-
-async function fetchStock(): Promise<Product[]> {
-    return api<Product[]>('/warehouse/update/stock');
-}
-
-export default function UpdateStock() {
-    const qc = useQueryClient();
+export default function UpdateStock({
+                                        data,
+                                        loading,
+                                        onReload,
+                                    }: {
+    data: Product[];
+    loading: boolean;
+    onReload: () => void;
+}) {
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState('');
-
-    const { data, isLoading } = useQuery({
-        queryKey: ['stockList'],
-        queryFn: fetchStock,
-    });
-
-    // เก็บการแก้ต่อแถวแบบ local
     const [editing, setEditing] = useState<Record<string, Partial<Product>>>({});
 
     const handleChange = (id: string, key: keyof Product, value: any) => {
-        setEditing((prev) => ({ ...prev, [id]: { ...prev[id], [key]: value } }));
+        setEditing(prev => ({ ...prev, [id]: { ...prev[id], [key]: value } }));
     };
 
-    // PUT — บันทึก “ผลนับ” (ไม่ปรับ quantity ในระบบ)
+    // PUT — บันทึก “ผลนับ”
     const saveCount = useMutation({
-        mutationFn: async (p: Product) => {
-            return api(`/warehouse/update/stock/${p.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    counted_qty: p.newQty,
-                    count_note: p.count_note ?? '', // เก็บโน้ตใหม่ (หรือเดิม) ไปพร้อมกัน
-                }),
-            });
-        },
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['stockList'] }),
+        mutationFn: (p: Product) =>
+            api.put(`/warehouse/update/stock/${p.id}`, {
+                counted_qty: p.newQty,
+                count_note: p.count_note ?? "",
+            }),
+        onSuccess: onReload,
     });
 
-    // PATCH — ปรับ “จำนวนในระบบ” ให้เท่ากับที่นับได้
+    // PATCH — ปรับ “จำนวนในระบบ”
     const adjustQty = useMutation({
-        mutationFn: async (p: Product) => {
-            return api(`/warehouse/products/${p.id}/adjust-quantity`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    quantity: p.newQty,
-                    note: p.count_note ?? '',
-                }),
-            });
-        },
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['stockList'] }),
+        mutationFn: (p: Product) =>
+            api.patch(`/warehouse/products/${p.id}/adjust-quantity`, {
+                quantity: p.newQty,
+                note: p.count_note ?? "",
+            }),
+        onSuccess: onReload,
     });
 
     const filtered = useMemo(() => {
-        if (!data) return [];
-        return data.filter((item) => {
+        const rows = Array.isArray(data) ? data : [];
+        return rows.filter(item => {
             const matchSearch = item.name.toLowerCase().includes(search.toLowerCase());
             const matchFilter = filter === '' ? true : filter === 'match' ? item.match : !item.match;
             return matchSearch && matchFilter;
@@ -125,7 +102,7 @@ export default function UpdateStock() {
                 </FormControl>
             </Box>
 
-            {isLoading ? (
+            {loading ? (
                 <Box display="flex" justifyContent="center" py={5}><CircularProgress /></Box>
             ) : (
                 <Box display="flex" flexDirection="column" gap={2}>
@@ -151,8 +128,6 @@ export default function UpdateStock() {
                                         <Typography variant="body2" color="text.secondary">
                                             ระบบ: {item.systemQty} | ล่าสุด: {item.latestQty}
                                         </Typography>
-
-                                        {/* ✅ โชว์ “โน้ตเดิมในระบบ” ถ้ามี */}
                                         {item.count_note && (
                                             <Typography variant="body2" sx={{ mt: 0.5 }}>
                                                 โน้ตก่อนหน้า: <em>{item.count_note}</em>
@@ -173,7 +148,7 @@ export default function UpdateStock() {
                                         <TextField
                                             label="โน้ต (แก้ไข/เพิ่ม)"
                                             size="small"
-                                            value={merged.count_note ?? item.count_note ?? ''} // ถ้า local ยังไม่เคยแก้ ให้โชว์โน้ตเดิม
+                                            value={merged.count_note ?? item.count_note ?? ''}
                                             onChange={(e) => handleChange(item.id, 'count_note', e.target.value)}
                                             sx={{ minWidth: 200 }}
                                         />

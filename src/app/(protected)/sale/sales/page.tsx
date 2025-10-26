@@ -31,6 +31,10 @@ export default function SalesPage() {
   const saleName = useUserStore((state) => state.name);
   const saleId = useUserStore((state) => state.id);
 
+  const backendDomain = (process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL ?? "http://localhost").replace(/\/$/, "");
+  const backendPort = process.env.NEXT_PUBLIC_BACKEND_PORT ?? "5002";
+  const backendBaseUrl = `${backendDomain}:${backendPort}`;
+
   // 🧩 โหลดข้อมูลลูกค้า/สินค้า/เลขบิล
   useEffect(() => {
     loadData();
@@ -38,9 +42,9 @@ export default function SalesPage() {
 
   async function loadData() {
     const [custRes, prodRes, invRes] = await Promise.all([
-      fetch(`${process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/sale/sales/customers`).then((r) => r.json()),
-      fetch(`${process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/sale/sales/products`).then((r) => r.json()),
-      fetch(`${process.env.NEXT_PUBLIC_BACKEND_DOMAIN_URL}:${process.env.NEXT_PUBLIC_BACKEND_PORT}/sale/sales/new-invoice`).then((r) => r.json()),
+      fetch(`${backendBaseUrl}/sale/sales/customers`).then((r) => r.json()),
+      fetch(`${backendBaseUrl}/sale/sales/products`).then((r) => r.json()),
+      fetch(`${backendBaseUrl}/sale/sales/new-invoice`).then((r) => r.json()),
     ]);
     setCustomers(custRes.data || []);
     setProducts(prodRes.data || []);

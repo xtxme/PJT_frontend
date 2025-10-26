@@ -6,6 +6,7 @@ import { Button, IconButton, Tooltip } from "@mui/material";
 import CachedIcon from "@mui/icons-material/Cached";
 import color from "@/app/styles/color";
 import type { OpenReceiveItem } from "@/app/types/warehouse";
+import {api} from "@/app/lib/api";
 
 type Props = {
     openItems: OpenReceiveItem[];
@@ -31,17 +32,8 @@ export default function Receiving({ openItems, isLoading, isError, refetch }: Pr
     };
 
     const { mutate: receiveItem, isPending } = useMutation({
-        mutationFn: async (payload: { itemId: number; qty: number }) => {
-            const res = await fetch(`/warehouse/stock-in/items/${payload.itemId}/receive`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ receive_qty: payload.qty }),
-            });
-            if (!res.ok) {
-                const j = await res.json().catch(() => null);
-                throw new Error(j?.message ?? "รับของไม่สำเร็จ");
-            }
-            return res.json();
+        mutationFn: async ({ itemId, qty }: { itemId: number; qty: number }) => {
+            return api.post(`/warehouse/stock-in/items/${itemId}/receive`, { receive_qty: qty });
         },
         onMutate: ({ itemId, qty }) => {
             const prev = itemsView;
